@@ -2,6 +2,14 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.0.7] - 2026-10-02
+
+### Added
+
+- Presentation deck for the package under `paparan/`
+  (`Laravel-Security-Monitor-Bulwark.pptx`, 20 slides) with a reproducible
+  generator (`paparan/generate.php`). Excluded from the Composer distribution.
+
 ## [1.0.4] - 2026-10-02
 
 ### Changed

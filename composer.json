@@ -93,7 +93,8 @@
             "/.github",
             "/.gitattributes",
             "/.gitignore",
-            "/push.sh"
+            "/push.sh",
+            "/paparan"
         ]
     },
     "minimum-stability": "stable",
