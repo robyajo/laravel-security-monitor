@@ -42,7 +42,8 @@ Dokumentasi ini disusun secara modular ke dalam 7 bagian utama:
 
 ### 6. [Hardening Web Server (Web Server Hardening)](./06-webserver-hardening/)
 - [01. Konfigurasi Nginx Hardened WAF (`nginx.conf`)](./06-webserver-hardening/01-nginx-hardened-waf.md) — Dual rate limiting, bypass aset Vite (`NS_ERROR_CORRUPTED_CONTENT`), eksekusi tunggal `/index.php`, dan sandbox storage.
-- [02. Checklist Keamanan Produksi](./06-webserver-hardening/02-production-checklist.md) — Checklist sebelum peluncuran, izin direktori, tuning database, dan prosedur darurat.
+- [02. Hardening Apache Web Server (`.htaccess`)](./06-webserver-hardening/02-apache-htaccess-hardening.md) — Blokir webshell, bypass double extension (`.php.jpg`), pencegahan eksposur dotfile (`.env`, `.git`), dan penutupan file backup/dump.
+- [03. Checklist Keamanan Produksi](./06-webserver-hardening/03-production-checklist.md) — Checklist sebelum peluncuran, izin direktori, tuning database, dan prosedur darurat.
 
 ### 7. [Panduan Integrasi (Integration Guides)](./07-integration-guides/)
 - [01. Integrasi Frontend React / Inertia](./07-integration-guides/01-frontend-react-inertia.md) — Axios interceptor penanganan HTTP 403, modal permohonan buka blokir, dan komponen SVG Captcha di React.

@@ -27,7 +27,7 @@ This repository is **`robyajo/laravel-security-monitor`** (Bulwark), an enterpri
 
 ## 2. Comprehensive Documentation Suite (`documents/`)
 
-The repository contains an authoritative, 24-chapter documentation suite located in `documents/`. Agents MUST consult these documents for architectural details, schema specs, API payload contracts, and integration recipes:
+The repository contains an authoritative, 25-chapter documentation suite located in `documents/`. Agents MUST consult these documents for architectural details, schema specs, API payload contracts, and integration recipes:
 
 - **Master Table of Contents**: [`documents/README.md`](./documents/README.md)
 - **Interactive Documentation Portal**: [`documents/index.html`](./documents/index.html) (Offline single-page app with full-text search, dark/light theme, and copy-to-clipboard code snippets)
@@ -58,7 +58,8 @@ The repository contains an authoritative, 24-chapter documentation suite located
      - `02-scheduled-tasks.md` — Scheduled cron tasks (log pruning, heartbeat, daily access log scan).
   6. `documents/06-webserver-hardening/`:
      - `01-nginx-hardened-waf.md` — Dual rate-limit zones, Vite bypass, strict single-PHP execution, storage sandbox.
-     - `02-production-checklist.md` — Pre-flight checklist, permissions, emergency unblock runbook.
+     - `02-apache-htaccess-hardening.md` — Apache & LiteSpeed hardening, webshell defense, double extension mitigation, dotfile & backup exposure lockdown.
+     - `03-production-checklist.md` — Pre-flight checklist, permissions, emergency unblock runbook.
   7. `documents/07-integration-guides/`:
      - `01-frontend-react-inertia.md` — Axios interceptor for 403, React Captcha component, Appeal modal.
      - `02-frontend-blade-livewire.md` — Customizing `errors/blocked.blade.php`, Blade/Livewire Captcha forms.
@@ -131,7 +132,7 @@ When working in this repository, you MUST activate the relevant skills located i
 ## 6. Directory Structure & Conventions
 
 ```text
-documents/                 # Authoritative 24-chapter documentation suite + index.html
+documents/                 # Authoritative 25-chapter documentation suite + index.html
 src/
 ├── Concerns/              # Reusable Eloquent traits (HasSecurityRelations)
 ├── Console/Commands/      # Artisan commands (security:install, security:scan-logs, security:baseline, etc.)

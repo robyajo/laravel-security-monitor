@@ -47,17 +47,28 @@ composer require robyajo/laravel-security-monitor:@dev
 
 ## 3. Publikasi Aset Otomatis (`security:install`)
 
-Paket menyediakan perintah Artisan interaktif satu langkah untuk mempublikasikan seluruh berkas konfigurasi, migrasi, dan berkas konfigurasi Nginx:
+Paket menyediakan perintah Artisan interaktif satu langkah untuk mempublikasikan seluruh berkas konfigurasi, migrasi, template Nginx, serta menerapkan aturan **Hardening Apache `.htaccess`**:
 
 ```bash
 php artisan security:install
 ```
 
+Perintah ini akan secara otomatis:
+1. Mempublikasikan berkas konfigurasi `config/security.php`.
+2. Mempublikasikan berkas migrasi database ke `database/migrations/`.
+3. Mempublikasikan template virtual host `nginx.conf` di root proyek.
+4. **Memperbarui berkas `public/.htaccess`**:
+   - Jika berkas belum ada: membuat `public/.htaccess` baru dengan aturan rewrite standar Laravel + blok hardening keamanan.
+   - Jika berkas sudah ada: membuat cadangan otomatis `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan blok hardening keamanan di bagian bawah berkas tanpa merusak aturan rewrite kustom Anda.
+   - Jika sudah memiliki aturan hardening: mendeteksi dan mempertahankan berkas yang sudah terlindungi.
+
 ### Opsi Perintah:
 | Opsi | Fungsi |
 | :--- | :--- |
-| `--force` | Menimpa berkas `config/security.php`, migrasi, dan `nginx.conf` yang sudah ada sebelumnya. |
-| `--without-nginx` | Melewatkan publikasi berkas `nginx.conf` jika server tidak menggunakan Nginx. |
+| `--force` | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess` dengan template bawaan paket. |
+| `--without-nginx` | Melewatkan publikasi berkas `nginx.conf` jika server Anda tidak menggunakan web server Nginx. |
+| `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess` jika Anda menggunakan Nginx murni dan tidak memerlukan Apache `.htaccess`. |
+| `--with-htaccess` | Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan paket. |
 
 ---
 
@@ -82,6 +93,17 @@ Berkas migrasi akan disalin ke folder `database/migrations/`.
 php artisan vendor:publish --tag=security-nginx
 ```
 Berkas akan ditempatkan di root proyek: `nginx.conf`.
+
+### 4. Publikasikan Template Apache `.htaccess` Hardened Saja
+```bash
+php artisan vendor:publish --tag=security-htaccess --force
+```
+Berkas akan ditempatkan di: `public/.htaccess`.
+
+### 5. Publikasikan Seluruh Aset Sekaligus
+```bash
+php artisan vendor:publish --tag=security-all --force
+```
 
 ---
 

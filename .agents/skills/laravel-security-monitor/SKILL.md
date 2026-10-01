@@ -116,8 +116,11 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 - **Sessions**: `GET /user-sessions`, `GET /user-sessions/realtime`, `DELETE /user-sessions/session/{id}`, `DELETE /trusted-ips/{id}`.
 - **Appeals**: `GET /unblock-tickets`, `POST /unblock-tickets/{id}/respond`, `DELETE /unblock-tickets/{id}`.
 
-### Nginx Publishing
+### Web Server Hardening & Publishing
 - `php artisan vendor:publish --tag=security-nginx`: Publishes `nginx.conf` template with dual-zone rate limiting, strict single-PHP execution (`/index.php` only), storage sandboxing (nosniff + CSP sandbox), and double-extension blocking.
+- `php artisan vendor:publish --tag=security-htaccess`: Publishes `public/.htaccess` template with Apache hardening (dotfile protection, double extension blocking, dump/log protection, directory indexing disabled).
+- `php artisan vendor:publish --tag=security-all`: Publishes config, migrations, `nginx.conf`, and `public/.htaccess` in a single command.
+- `php artisan security:install`: Interactive one-stop command that publishes assets and auto-appends hardening rules to `public/.htaccess` with automatic backup.
 
 ---
 

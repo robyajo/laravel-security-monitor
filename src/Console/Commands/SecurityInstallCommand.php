@@ -3,14 +3,17 @@
 namespace Internal\SecurityMonitor\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 
 class SecurityInstallCommand extends Command
 {
     protected $signature = 'security:install
-                            {--force : Timpa berkas konfigurasi, migrasi, dan nginx yang sudah ada}
-                            {--without-nginx : Jangan publikasikan berkas nginx.conf}';
+                            {--force : Timpa berkas konfigurasi, migrasi, nginx, dan htaccess yang sudah ada}
+                            {--without-nginx : Jangan publikasikan berkas nginx.conf}
+                            {--without-htaccess : Jangan perbarui berkas public/.htaccess}
+                            {--with-htaccess : Paksa perbarui berkas public/.htaccess dengan aturan hardening}';
 
-    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, dan konfigurasi Nginx)';
+    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, dan Apache .htaccess)';
 
     public function handle(): int
     {
@@ -19,6 +22,7 @@ class SecurityInstallCommand extends Command
 
         $force = (bool) $this->option('force');
         $withoutNginx = (bool) $this->option('without-nginx');
+        $withoutHtaccess = (bool) $this->option('without-htaccess');
 
         // 1. Publish Config
         $this->comment('Mempublikasikan berkas konfigurasi...');
@@ -43,6 +47,12 @@ class SecurityInstallCommand extends Command
             ]);
         }
 
+        // 4. Publish / Hardening Apache .htaccess
+        if (! $withoutHtaccess) {
+            $this->comment('Mempublikasikan dan menerapkan aturan hardening Apache (public/.htaccess)...');
+            $this->applyHtaccessHardening($force);
+        }
+
         $this->newLine();
         $this->info('Instalasi aset berhasil diselesaikan!');
         $this->newLine();
@@ -57,10 +67,71 @@ class SecurityInstallCommand extends Command
         $this->line('     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\BlockIpAddress::class</>');
         $this->line('     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats::class</>');
         if (! $withoutNginx) {
-            $this->line('  4. Periksa dan sesuaikan berkas <fg=yellow>nginx.conf</> di root proyek Anda');
-            $this->line('     untuk konfigurasi virtual host web server Nginx produksi.');
+            $this->line('  4. Web Server Nginx: Periksa dan sesuaikan <fg=yellow>nginx.conf</> di root proyek.');
+        }
+        if (! $withoutHtaccess) {
+            $this->line('  5. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat');
+            $this->line('     terhadap upload webshell, double extension, pembacaan dotfile, dan file backup.');
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Terapkan aturan hardening pada public/.htaccess.
+     */
+    protected function applyHtaccessHardening(bool $force): void
+    {
+        $stubPath = __DIR__ . '/../../../stubs/htaccess.stub';
+        if (! File::exists($stubPath)) {
+            $stubPath = dirname(__DIR__, 2) . '/stubs/htaccess.stub';
+        }
+
+        if (! File::exists($stubPath)) {
+            $this->warn('Berkas stub htaccess tidak ditemukan pada path: ' . $stubPath);
+            return;
+        }
+
+        $stubContent = File::get($stubPath);
+        $publicDir = public_path();
+        if (! File::isDirectory($publicDir)) {
+            File::makeDirectory($publicDir, 0755, true, true);
+        }
+
+        $htaccessPath = public_path('.htaccess');
+
+        if (! File::exists($htaccessPath) || $force) {
+            // Buat atau timpa dengan stub lengkap
+            File::put($htaccessPath, $stubContent);
+            $this->info('  ✓ Berkas public/.htaccess berhasil diperbarui dengan aturan hardening lengkap.');
+            return;
+        }
+
+        $currentContent = File::get($htaccessPath);
+
+        // Cek apakah hardening rules sudah terpasang
+        if (str_contains($currentContent, 'Hardening keamanan') ||
+            str_contains($currentContent, 'Hardening Keamanan') ||
+            str_contains($currentContent, 'FilesMatch "^\."') ||
+            str_contains($currentContent, 'phtml|pht|phar')) {
+            $this->line('  ✓ Berkas public/.htaccess sudah memiliki aturan hardening keamanan.');
+            return;
+        }
+
+        // Backup htaccess lama
+        $backupPath = public_path('.htaccess.backup-' . date('Ymd_His'));
+        File::copy($htaccessPath, $backupPath);
+        $this->line("  ℹ Cadangan dibuat di: <fg=gray>{$backupPath}</>");
+
+        // Ambil bagian hardening dari stub
+        $pos = strpos($stubContent, '# ---------------------------------------------------------------------------');
+        $hardeningSection = $pos !== false ? "
+
+" . substr($stubContent, $pos) : "
+
+" . $stubContent;
+        File::append($htaccessPath, $hardeningSection);
+
+        $this->info('  ✓ Aturan hardening keamanan berhasil ditambahkan ke berkas public/.htaccess.');
     }
 }

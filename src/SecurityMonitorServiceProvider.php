@@ -101,11 +101,17 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             __DIR__ . '/../stubs/nginx.conf.stub' => base_path('nginx.conf'),
         ], 'security-nginx');
 
-        // Publish All Assets (Config, Migrations, Nginx)
+        // Apache .htaccess Hardened Configuration
+        $this->publishes([
+            __DIR__ . '/../stubs/htaccess.stub' => public_path('.htaccess'),
+        ], 'security-htaccess');
+
+        // Publish All Assets (Config, Migrations, Nginx, Htaccess)
         $this->publishes([
             __DIR__ . '/../config/security.php' => config_path('security.php'),
             __DIR__ . '/../database/migrations' => database_path('migrations'),
             __DIR__ . '/../stubs/nginx.conf.stub' => base_path('nginx.conf'),
+            __DIR__ . '/../stubs/htaccess.stub' => public_path('.htaccess'),
         ], 'security-all');
 
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');

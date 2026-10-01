@@ -5,15 +5,22 @@ Paket menyertakan kumpulan perintah Artisan CLI untuk administrasi, otomasi pemi
 ---
 
 ## 1. `security:install`
-Menginisialisasi paket, mempublikasikan konfigurasi, migrasi, dan konfigurasi Nginx hardened WAF.
+Menginisialisasi paket, mempublikasikan konfigurasi, migrasi database, konfigurasi Nginx hardened WAF, serta menerapkan aturan **Apache `.htaccess` Hardened** di folder `public/`.
 
 ```bash
 php artisan security:install [options]
 ```
 
+### Mekanisme Pembaruan `.htaccess`:
+- Jika `public/.htaccess` belum ada: installer membuat berkas baru dengan rewrite standar Laravel + blok proteksi hardening.
+- Jika `public/.htaccess` sudah ada: installer membuat berkas backup otomatis (`.htaccess.backup-YYYYMMDD_HHMMSS`) dan menambahkan blok hardening keamanan di bagian bawah berkas tanpa merusak aturan kustom pengguna.
+- Jika sudah terpasang: installer mendeteksi signature hardening dan tidak menduplikasi aturan.
+
 ### Opsi:
-- `--force`: Menimpa berkas yang sudah ada sebelumnya.
+- `--force`: Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess` dengan template bawaan.
 - `--without-nginx`: Melewatkan publikasi berkas `nginx.conf`.
+- `--without-htaccess`: Melewatkan publikasi atau penambahan aturan pada `public/.htaccess`.
+- `--with-htaccess`: Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan.
 
 ---
 
