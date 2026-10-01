@@ -22,6 +22,12 @@
         "source": "https://github.com/robyajo/laravel-security-monitor",
         "docs": "https://github.com/robyajo/laravel-security-monitor#readme"
     },
+    "funding": [
+        {
+            "type": "custom",
+            "url": "https://saweria.co/robykartis"
+        }
+    ],
     "type": "library",
     "license": "MIT",
     "authors": [

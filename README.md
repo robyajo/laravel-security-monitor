@@ -3,8 +3,8 @@
 [![Run Tests](https://github.com/robyajo/laravel-security-monitor/actions/workflows/run-tests.yml/badge.svg)](https://github.com/robyajo/laravel-security-monitor/actions/workflows/run-tests.yml)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/robyajo/laravel-security-monitor.svg)](https://packagist.org/packages/robyajo/laravel-security-monitor)
 [![Total Downloads](https://img.shields.io/packagist/dt/robyajo/laravel-security-monitor.svg)](https://packagist.org/packages/robyajo/laravel-security-monitor)
-[![PHP Version](https://img.shields.io/badge/php-%5E8.2%20%7C%20%5E8.3%20%7C%20%5E8.4%20%7C%20%5E8.5-blue.svg)](<>)
-[![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%20%7C%20%5E11.0%20%7C%20%5E12.0%20%7C%20%5E13.0-red.svg)](<>)
+[![PHP Version](https://img.shields.io/badge/php-%5E8.2%20%7C%20%5E8.3%20%7C%20%5E8.4%20%7C%20%5E8.5-blue.svg)](https://www.php.net/supported-versions.php)
+[![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%20%7C%20%5E11.0%20%7C%20%5E12.0%20%7C%20%5E13.0-red.svg)](https://laravel.com/docs/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **Laravel Security Monitor** (Bulwark) adalah paket keamanan komprehensif (_Self-Hosted WAF & Threat Engine_) berbasis **Headless REST API** untuk ekosistem Laravel. Paket ini murni PHP Composer library (Zero-NPM / standar Spatie) yang dirancang khusus untuk memproteksi aplikasi web internal dari serangan siber tingkat lanjut, injeksi payload pentest, eksploitasi webshell, dan brute force tanpa mengikat aplikasi ke template frontend tertentu.
@@ -450,7 +450,7 @@ Paket ini dilengkapi dengan pengujian menyeluruh menggunakan **Pest PHP** dan **
 ./vendor/bin/pest
 ```
 
-Hasil uji: **70 passed (302 assertions)** 100% Passed mencakup:
+Hasil uji: **82 passed (333 assertions)** 100% Passed mencakup:
 
 - `DetectorTuningTest`: Verifikasi akurasi pola deteksi dan ketahanan ReDoS.
 - `InstantBlockTest`: Verifikasi zero-tolerance instant blocking pada percobaan pertama.
@@ -462,6 +462,18 @@ Hasil uji: **70 passed (302 assertions)** 100% Passed mencakup:
 - `SecurityMonitorTest`: Uji ambang batas auto-blocking dan rotasi log.
 - `NginxPublishTest`: Verifikasi publikasi konfigurasi hardened virtual host Nginx.
 - `HtaccessPublishTest`: Verifikasi publikasi, penambahan aturan otomatis, dan pencadangan `.htaccess` Apache.
+
+---
+
+## ❤️ Dukungan (Support)
+
+Jika paket ini bermanfaat untuk proyek Anda, Anda dapat mendukung pengembangan
+berkelanjutannya melalui:
+
+- 🇮🇩 **Saweria**: <https://saweria.co/robykartis>
+
+Dukungan Anda sangat membantu agar paket ini tetap terawat, aman, dan terus
+diperbarui. Terima kasih! 🙏
 
 ---
 
