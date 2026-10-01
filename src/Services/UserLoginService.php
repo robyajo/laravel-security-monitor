@@ -368,8 +368,7 @@ class UserLoginService
             'security.user_model',
             'App\\Models\\User',
         );
-        $users = new $userModel()
-            ->newQuery()
+        $users = $userModel::query()
             ->whereIn('id', $userIds)
             ->get()
             ->keyBy('id');

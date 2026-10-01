@@ -14,9 +14,10 @@ parameters:
         # The trait is consumed by the host application's User model.
         - '#Trait Internal\\SecurityMonitor\\Concerns\\HasSecurityRelations is used zero times and is not analysed#'
         # Larastan narrows view()->exists() based on the host's published views,
-        # so its result is environment-dependent.
+        # so its result is environment-dependent (true when the host has published
+        # the view, false on a clean checkout such as CI).
         -
-            identifier: method.alreadyNarrowedType
+            message: '#Factory::exists\(\) with .*errors\.blocked.* will always evaluate to (true|false)#'
             path: src/Http/Middleware/BlockIpAddress.php
         # The configured user model is dynamic; `email` is not part of the contract.
         - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$email#'

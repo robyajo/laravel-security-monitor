@@ -2,6 +2,20 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.0.12] - 2026-10-02
+
+### Fixed
+
+- **PHP 8.2 / 8.3 compatibility (critical)**: `UserLoginService` chained a
+  method call directly off a `new` expression
+  (`new $model()->newQuery()`). That syntax only parses from PHP 8.4, so on
+  PHP 8.2/8.3 it raised a `ParseError` that failed every PHP 8.2/8.3 test-matrix
+  job as well as the Pint job. It now uses `$model::query()`, which parses and
+  formats identically on every supported PHP version.
+- PHPStan: the `view()->exists('errors.blocked')` suppression now matches both
+  the `true` and `false` evaluation, since the result depends on whether the
+  host application has published the view.
+
 ## [1.0.11] - 2026-10-02
 
 ### Fixed
