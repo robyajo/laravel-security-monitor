@@ -119,3 +119,28 @@ test('server scan runs when admin accounts exist', function () {
         ->toBeArray()
         ->toHaveKeys(['summary', 'categories']);
 });
+
+test('application audit marks a strong public api key and trusted proxies as ok', function () {
+    config()->set('security.server_scan.public_api_key', 'long-random-secret-value');
+    config()->set('security.server_scan.trusted_proxies', '10.0.0.1');
+
+    $checks = collect(app(ServerSecurityService::class)->scan(force: true)['categories'])
+        ->flatMap(fn (array $category): array => $category['checks'])
+        ->keyBy('id');
+
+    expect($checks['public_api_key']['status'])->toBe('ok')
+        ->and($checks['trusted_proxies']['status'])->toBe('ok')
+        ->and($checks['public_api_key']['value'])->toBe('long-random-secret-value');
+});
+
+test('application audit warns when public api key and trusted proxies are empty', function () {
+    config()->set('security.server_scan.public_api_key', '');
+    config()->set('security.server_scan.trusted_proxies', '');
+
+    $checks = collect(app(ServerSecurityService::class)->scan(force: true)['categories'])
+        ->flatMap(fn (array $category): array => $category['checks'])
+        ->keyBy('id');
+
+    expect($checks['public_api_key']['status'])->toBe('warning')
+        ->and($checks['trusted_proxies']['status'])->toBe('warning');
+});

@@ -435,8 +435,8 @@ class ServerSecurityService
         );
 
         // Dibaca sama seperti CheckPublicApiHeader agar hasil pemeriksaan konsisten.
-        $apiKey = (string) env('PUBLIC_API_KEY', 'pekanbaru-2026');
-        $defaultKey = in_array($apiKey, ['', 'pekanbaru-2026'], true);
+        $apiKey = (string) config('security.server_scan.public_api_key', '');
+        $defaultKey = in_array($apiKey, ['', 'change-me'], true);
         $checks[] = $this->check(
             'public_api_key',
             'Aplikasi',
@@ -469,7 +469,7 @@ class ServerSecurityService
         );
 
         // Dibaca sama seperti bootstrap/app.php (trustProxies).
-        $proxies = (string) env('TRUSTED_PROXIES', '');
+        $proxies = (string) config('security.server_scan.trusted_proxies', '');
         $checks[] = $this->check(
             'trusted_proxies',
             'Aplikasi',

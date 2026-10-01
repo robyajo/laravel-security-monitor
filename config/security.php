@@ -593,6 +593,10 @@ return [
         'max_admin_accounts' => (int) env('SECURITY_MAX_ADMIN_ACCOUNTS', 5),
         'log_size_warning_mb' => (int) env('SECURITY_LOG_SIZE_WARNING_MB', 100),
 
+        // Dibaca oleh audit aplikasi (ServerSecurityService::applicationChecks()).
+        'public_api_key' => env('PUBLIC_API_KEY'),
+        'trusted_proxies' => env('TRUSTED_PROXIES'),
+
         'integrity_paths' => [
             'public/index.php',
             'public/.htaccess',

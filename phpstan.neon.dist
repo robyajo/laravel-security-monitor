@@ -9,6 +9,7 @@ parameters:
     excludePaths:
         - vendor
     treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         # The trait is consumed by the host application's User model.
         - '#Trait Internal\\SecurityMonitor\\Concerns\\HasSecurityRelations is used zero times and is not analysed#'
@@ -16,3 +17,12 @@ parameters:
         - '#Call to method Illuminate\\Contracts\\View\\Factory::exists\(\) with .*errors\.blocked.* will always evaluate to true#'
         # The configured user model is dynamic; `email` is not part of the contract.
         - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$email#'
+
+        # Pest tests rely on magic `$this`; the official Pest PHPStan plugin is
+        # only available for Pest 5, so these are expected when tests are analysed.
+        -
+            message: '#Undefined variable: \$this#'
+            path: tests/*
+        -
+            message: '#Call to an undefined method Pest\\PendingCalls\\TestCall::.*#'
+            path: tests/*

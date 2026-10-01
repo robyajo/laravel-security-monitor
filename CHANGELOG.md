@@ -2,6 +2,21 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.0.10] - 2026-10-02
+
+### Changed
+
+- The application audit now reads `PUBLIC_API_KEY` and `TRUSTED_PROXIES` via
+  `config('security.server_scan.*')` instead of calling `env()`
+  inside a service, and the weak-key placeholder list no longer references an
+  app-specific value.
+
+### Fixed
+
+- PHPStan: added `tests/*`-scoped ignores for Pest's magic `$this` /
+  `TestCall` so IDE analysis of the test suite stays quiet, plus
+  `reportUnmatchedIgnoredErrors: false`.
+
 ## [1.0.9] - 2026-10-02
 
 ### Added
