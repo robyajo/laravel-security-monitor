@@ -1,11 +1,13 @@
 # Laravel Security Monitor (Bulwark)
 
-[![Tests](https://img.shields.io/badge/tests-70%20passed%20(302%20assertions)-brightgreen.svg)]()
-[![PHP Version](https://img.shields.io/badge/php-%5E8.2%20%7C%20%5E8.3%20%7C%20%5E8.4%20%7C%20%5E8.5-blue.svg)]()
-[![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%20%7C%20%5E11.0%20%7C%20%5E12.0%20%7C%20%5E13.0-red.svg)]()
+[![Run Tests](https://github.com/robyajo/laravel-security-monitor/actions/workflows/run-tests.yml/badge.svg)](https://github.com/robyajo/laravel-security-monitor/actions/workflows/run-tests.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/robyajo/laravel-security-monitor.svg)](https://packagist.org/packages/robyajo/laravel-security-monitor)
+[![Total Downloads](https://img.shields.io/packagist/dt/robyajo/laravel-security-monitor.svg)](https://packagist.org/packages/robyajo/laravel-security-monitor)
+[![PHP Version](https://img.shields.io/badge/php-%5E8.2%20%7C%20%5E8.3%20%7C%20%5E8.4%20%7C%20%5E8.5-blue.svg)](<>)
+[![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%20%7C%20%5E11.0%20%7C%20%5E12.0%20%7C%20%5E13.0-red.svg)](<>)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Laravel Security Monitor** (Bulwark) adalah paket keamanan komprehensif (*Self-Hosted WAF & Threat Engine*) berbasis **Headless REST API** untuk ekosistem Laravel. Paket ini murni PHP Composer library (Zero-NPM / standar Spatie) yang dirancang khusus untuk memproteksi aplikasi web internal dari serangan siber tingkat lanjut, injeksi payload pentest, eksploitasi webshell, dan brute force tanpa mengikat aplikasi ke template frontend tertentu.
+**Laravel Security Monitor** (Bulwark) adalah paket keamanan komprehensif (_Self-Hosted WAF & Threat Engine_) berbasis **Headless REST API** untuk ekosistem Laravel. Paket ini murni PHP Composer library (Zero-NPM / standar Spatie) yang dirancang khusus untuk memproteksi aplikasi web internal dari serangan siber tingkat lanjut, injeksi payload pentest, eksploitasi webshell, dan brute force tanpa mengikat aplikasi ke template frontend tertentu.
 
 > 📚 **Portal Dokumentasi Resmi Lengkap**: Tersedia 25 bab dokumentasi mendalam di direktori [`documents/`](./documents/README.md) serta portal interaktif offline [`documents/index.html`](./documents/index.html).
 
@@ -14,39 +16,39 @@
 ## 🌟 Fitur Utama
 
 1. **Self-Hosted WAF & Zero-Tolerance Threat Detection**:
-   - Deteksi instan tanpa batas ambang (*zero-tolerance*) untuk null-byte upload (`.php%00.jpg`), ekstensi ganda (`.php.jpg`), path traversal (`../../../public/`), probe file sensitif (`.htaccess`, `.env`, `.git`), dan SSTI canary (`{{7*7}}`).
-   - Deteksi komprehensif untuk SQL Injection, Cross-Site Scripting (XSS), Local File Inclusion (LFI), Command Injection, dan Scanner User-Agents.
-   - Pola regex yang diperketat dan kebal terhadap serangan ReDoS (*Regular Expression Denial of Service*).
+    - Deteksi instan tanpa batas ambang (_zero-tolerance_) untuk null-byte upload (`.php%00.jpg`), ekstensi ganda (`.php.jpg`), path traversal (`../../../public/`), probe file sensitif (`.htaccess`, `.env`, `.git`), dan SSTI canary (`{{7*7}}`).
+    - Deteksi komprehensif untuk SQL Injection, Cross-Site Scripting (XSS), Local File Inclusion (LFI), Command Injection, dan Scanner User-Agents.
+    - Pola regex yang diperketat dan kebal terhadap serangan ReDoS (_Regular Expression Denial of Service_).
 
 2. **Isolasi Perangkat Granular (Device-Level Quarantine)**:
-   - Dukungan isolasi di tingkat perangkat menggunakan `device_id` (WebRTC/fingerprint) dan `local_ip`.
-   - Memastikan perangkat penyerang terblokir tanpa mengganggu pengguna sah lain yang berbagi alamat IP publik yang sama (seperti kantor atau router Wi-Fi publik).
+    - Dukungan isolasi di tingkat perangkat menggunakan `device_id` (WebRTC/fingerprint) dan `local_ip`.
+    - Memastikan perangkat penyerang terblokir tanpa mengganggu pengguna sah lain yang berbagi alamat IP publik yang sama (seperti kantor atau router Wi-Fi publik).
 
 3. **Tiket Banding & Permohonan Buka Blokir (Appeal Tickets)**:
-   - Endpoint publik REST API bagi pengguna yang terblokir untuk mengajukan tiket permohonan buka blokir beserta status pelacakannya.
-   - Antarmuka persetujuan admin yang secara otomatis mencabut karantina IP/perangkat dan memasukkannya ke whitelist.
+    - Endpoint publik REST API bagi pengguna yang terblokir untuk mengajukan tiket permohonan buka blokir beserta status pelacakannya.
+    - Antarmuka persetujuan admin yang secara otomatis mencabut karantina IP/perangkat dan memasukkannya ke whitelist.
 
 4. **Multi-Tier Stepped Login Lockout**:
-   - Sistem pencegahan *credential stuffing* & *brute force* berjenjang (1 menit, 5 menit, 15 menit, 1 jam, hingga 24 jam).
-   - Pencatatan otomatis riwayat kegagalan otentikasi ke log audit keamanan.
+    - Sistem pencegahan _credential stuffing_ & _brute force_ berjenjang (1 menit, 5 menit, 15 menit, 1 jam, hingga 24 jam).
+    - Pencatatan otomatis riwayat kegagalan otentikasi ke log audit keamanan.
 
 5. **Pure SVG CAPTCHA (Zero Dependency)**:
-   - Generator CAPTCHA berbasis matriks vektor SVG murni tanpa memerlukan ekstensi PHP GD atau Imagick.
-   - Token tantangan sekali pakai (*stateless one-time challenge*) yang aman secara kriptografis.
+    - Generator CAPTCHA berbasis matriks vektor SVG murni tanpa memerlukan ekstensi PHP GD atau Imagick.
+    - Token tantangan sekali pakai (_stateless one-time challenge_) yang aman secara kriptografis.
 
 6. **Server Integrity & Webshell Scanner**:
-   - Pembuatan dan verifikasi baseline hash SHA-256 untuk berkas-berkas aplikasi inti.
-   - Pemindaian berkas mencurigakan / webshell (ekstensi ganda, skrip di direktori publik/upload, polyglot media).
-   - Fitur penghapusan berkas berbahaya yang aman dengan proteksi path traversal dan berkas sistem vital.
-   - Audit konfigurasi keamanan server (`APP_DEBUG`, secure session cookie, Fortify 2FA).
+    - Pembuatan dan verifikasi baseline hash SHA-256 untuk berkas-berkas aplikasi inti.
+    - Pemindaian berkas mencurigakan / webshell (ekstensi ganda, skrip di direktori publik/upload, polyglot media).
+    - Fitur penghapusan berkas berbahaya yang aman dengan proteksi path traversal dan berkas sistem vital.
+    - Audit konfigurasi keamanan server (`APP_DEBUG`, secure session cookie, Fortify 2FA).
 
 7. **Streaming Access Log Scanner**:
-   - Pemindai berkas log mentah Apache / Nginx secara *streaming* berdaya hemat memori untuk menangkap penyerang yang ditolak oleh web server sebelum request mencapai proses PHP Laravel.
+    - Pemindai berkas log mentah Apache / Nginx secara _streaming_ berdaya hemat memori untuk menangkap penyerang yang ditolak oleh web server sebelum request mencapai proses PHP Laravel.
 
 8. **Headless & Arsitektur Terkopel Longgar**:
-   - 100% REST API JSON murni.
-   - Model `User` dan nama tabel database sepenuhnya dapat dikonfigurasi melalui `config/security.php`.
-   - Trait `HasSecurityRelations` untuk kemudahan integrasi relasi Eloquent.
+    - 100% REST API JSON murni.
+    - Model `User` dan nama tabel database sepenuhnya dapat dikonfigurasi melalui `config/security.php`.
+    - Trait `HasSecurityRelations` untuk kemudahan integrasi relasi Eloquent.
 
 ---
 
@@ -61,8 +63,6 @@
 
 ### 1. Pasang Paket via Composer
 
-Tambahkan repositori paket internal pada `composer.json` proyek Anda, lalu jalankan:
-
 ```bash
 composer require robyajo/laravel-security-monitor
 ```
@@ -76,23 +76,26 @@ php artisan security:install
 ```
 
 #### Aset yang Didapat Pengguna Setelah Menjalankan Perintah Ini:
+
 1. 📄 **`config/security.php`**: Konfigurasi lengkap WAF, ambang batas blokir, IP whitelist, stepped login lockout, SVG Captcha, dan log scanner.
 2. 🗄️ **`database/migrations/` (6 tabel)**: Menyiapkan tabel `blocked_ips`, `security_logs`, `login_attempts`, `ip_unblock_requests`, `user_logins`, dan `trusted_ips`.
 3. 🌐 **`nginx.conf`**: Konfigurasi produksi Nginx Hardened WAF (Dual-zone rate limit, single-PHP execution `/index.php`, storage sandboxing).
 4. 🛡️ **`public/.htaccess`**: Hardening web server Apache & LiteSpeed (Blokir dotfiles, double extension `.php.jpg`, file backup dump `.sql`, dan matikan directory listing).
-   > *Catatan Keamanan*: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
+    > _Catatan Keamanan_: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
 5. ⚙️ **Penyematan Variabel ke `.env` & `.env.example`**: Installer secara otomatis menambahkan blok konfigurasi lengkap disertai **penjelasan fungsi berbahasa Indonesia** untuk setiap variabel (`SECURITY_*` dan `CAPTCHA_*`) langsung ke berkas `.env` dan `.env.example` aplikasi Anda.
 
 #### Opsi Perintah `security:install`:
-| Opsi | Keterangan |
-| :--- | :--- |
-| `--force` | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess`. |
-| `--without-nginx` | Melewatkan pembuatan berkas `nginx.conf`. |
-| `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess`. |
-| `--with-htaccess` | Memaksa pembaruan berkas `public/.htaccess`. |
-| `--without-env` | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`. |
+
+| Opsi                 | Keterangan                                                                         |
+| :------------------- | :--------------------------------------------------------------------------------- |
+| `--force`            | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess`. |
+| `--without-nginx`    | Melewatkan pembuatan berkas `nginx.conf`.                                          |
+| `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess`.                                    |
+| `--with-htaccess`    | Memaksa pembaruan berkas `public/.htaccess`.                                       |
+| `--without-env`      | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`.    |
 
 #### Publikasi Aset Secara Parsial (Manual):
+
 ```bash
 # 1. Konfigurasi saja
 php artisan vendor:publish --tag=security-config
@@ -139,6 +142,7 @@ class User extends Authenticatable
 ```
 
 Trait ini menyediakan relasi Eloquent bawaan:
+
 - `$user->logins()`: Riwayat login pengguna (`UserLogin`).
 - `$user->trustedIps()`: Daftar IP terpercaya pengguna (`TrustedIp`).
 - `$user->securityLogs()`: Riwayat event keamanan pengguna (`SecurityLog`).
@@ -212,14 +216,15 @@ Semua rute REST API didaftarkan secara default dengan prefix `/api/security` (da
 
 ### 1. Endpoint Publik
 
-| Metode | URI | Deskripsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/security/captcha` | Menghasilkan SVG CAPTCHA dan mengembalikan gambar vector langsung beserta `X-Captcha-Token` |
-| `POST` | `/api/security/captcha/verify` | Memvalidasi jawaban CAPTCHA (`phrase` & `token`) |
-| `POST` | `/api/security/unblock-tickets/submit` | Mengirim permohonan banding pembukaan blokir IP/perangkat |
-| `GET` | `/api/security/unblock-tickets/check/{ticketNumber}` | Memeriksa status tiket permohonan banding |
+| Metode | URI                                                  | Deskripsi                                                                                   |
+| :----- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------ |
+| `GET`  | `/api/security/captcha`                              | Menghasilkan SVG CAPTCHA dan mengembalikan gambar vector langsung beserta `X-Captcha-Token` |
+| `POST` | `/api/security/captcha/verify`                       | Memvalidasi jawaban CAPTCHA (`phrase` & `token`)                                            |
+| `POST` | `/api/security/unblock-tickets/submit`               | Mengirim permohonan banding pembukaan blokir IP/perangkat                                   |
+| `GET`  | `/api/security/unblock-tickets/check/{ticketNumber}` | Memeriksa status tiket permohonan banding                                                   |
 
 #### Contoh Payload Pengajuan Tiket:
+
 ```json
 POST /api/security/unblock-tickets/submit
 {
@@ -234,52 +239,57 @@ POST /api/security/unblock-tickets/submit
 
 ### 2. Endpoint Pengguna Terautentikasi (`auth`)
 
-| Metode | URI | Deskripsi |
-| :--- | :--- | :--- |
+| Metode | URI                                    | Deskripsi                                                   |
+| :----- | :------------------------------------- | :---------------------------------------------------------- |
 | `POST` | `/api/security/trusted-ips/save-my-ip` | Menyimpan alamat IP saat ini sebagai IP terpercaya pengguna |
 
 ### 3. Endpoint Manajemen Admin (`auth` + `security.admin`)
 
 #### Log Keamanan & Analitik Serangan
-| Metode | URI | Deskripsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/security/logs` | Mendapatkan log ancaman (paginasi, filter event/level/tanggal, statistik, tren 24 jam/7 hari) |
-| `DELETE` | `/api/security/logs/clear` | Mengosongkan seluruh log audit keamanan |
-| `DELETE` | `/api/security/logs/{id}` | Menghapus satu entri log keamanan tertentu |
+
+| Metode   | URI                        | Deskripsi                                                                                     |
+| :------- | :------------------------- | :-------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/security/logs`       | Mendapatkan log ancaman (paginasi, filter event/level/tanggal, statistik, tren 24 jam/7 hari) |
+| `DELETE` | `/api/security/logs/clear` | Mengosongkan seluruh log audit keamanan                                                       |
+| `DELETE` | `/api/security/logs/{id}`  | Menghapus satu entri log keamanan tertentu                                                    |
 
 #### Daftar Blokir IP & Perangkat
-| Metode | URI | Deskripsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/security/blocked-ips` | Mendapatkan daftar IP yang diblokir (aktif & kedaluwarsa) |
-| `POST` | `/api/security/blocked-ips` | Memblokir IP atau perangkat secara manual |
-| `GET` | `/api/security/blocked-ips/{id}` | Melihat detail data pemblokiran |
-| `PATCH` | `/api/security/blocked-ips/{id}/toggle` | Mengaktifkan / menonaktifkan status blokir |
-| `DELETE` | `/api/security/blocked-ips/{id}` | Mencabut blokir dan menghapus entri |
+
+| Metode   | URI                                     | Deskripsi                                                 |
+| :------- | :-------------------------------------- | :-------------------------------------------------------- |
+| `GET`    | `/api/security/blocked-ips`             | Mendapatkan daftar IP yang diblokir (aktif & kedaluwarsa) |
+| `POST`   | `/api/security/blocked-ips`             | Memblokir IP atau perangkat secara manual                 |
+| `GET`    | `/api/security/blocked-ips/{id}`        | Melihat detail data pemblokiran                           |
+| `PATCH`  | `/api/security/blocked-ips/{id}/toggle` | Mengaktifkan / menonaktifkan status blokir                |
+| `DELETE` | `/api/security/blocked-ips/{id}`        | Mencabut blokir dan menghapus entri                       |
 
 #### Audit Server & Integritas Berkas
-| Metode | URI | Deskripsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/security/server` | Laporan komprehensif audit keamanan server & integritas berkas |
-| `POST` | `/api/security/server/baseline` | Membuat baseline hash SHA-256 berkas aplikasi baru |
-| `DELETE` | `/api/security/server/baseline` | Menghapus baseline integritas |
-| `DELETE` | `/api/security/server/suspicious-files` | Menghapus berkas mencurigakan/webshell yang terdeteksi |
-| `DELETE` | `/api/security/lockouts/{id}` | Membuka kunci akun yang terkena lockout login berjenjang |
+
+| Metode   | URI                                     | Deskripsi                                                      |
+| :------- | :-------------------------------------- | :------------------------------------------------------------- |
+| `GET`    | `/api/security/server`                  | Laporan komprehensif audit keamanan server & integritas berkas |
+| `POST`   | `/api/security/server/baseline`         | Membuat baseline hash SHA-256 berkas aplikasi baru             |
+| `DELETE` | `/api/security/server/baseline`         | Menghapus baseline integritas                                  |
+| `DELETE` | `/api/security/server/suspicious-files` | Menghapus berkas mencurigakan/webshell yang terdeteksi         |
+| `DELETE` | `/api/security/lockouts/{id}`           | Membuka kunci akun yang terkena lockout login berjenjang       |
 
 #### Sesi Pengguna & IP Terpercaya
-| Metode | URI | Deskripsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/security/user-sessions` | Riwayat sesi login seluruh pengguna |
-| `GET` | `/api/security/user-sessions/realtime` | Daftar pengguna yang aktif secara real-time |
-| `DELETE` | `/api/security/user-sessions/{id}` | Menghapus log sesi pengguna |
-| `DELETE` | `/api/security/user-sessions/session/{sessionId}` | Memutus sesi pengguna tertentu (*force logout*) |
-| `DELETE` | `/api/security/trusted-ips/{id}` | Menghapus IP dari daftar terpercaya |
+
+| Metode   | URI                                               | Deskripsi                                       |
+| :------- | :------------------------------------------------ | :---------------------------------------------- |
+| `GET`    | `/api/security/user-sessions`                     | Riwayat sesi login seluruh pengguna             |
+| `GET`    | `/api/security/user-sessions/realtime`            | Daftar pengguna yang aktif secara real-time     |
+| `DELETE` | `/api/security/user-sessions/{id}`                | Menghapus log sesi pengguna                     |
+| `DELETE` | `/api/security/user-sessions/session/{sessionId}` | Memutus sesi pengguna tertentu (_force logout_) |
+| `DELETE` | `/api/security/trusted-ips/{id}`                  | Menghapus IP dari daftar terpercaya             |
 
 #### Pengelolaan Tiket Banding
-| Metode | URI | Deskripsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/security/unblock-tickets` | Daftar seluruh tiket permohonan banding |
-| `POST` | `/api/security/unblock-tickets/{id}/respond` | Menyetujui atau menolak tiket (buka blokir & whitelist) |
-| `DELETE` | `/api/security/unblock-tickets/{id}` | Menghapus arsip tiket |
+
+| Metode   | URI                                          | Deskripsi                                               |
+| :------- | :------------------------------------------- | :------------------------------------------------------ |
+| `GET`    | `/api/security/unblock-tickets`              | Daftar seluruh tiket permohonan banding                 |
+| `POST`   | `/api/security/unblock-tickets/{id}/respond` | Menyetujui atau menolak tiket (buka blokir & whitelist) |
+| `DELETE` | `/api/security/unblock-tickets/{id}`         | Menghapus arsip tiket                                   |
 
 ---
 
@@ -288,7 +298,8 @@ POST /api/security/unblock-tickets/submit
 Paket menyediakan aturan validasi siap pakai untuk request form aplikasi Anda:
 
 ### 1. `SafeImageFile`
-Memvalidasi unggahan gambar dan mencegah serangan *polyglot image* (gambar JPEG/PNG sah yang diinjeksi kode `<?php`), ekstensi ganda berbahaya, dan SVG bereksekusi JavaScript/XSS:
+
+Memvalidasi unggahan gambar dan mencegah serangan _polyglot image_ (gambar JPEG/PNG sah yang diinjeksi kode `<?php`), ekstensi ganda berbahaya, dan SVG bereksekusi JavaScript/XSS:
 
 ```php
 use Internal\SecurityMonitor\Rules\SafeImageFile;
@@ -299,6 +310,7 @@ $request->validate([
 ```
 
 ### 2. `SafeAssetPath`
+
 Memvalidasi string path aset gambar/ikon agar terbebas dari path traversal, probe direktori sensitif, dan file `.htaccess`:
 
 ```php
@@ -310,6 +322,7 @@ $request->validate([
 ```
 
 ### 3. `ValidCaptcha`
+
 Memvalidasi verifikasi CAPTCHA SVG tanpa dependensi:
 
 ```php
@@ -327,6 +340,7 @@ $request->validate([
 Paket ini menyertakan perintah Artisan lengkap untuk otomasi di server produksi:
 
 ### 1. Pemindaian Log Akses Web Server (`security:scan-logs`)
+
 Memindai berkas log Apache atau Nginx, mendeteksi pola serangan, dan memblokir IP penyerang secara otomatis:
 
 ```bash
@@ -338,6 +352,7 @@ php artisan security:scan-logs --file=/var/log/nginx/access.log --import --block
 ```
 
 ### 2. Manajemen Baseline Integritas Berkas (`security:baseline`)
+
 ```bash
 # Menampilkan status verifikasi integritas berkas
 php artisan security:baseline
@@ -350,11 +365,13 @@ php artisan security:baseline --destroy
 ```
 
 ### 3. Membuka Blokir IP (`security:unblock-ip`)
+
 ```bash
 php artisan security:unblock-ip 198.51.100.50
 ```
 
 ### 4. Pembersihan Log Kedaluwarsa (`security:prune-logs`)
+
 ```bash
 # Menghapus log lebih tua dari durasi retensi terkonfigurasi (default: 90 hari)
 php artisan security:prune-logs
@@ -364,6 +381,7 @@ php artisan security:prune-logs --days=30
 ```
 
 ### 5. Pembersihan Data Residu Pentest (`security:purge-injected-data`)
+
 Mendeteksi dan menghapus payload injeksi sisa pengujian keamanan (seperti `{{7*7}}`, `.htaccess`, path traversal) dari tabel aplikasi:
 
 ```bash
@@ -376,7 +394,6 @@ php artisan security:purge-injected-data --force
 
 ---
 
-
 ---
 
 ## 🌐 Konfigurasi Web Server Hardened
@@ -384,37 +401,41 @@ php artisan security:purge-injected-data --force
 Paket ini menyertakan template konfigurasi hardened siap pakai untuk web server **Nginx** maupun **Apache / LiteSpeed / cPanel**.
 
 ### 1. Nginx Hardened WAF (`nginx.conf`)
+
 Diterbitkan via `php artisan vendor:publish --tag=security-nginx`:
+
 1. **Dua Zona Rate Limiting Terpisah**:
-   - `auth_limit`: 5 request/menit (burst 5) untuk endpoint sensitif (`/login`, `/register`, `/forgot-password`, `/reset-password`, dll.).
-   - `general_limit`: 30 request/detik (burst 50) untuk rute umum aplikasi.
+    - `auth_limit`: 5 request/menit (burst 5) untuk endpoint sensitif (`/login`, `/register`, `/forgot-password`, `/reset-password`, dll.).
+    - `general_limit`: 30 request/detik (burst 50) untuk rute umum aplikasi.
 2. **Proteksi Aset Statis Vite / Frontend**:
-   - Direktori `/build/` dibebaskan dari rate-limiting agar chunk parallel JS tidak memicu HTTP 429 atau `NS_ERROR_CORRUPTED_CONTENT`.
+    - Direktori `/build/` dibebaskan dari rate-limiting agar chunk parallel JS tidak memicu HTTP 429 atau `NS_ERROR_CORRUPTED_CONTENT`.
 3. **Strict Single-PHP Execution**:
-   - **Hanya `/index.php`** yang boleh dieksekusi oleh PHP-FPM. Berkas skrip lain yang berada di direktori publik langsung ditolak dengan **HTTP 403**.
+    - **Hanya `/index.php`** yang boleh dieksekusi oleh PHP-FPM. Berkas skrip lain yang berada di direktori publik langsung ditolak dengan **HTTP 403**.
 4. **Pencegahan Double Extension & Ekstensi Berbahaya**:
-   - Menolak ekstensi ganda (`.php.jpg`, `.phtml.zip`, dll.).
+    - Menolak ekstensi ganda (`.php.jpg`, `.phtml.zip`, dll.).
 5. **Sandboxing Direktori Storage / Upload**:
-   - Folder `/storage/` dimatikan dari eksekusi PHP dengan header `X-Content-Type-Options: nosniff` dan CSP sandbox.
+    - Folder `/storage/` dimatikan dari eksekusi PHP dengan header `X-Content-Type-Options: nosniff` dan CSP sandbox.
 6. **Blokir Dotfiles & Berkas Backup**:
-   - Menolak akses berkas `.env`, `.git`, `.htaccess`, `.sql`, `.bak`, dan `.log`.
+    - Menolak akses berkas `.env`, `.git`, `.htaccess`, `.sql`, `.bak`, dan `.log`.
 
 ### 2. Apache & LiteSpeed Hardened (`public/.htaccess`)
+
 Diterapkan otomatis via `php artisan security:install` atau `php artisan vendor:publish --tag=security-htaccess`:
+
 1. **Front Controller & Authorization Header**: Routing Laravel standar, pemeliharaan header `Authorization` dan `X-XSRF-Token`.
 2. **Blokir Akses ke Dotfile (`<FilesMatch "^\.">`)**:
-   - Menutup akses ke `.htaccess`, `.env`, `.git`, `.htpasswd` (kompatibel Apache 2.4+ `Require all denied` dan Apache 2.2 `Deny from all`).
+    - Menutup akses ke `.htaccess`, `.env`, `.git`, `.htpasswd` (kompatibel Apache 2.4+ `Require all denied` dan Apache 2.2 `Deny from all`).
 3. **Blokir Serangan Ekstensi Ganda (Double Extension Webshell)**:
-   - Menolak berkas berbahaya seperti `shell.php.jpg` atau trik null-byte `wne.php%00.jpg`:
-   ```apache
-   <FilesMatch "\.(php[0-9]?|phtml|pht|phar|phps|asp|aspx|ashx|asmx|jsp|jspx|cgi|pl|py|rb|sh|bash|exe|dll|bat|cmd|scr)\.[a-z0-9]+$">
-       Require all denied
-   </FilesMatch>
-   ```
+    - Menolak berkas berbahaya seperti `shell.php.jpg` atau trik null-byte `wne.php%00.jpg`:
+    ```apache
+    <FilesMatch "\.(php[0-9]?|phtml|pht|phar|phps|asp|aspx|ashx|asmx|jsp|jspx|cgi|pl|py|rb|sh|bash|exe|dll|bat|cmd|scr)\.[a-z0-9]+$">
+        Require all denied
+    </FilesMatch>
+    ```
 4. **Blokir Berkas Backup, Dump Database, dan Log Sensitif**:
-   - Menutup berkas `.sql`, `.bak`, `.old`, `.orig`, `.save`, `.swp`, `.log`, `.ini`, `.conf`, `.yml`, `.yaml`.
+    - Menutup berkas `.sql`, `.bak`, `.old`, `.orig`, `.save`, `.swp`, `.log`, `.ini`, `.conf`, `.yml`, `.yaml`.
 5. **Matikan Directory Listing**:
-   - `Options -Indexes` mencegah browser menampilkan daftar berkas di dalam folder publik/storage.
+    - `Options -Indexes` mencegah browser menampilkan daftar berkas di dalam folder publik/storage.
 
 ## 🧪 Menjalankan Pengujian (Testing)
 
@@ -425,6 +446,7 @@ Paket ini dilengkapi dengan pengujian menyeluruh menggunakan **Pest PHP** dan **
 ```
 
 Hasil uji: **70 passed (302 assertions)** 100% Passed mencakup:
+
 - `DetectorTuningTest`: Verifikasi akurasi pola deteksi dan ketahanan ReDoS.
 - `InstantBlockTest`: Verifikasi zero-tolerance instant blocking pada percobaan pertama.
 - `PolyglotImageTest`: Uji penolakan polyglot image ber-tag PHP dan SVG XSS.
