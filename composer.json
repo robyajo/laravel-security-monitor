@@ -1,6 +1,6 @@
 {
     "name": "robyajo/laravel-security-monitor",
-    "description": "Headless self-hosted WAF, threat detection, IP blocking, login protection, and security auditing for Laravel.",
+    "description": "Enterprise-grade headless self-hosted WAF, threat detection engine, zero-tolerance blocking, stepped login lockout, pure SVG captcha, and security auditing toolkit for Laravel.",
     "keywords": [
         "laravel",
         "security",
@@ -8,14 +8,27 @@
         "firewall",
         "threat-detection",
         "ip-blocking",
+        "captcha",
+        "svg-captcha",
+        "brute-force",
+        "login-throttle",
+        "webshell-scanner",
+        "security-audit",
         "headless"
     ],
+    "homepage": "https://github.com/robyajo/laravel-security-monitor",
+    "support": {
+        "issues": "https://github.com/robyajo/laravel-security-monitor/issues",
+        "source": "https://github.com/robyajo/laravel-security-monitor",
+        "docs": "https://github.com/robyajo/laravel-security-monitor#readme"
+    },
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Internal Security Team",
-            "email": "robyfull.dev@gmail.com"
+            "name": "Roby",
+            "email": "robyfull.dev@gmail.com",
+            "role": "Developer"
         }
     ],
     "require": {

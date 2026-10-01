@@ -1,0 +1,139 @@
+# 02. Integrasi Frontend Blade & Livewire
+
+Jika aplikasi host Anda menggunakan template berbasis Blade atau Livewire, integrasi dengan **`robyajo/laravel-security-monitor`** sangat cepat dan intuitif.
+
+---
+
+## 1. Menyesuaikan Halaman Tampilan Blokir (`errors.blocked`)
+
+Jika request bukan panggilan JSON API, middleware `BlockIpAddress` secara otomatis memeriksa apakah berkas view Blade `errors.blocked` tersedia di aplikasi Anda (`resources/views/errors/blocked.blade.php`).
+
+Jika ada, paket akan me-render view tersebut dengan meneruskan variabel:
+- `$ip`: Alamat IP klien yang diblokir.
+- `$deviceId`: Fingerprint perangkat klien (jika ada).
+- `$localIp`: IP lokal klien.
+- `$reason`: Alasan pemblokiran (nama aturan atau catatan admin).
+- `$message`: Pesan deskriptif.
+- `$referenceId`: ID referensi unik (misal: `SEC-9A8B7C6D`).
+- `$supportEmail`: Alamat email bantuan dari konfigurasi.
+
+### Contoh Template Blade Cantik: `resources/views/errors/blocked.blade.php`
+```blade
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>403 - Akses Ditolak | Sistem Keamanan</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+        .badge { display: inline-block; background: #ef4444; color: #fff; font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 16px; }
+        h1 { font-size: 22px; margin: 0 0 12px 0; color: #f1f5f9; }
+        p { font-size: 14px; line-height: 1.6; color: #94a3b8; margin: 0 0 20px 0; }
+        .meta-box { background: #0f172a; border-radius: 8px; padding: 16px; margin-bottom: 24px; font-family: monospace; font-size: 13px; }
+        .meta-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .meta-row:last-child { margin-bottom: 0; }
+        .meta-label { color: #64748b; }
+        .meta-value { color: #38bdf8; font-weight: bold; }
+        .btn { display: block; width: 100%; text-align: center; background: #2563eb; color: #fff; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px; transition: background 0.2s; }
+        .btn:hover { background: #1d4ed8; }
+        .footer { font-size: 12px; text-align: center; color: #64748b; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span class="badge">Akses Ditolak (403)</span>
+        <h1>Perlindungan Keamanan Aktif</h1>
+        <p>{{ $message }}</p>
+        
+        <div class="meta-box">
+            <div class="meta-row">
+                <span class="meta-label">ID Referensi:</span>
+                <span class="meta-value">{{ $referenceId }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Alamat IP:</span>
+                <span class="meta-value">{{ $ip }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Indikasi:</span>
+                <span class="meta-value" style="color: #f87171">{{ $reason }}</span>
+            </div>
+        </div>
+
+        <a href="mailto:{{ $supportEmail }}?subject=Buka%20Blokir%20{{ $referenceId }}" class="btn">
+            Hubungi Tim Keamanan IT
+        </a>
+
+        <div class="footer">
+            Pusat Keamanan Siber &bullet; {{ config('app.name') }}
+        </div>
+    </div>
+</body>
+</html>
+```
+
+---
+
+## 2. Menampilkan SVG CAPTCHA di Formulir Blade
+
+```blade
+<div class="mb-4">
+    <label for="captcha" class="block text-sm font-medium text-gray-700">Kode Keamanan</label>
+    
+    <div class="flex items-center space-x-3 mt-1 mb-2">
+        <img id="captcha-svg" src="{{ route('security.captcha.image') }}" alt="Captcha" class="border rounded p-1 bg-white h-12" />
+        <button type="button" onclick="document.getElementById('captcha-svg').src='{{ route('security.captcha.image') }}?t='+Date.now()" class="text-xs text-blue-600 hover:underline">
+            🔄 Muat Ulang
+        </button>
+    </div>
+
+    <input type="text" name="captcha" id="captcha" required maxlength="6" class="uppercase font-mono tracking-widest border rounded px-3 py-2 w-full" placeholder="Ketik kode di atas" />
+    
+    @error('captcha')
+        <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+    @enderror
+</div>
+```
+
+---
+
+## 3. Komponen Livewire dengan SVG CAPTCHA
+
+Dalam komponen Livewire, Anda dapat memvalidasi form login menggunakan aturan bawaan `ValidCaptcha`:
+
+```php
+namespace App\Livewire;
+
+use Livewire\Component;
+use Internal\SecurityMonitor\Rules\ValidCaptcha;
+
+class LoginForm extends Component
+{
+    public string $email = '';
+    public string $password = '';
+    public string $captcha = '';
+
+    protected function rules(): array
+    {
+        return [
+            'email' => 'required|email',
+            'password' => 'required',
+            'captcha' => ['required', new ValidCaptcha],
+        ];
+    }
+
+    public function submit()
+    {
+        $this->validate();
+
+        // Lakukan autentikasi
+    }
+
+    public function render()
+    {
+        return view('livewire.login-form');
+    }
+}
+```

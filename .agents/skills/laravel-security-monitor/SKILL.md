@@ -10,26 +10,42 @@ metadata:
 
 `robyajo/laravel-security-monitor` (Bulwark) is an enterprise-grade, headless self-hosted Web Application Firewall (WAF), threat detection engine, and security auditing toolkit for Laravel applications.
 
+> **Authoritative Documentation**: Complete 24-chapter guides and an interactive offline portal are located in [`documents/`](../../documents/) and [`documents/index.html`](../../documents/index.html).
+
 ---
 
 ## 1. Core Architecture Principles
 
-1. **Headless Only (Pure REST API)**:
+1. **Zero NPM / Standar Spatie (100% Pure PHP)**:
+   - The package has **NO NPM, NO Node.js, and NO frontend build step dependencies**.
+   - Like standard Spatie packages (`spatie/laravel-permission`), once installed via `composer require`, it hooks directly into Laravel Core and can be used anywhere across any frontend stack (Blade, Livewire, Filament, Inertia, or headless API).
+   - Core hooks utilized:
+     - **Package Auto-Discovery**: `SecurityMonitorServiceProvider` + `SecurityMonitor` Facade.
+     - **Core Eloquent Model Trait**: `HasSecurityRelations` on host `User` model (similar to Spatie's `HasRoles`).
+     - **Core Auth Events**: Automatically listens to `\Illuminate\Auth\Events\Failed` and `Login`.
+     - **Core HTTP Middleware**: Aliased as `'security.block'`, `'security.detect'`, `'security.admin'`, `'security.activity'`.
+     - **Core Gate**: `Gate::define('manage-security-monitor')`.
+     - **Core Artisan Commands**: 6 commands under `php artisan security:*`.
+     - **Core Scheduler**: Auto-registered prune & heartbeat tasks.
+     - **Validation Rules**: `SafeImageFile`, `SafeAssetPath`, `ValidCaptcha`.
+     - **Zero-Dep SVG Captcha**: Generated via pure PHP vector math (no GD, no Imagick, no client JS).
+
+2. **Headless Only (Pure REST API)**:
    - The package never renders or assumes a frontend stack (no Inertia, React, Blade, or Livewire coupling).
    - All management features are exposed as structured JSON REST API endpoints under `/api/security/*`.
    - Host applications can build custom dashboards in Blade, React, Vue, Livewire, or mobile apps.
 
-2. **Loose Coupling & Decoupled Models**:
+3. **Loose Coupling & Decoupled Models**:
    - Never hardcode `App\Models\User` or standard table names.
    - User model resolution is always retrieved via `config('security.user_model', 'App\Models\User')`.
    - All database tables are dynamically configured via `config('security.table_names.*')`.
    - The `HasSecurityRelations` trait (`Internal\SecurityMonitor\Concerns\HasSecurityRelations`) is added to the host application's User model to provide Eloquent relations (`logins()`, `trustedIps()`, `securityLogs()`, `blockedIps()`, `resolvedTickets()`).
 
-3. **ReDoS Immunity**:
+4. **ReDoS Immunity**:
    - Detection signatures must never use unbounded nested quantifiers (e.g., `(a+)+` or `(.*[a-z])+`).
    - Every regex pattern must pass `DetectorTuningTest` and execute in sub-millisecond time even against adversarial 100KB+ payloads.
 
-4. **Multi-Tenant / Shared Router Awareness**:
+5. **Multi-Tenant / Shared Router Awareness**:
    - Public IPs often belong to corporate routers or shared Wi-Fi.
    - The quarantine engine supports `block_scope = 'device'` using client `device_id` (WebRTC fingerprint) and `local_ip` to isolate rogue devices without affecting innocent users on the same router.
 
@@ -44,10 +60,10 @@ metadata:
   - Path traversal: `(?:\.\.[\/\\])+`, `\.\.%2f`, `\.\.%5c`.
   - Probes for sensitive files: `\.htaccess`, `\.env`, `\.git/config`.
   - SSTI canary probes: `\{\{7\*7\}\}`, `\$\{7\*7\}`.
-  - *Action*: Triggered on the **very first attempt** without waiting for threshold, immediately writing to `blocked_ips` and returning HTTP 403.
+  - *Action*: Triggered on the **very first attempt** without waiting for threshold, immediately writing to `blocked_ips` (default: 720 hours / 30 days) and returning HTTP 403.
 - **Progressive Threat Threshold** (`config('security.auto_block.*')`):
   - Suspicious queries (SQLi patterns, XSS probes, scanner UAs) increment threat scores in a sliding window (default: 3 occurrences in 10 minutes).
-  - Reaching threshold escalates to automatic quarantine with configurable duration (default: 720 hours / 30 days).
+  - Reaching threshold escalates to automatic quarantine with configurable duration (default: 24 hours).
 
 ### Validation Rules
 - `SafeImageFile`:
@@ -87,14 +103,11 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 ### Public
 - `GET /api/security/captcha`: SVG captcha challenge.
 - `POST /api/security/captcha/verify`: Stateless captcha verification.
-- `POST /api/security/unblock-tickets/submit`: Appeal ticket submission.
+- `POST /api/security/unblock-tickets/submit`: Appeal ticket submission (30m cooldown).
 - `GET /api/security/unblock-tickets/check/{ticketNumber}`: Appeal status lookup.
 
 ### Authenticated User
 - `POST /api/security/trusted-ips/save-my-ip`: Save current IP as trusted.
-
-### Nginx Publishing
-- `php artisan vendor:publish --tag=security-nginx`: Publishes `nginx.conf` template with dual-zone rate limiting, strict single-PHP execution (`/index.php` only), storage sandboxing (nosniff + CSP sandbox), and double-extension blocking.
 
 ### Admin Protected (`auth` + `security.admin`)
 - **Logs**: `GET /logs`, `DELETE /logs/clear`, `DELETE /logs/{id}`.
@@ -102,6 +115,9 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 - **Server Audit**: `GET /server`, `POST /server/baseline`, `DELETE /server/baseline`, `DELETE /server/suspicious-files`, `DELETE /lockouts/{id}`.
 - **Sessions**: `GET /user-sessions`, `GET /user-sessions/realtime`, `DELETE /user-sessions/session/{id}`, `DELETE /trusted-ips/{id}`.
 - **Appeals**: `GET /unblock-tickets`, `POST /unblock-tickets/{id}/respond`, `DELETE /unblock-tickets/{id}`.
+
+### Nginx Publishing
+- `php artisan vendor:publish --tag=security-nginx`: Publishes `nginx.conf` template with dual-zone rate limiting, strict single-PHP execution (`/index.php` only), storage sandboxing (nosniff + CSP sandbox), and double-extension blocking.
 
 ---
 
@@ -111,8 +127,8 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 | :--- | :--- |
 | `security:install` | Publish all package assets: config, migrations, and hardened `nginx.conf` with interactive options. |
 | `security:scan-logs` | Stream & parse Apache/Nginx access logs for zero-tolerance attacks; auto-block offending IPs. |
-| `security:baseline` | Audit, create (`--create`), or destroy (`--destroy`) SHA-256 integrity baseline. |
-| `security:unblock-ip {ip}` | Lift block on IP or device immediately. |
+| `security:baseline` | Audit, create (`--create`), or destroy (`--prune`) SHA-256 integrity baseline. |
+| `security:unblock-ip {ip}` | Lift block on IP or device immediately (emergency escape hatch). |
 | `security:prune-logs {--days=}` | Remove logs older than retention period (default: 90 days). |
 | `security:purge-injected-data {--force}` | Scan & clean residual pentest payloads from application database tables. |
 
@@ -137,3 +153,4 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 - **Assertions**:
   - Always use `assertSuccessful()`, `assertForbidden()`, `assertNotFound()`.
   - Verify database state using `expect(BlockedIp::query()->...)->not->toBeNull()`.
+- **Target Invariant**: All 64+ tests and 274+ assertions must pass with zero failures.
