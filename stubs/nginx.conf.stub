@@ -1,5 +1,5 @@
 # =====================================================================
-# KOMINFO SUPERAPP API - NGINX CONFIGURATION
+# LARAVEL SECURITY MONITOR (BULWARK) - HARDENED NGINX CONFIGURATION
 # =====================================================================
 # CATATAN PENEMPATAN RATE LIMITING:
 # Dua direktif limit_req_zone di bawah ini WAJIB diletakkan di dalam blok
@@ -13,8 +13,8 @@
 server {
     listen 80;
     listen [::]:80;
-    server_name superapp-api.pekanbaru.go.id;
-    root /var/www/superapp-api.pekanbaru.go.id/kominfo-superapp-api/public;
+    server_name example.com; # Ganti dengan domain atau IP server Anda
+    root /var/www/your-app/public; # Ganti dengan path folder public aplikasi Anda
 
     # Batasi ukuran payload request untuk mencegah DoS / upload raksasa
     client_max_body_size 5M;
@@ -25,7 +25,7 @@ server {
     # ---------------------------------------------------------------------
     # DAFTAR IP PENYERANG YANG DIBLOKIR MANUAL DI LEVEL NGINX
     # ---------------------------------------------------------------------
-    deny 104.207.74.38;
+    # deny 198.51.100.1; # Contoh blokir IP penyerang manual di level Nginx
 
     # Header keamanan HTTP
     add_header X-Frame-Options "SAMEORIGIN" always;
@@ -115,7 +115,7 @@ server {
     # sehingga aturan penolakan di atas tidak memblokir index.php.
     location = /index.php {
         limit_req zone=general_limit burst=50 nodelay;
-        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock; # Sesuaikan socket PHP-FPM Anda (misal: php8.2, php8.3, php8.4)
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
         fastcgi_hide_header X-Powered-By;

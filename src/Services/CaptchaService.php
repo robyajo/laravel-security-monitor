@@ -204,7 +204,7 @@ class CaptchaService
      */
     protected function salt(): string
     {
-        return (string) config('app.key', 'superapp-captcha');
+        return (string) config('app.key', 'laravel-security-monitor-captcha');
     }
 
     /**

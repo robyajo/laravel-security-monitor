@@ -28,7 +28,7 @@ test('nginx configuration stub can be published using vendor publish tag', funct
     // Verify key hardened WAF directives in published nginx.conf
     expect($content)->toContain('limit_req_zone $binary_remote_addr zone=auth_limit:10m rate=5r/m;')
         ->and($content)->toContain('limit_req_zone $binary_remote_addr zone=general_limit:10m rate=30r/s;')
-        ->and($content)->toContain('deny 104.207.74.38;')
+        ->and($content)->toContain('root /var/www/your-app/public;')
         ->and($content)->toContain('location ~ \.php$ {')
         ->and($content)->toContain('return 403;')
         ->and($content)->toContain('location = /index.php {')
@@ -48,5 +48,5 @@ test('security install command runs and publishes nginx configuration', function
     ])->assertSuccessful();
 
     expect(File::exists($publishedPath))->toBeTrue();
-    expect(File::get($publishedPath))->toContain('KOMINFO SUPERAPP API - NGINX CONFIGURATION');
+    expect(File::get($publishedPath))->toContain('LARAVEL SECURITY MONITOR (BULWARK) - HARDENED NGINX CONFIGURATION');
 });

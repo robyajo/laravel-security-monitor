@@ -130,7 +130,7 @@ return [
                     '/(\.\.\/)+(public|storage|vendor|config|resources|bootstrap|app)(\/|$)/i',
                     // Catatan: "var/www" sengaja TIDAK dipakai walau terlihat
                     // seperti path sistem, karena folder itulah document root
-                    // aplikasi ini (/var/www/superapp-api.pekanbaru.go.id/...)
+                    // aplikasi ini (/var/www/your-app/public/...)
                     // sehingga sering muncul di konten admin yang sah. Probe ke
                     // sana tetap tertangkap oleh pola traversal di atas.
                     '/\b(etc\/passwd|etc\/shadow|proc\/self|windows\/win\.ini|boot\.ini)\b/i',
