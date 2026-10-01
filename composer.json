@@ -81,6 +81,17 @@
             }
         }
     },
+    "archive": {
+        "exclude": [
+            "/.agents",
+            "/AGENTS.md",
+            "/DOCS",
+            "/.github",
+            "/.gitattributes",
+            "/.gitignore",
+            "/push.sh"
+        ]
+    },
     "minimum-stability": "stable",
     "prefer-stable": true
 }

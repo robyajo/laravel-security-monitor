@@ -1,0 +1,10 @@
+# Dev-only assets: excluded from the Composer/Packagist distribution archive
+/.agents        export-ignore
+/AGENTS.md      export-ignore
+/DOCS           export-ignore
+/.github        export-ignore
+/push.sh        export-ignore
+
+# Editor and VCS metadata not needed by package consumers
+/.gitattributes export-ignore
+/.gitignore     export-ignore

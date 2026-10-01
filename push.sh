@@ -3,6 +3,13 @@
 # ==============================================================================
 # Git Automated Push & Optional Tagging Script
 # Repository: robyajo/laravel-security-monitor
+#
+# Setiap kali dijalankan, skrip ini SELALU melakukan pengecekan versi:
+#   - Versi sekarang    : tag rilis semver terakhir (mis. v1.0.3)
+#   - Versi direkomendasi: kenaikan otomatis (major/minor/patch) dihitung dari
+#                          commit & perubahan yang belum di-tag
+#
+# Gunakan "-t auto" untuk langsung memakai versi rekomendasi sebagai tag rilis.
 # ==============================================================================
 
 set -e
@@ -40,6 +47,115 @@ print_info() {
     echo -e "${CYAN}ℹ $1${NC}"
 }
 
+# ==============================================================================
+# PENGECEKAN VERSI
+# ==============================================================================
+
+# Ambil tag rilis semver terakhir (diurutkan secara version-aware).
+get_current_tag() {
+    git tag -l 'v[0-9]*' --sort=-v:refname 2>/dev/null | head -n1
+}
+
+# Ambil komponen angka ke-N dari versi (tanpa prefix 'v'); default 0.
+_version_part() {
+    local part
+    part=$(printf '%s' "$1" | cut -d. -f"$2")
+    part=${part//[!0-9]/}
+    echo "${part:-0}"
+}
+
+# Naikkan versi sesuai tipe bump: major | minor | patch.
+bump_version() {
+    local version="$1"
+    local type="$2"
+    local major minor patch
+
+    major=$(_version_part "$version" 1)
+    minor=$(_version_part "$version" 2)
+    patch=$(_version_part "$version" 3)
+
+    case "$type" in
+        major) major=$((major + 1)); minor=0; patch=0 ;;
+        minor) minor=$((minor + 1)); patch=0 ;;
+        *)     patch=$((patch + 1)) ;;
+    esac
+
+    echo "${major}.${minor}.${patch}"
+}
+
+# Tentukan tipe bump dari Conventional Commits antara tag terakhir dan HEAD.
+detect_bump_type() {
+    local range="$1"
+    local log
+
+    if [ -n "$range" ] && git rev-parse "$range" >/dev/null 2>&1; then
+        log=$(git log "$range" --pretty=format:'%s%n%b' 2>/dev/null || true)
+    else
+        log=$(git log --pretty=format:'%s%n%b' 2>/dev/null || true)
+    fi
+
+    if printf '%s' "$log" | grep -qE 'BREAKING[ _-]?CHANGE|[[:alnum:]]+(\([^)]+\))?!: '; then
+        echo "major"
+        return
+    fi
+
+    if printf '%s' "$log" | grep -qE '^feat(\([^)]+\))?!?: '; then
+        echo "minor"
+        return
+    fi
+
+    echo "patch"
+}
+
+# Hitung & tampilkan versi sekarang vs versi yang direkomendasikan.
+report_versions() {
+    local ahead uncommitted log_range
+
+    CURRENT_TAG=$(get_current_tag)
+    if [ -n "$CURRENT_TAG" ]; then
+        CURRENT_VERSION="${CURRENT_TAG#v}"
+    else
+        CURRENT_VERSION="0.0.0"
+    fi
+
+    if [ -n "$CURRENT_TAG" ]; then
+        ahead=$(git rev-list --count "${CURRENT_TAG}..HEAD" 2>/dev/null || echo 0)
+        log_range="${CURRENT_TAG}..HEAD"
+    else
+        ahead=$(git rev-list --count HEAD 2>/dev/null || echo 0)
+        log_range=""
+    fi
+    uncommitted=$(git status --porcelain | wc -l | tr -d ' ')
+
+    if [ "$ahead" -eq 0 ] && [ "$uncommitted" -eq 0 ]; then
+        BUMP_TYPE="none"
+        RECOMMENDED_VERSION="$CURRENT_VERSION"
+    else
+        BUMP_TYPE=$(detect_bump_type "$log_range")
+        RECOMMENDED_VERSION=$(bump_version "$CURRENT_VERSION" "$BUMP_TYPE")
+    fi
+    RECOMMENDED_TAG="v${RECOMMENDED_VERSION}"
+
+    echo -e "${BOLD}${CYAN}----------------------------------------------------------------------${NC}"
+    echo -e "${BOLD}  📦 Pengecekan Versi${NC}"
+    echo -e "${BOLD}${CYAN}----------------------------------------------------------------------${NC}"
+
+    if [ -n "$CURRENT_TAG" ]; then
+        print_info "Versi sekarang       : ${BOLD}v${CURRENT_VERSION}${NC}  (tag terakhir: ${CURRENT_TAG})"
+    else
+        print_info "Versi sekarang       : ${BOLD}v${CURRENT_VERSION}${NC}  (belum ada tag rilis)"
+    fi
+
+    print_info "Belum di-tag         : ${BOLD}${ahead}${NC} commit, ${BOLD}${uncommitted}${NC} berkas belum di-commit"
+
+    if [ "$BUMP_TYPE" = "none" ]; then
+        print_warning "Versi direkomendasi  : ${BOLD}${RECOMMENDED_TAG}${NC} (tidak ada perubahan baru)"
+    else
+        print_info "Versi direkomendasi  : ${BOLD}${GREEN}${RECOMMENDED_TAG}${NC}  (${BUMP_TYPE} bump)"
+    fi
+    echo ""
+}
+
 # Tampilkan Bantuan
 show_help() {
     print_header
@@ -51,6 +167,7 @@ show_help() {
     echo -e "${BOLD}OPSI:${NC}"
     echo -e "  -m, --message <msg>   Pesan commit git"
     echo -e "  -t, --tag <tag>       Nama tag rilis (opsional, misal: v1.0.0)"
+    echo -e "                        Gunakan 'auto' untuk memakai versi rekomendasi"
     echo -e "  -b, --branch <name>   Nama branch target (default: branch aktif)"
     echo -e "  -r, --remote <name>   Nama remote git (default: origin)"
     echo -e "  -h, --help            Tampilkan bantuan ini"
@@ -59,6 +176,10 @@ show_help() {
     echo -e "  ./push.sh"
     echo -e "  ./push.sh -m \"docs: update installation guide\""
     echo -e "  ./push.sh -m \"release: launch v1.0.0\" -t \"v1.0.0\""
+    echo -e "  ./push.sh -m \"fix: patch bug\" -t auto"
+    echo ""
+    echo -e "${BOLD}CATATAN:${NC}"
+    echo -e "  Pengecekan versi (sekarang vs rekomendasi) SELALU dijalankan."
     exit 0
 }
 
@@ -118,6 +239,9 @@ print_info "Remote target : ${BOLD}${REMOTE_NAME}${NC}"
 print_info "Branch target : ${BOLD}${TARGET_BRANCH}${NC}"
 echo ""
 
+# 0. Pengecekan Versi (WAJIB, selalu dijalankan)
+report_versions
+
 # 1. Periksa Status Perubahan File
 STATUS_OUTPUT=$(git status --porcelain)
 
@@ -161,19 +285,35 @@ print_success "Commit berhasil di-push ke ${REMOTE_NAME}/${TARGET_BRANCH}!"
 
 # 3. Penanganan Tag (Opsional)
 echo ""
+
+# Resolusi kata kunci 'auto' menjadi versi rekomendasi.
+if [ "$TAG_NAME" = "auto" ]; then
+    TAG_NAME="$RECOMMENDED_TAG"
+    print_info "Mode 'auto': memakai versi rekomendasi ${BOLD}${TAG_NAME}${NC}."
+fi
+
 if [ -z "$TAG_NAME" ]; then
     if [ -t 0 ]; then
         echo -ne "${BOLD}Apakah Anda ingin membuat Git Tag rilis baru sekarang? (y/N): ${NC}"
         read -r WANT_TAG
         if [[ "$WANT_TAG" =~ ^[yY]([eE][sS])?$ ]]; then
-            echo -ne "${BOLD}Masukkan nama tag${NC} (contoh: v1.0.0): "
+            echo -ne "${BOLD}Masukkan nama tag${NC} (contoh: v1.0.0) [default: ${RECOMMENDED_TAG}]: "
             read -r INPUT_TAG
-            TAG_NAME="$INPUT_TAG"
+            if [ -n "$INPUT_TAG" ]; then
+                TAG_NAME="$INPUT_TAG"
+            else
+                TAG_NAME="$RECOMMENDED_TAG"
+            fi
         fi
     fi
 fi
 
 if [ -n "$TAG_NAME" ]; then
+    # Peringatan bila tag sama dengan versi sekarang (tidak menaikkan versi)
+    if [ -n "$CURRENT_TAG" ] && [ "$TAG_NAME" = "$CURRENT_TAG" ]; then
+        print_warning "Tag '${TAG_NAME}' sama dengan tag terakhir. Naikkan versi (rekomendasi: ${RECOMMENDED_TAG})."
+    fi
+
     # Validasi apakah tag sudah pernah ada sebelumnya
     if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
         print_warning "Tag '${TAG_NAME}' sudah ada di repositori lokal."
@@ -208,13 +348,14 @@ if [ -n "$TAG_NAME" ]; then
         print_info "Mendorong tag ${TAG_NAME} ke ${REMOTE_NAME}..."
         git push "$REMOTE_NAME" "$TAG_NAME"
         print_success "Tag '${TAG_NAME}' berhasil dibuat dan di-push ke ${REMOTE_NAME}!"
-        
+
         echo ""
         print_info "🚀 Paket versi ${TAG_NAME} kini siap dideteksi secara otomatis oleh Packagist!"
         echo -e "   Periksa katalog rilis di: ${BLUE}https://packagist.org/packages/robyajo/laravel-security-monitor${NC}"
     fi
 else
     print_info "Melewatkan pembuatan tag (tidak ada tag yang ditentukan)."
+    echo -e "   ${BOLD}Rekomendasi tag:${NC} ${GREEN}${RECOMMENDED_TAG}${NC} — jalankan: ./push.sh -t auto"
 fi
 
 echo ""
