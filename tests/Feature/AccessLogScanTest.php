@@ -16,9 +16,9 @@ function accessLogLine(
 
 function sampleLogFile(array $lines): string
 {
-    $path = sys_get_temp_dir() . '/test-access-' . uniqid() . '.log';
+    $path = sys_get_temp_dir().'/test-access-'.uniqid().'.log';
     File::ensureDirectoryExists(dirname($path));
-    File::put($path, implode(PHP_EOL, $lines) . PHP_EOL);
+    File::put($path, implode(PHP_EOL, $lines).PHP_EOL);
 
     return $path;
 }

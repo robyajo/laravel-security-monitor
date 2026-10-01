@@ -1,0 +1,10 @@
+{
+    "preset": "laravel",
+    "exclude": [
+        "vendor",
+        "paparan",
+        "documents",
+        "DOCS",
+        "stubs"
+    ]
+}

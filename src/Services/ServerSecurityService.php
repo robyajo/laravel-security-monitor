@@ -2,16 +2,15 @@
 
 namespace Internal\SecurityMonitor\Services;
 
-use Internal\SecurityMonitor\Models\BlockedIp;
-use Internal\SecurityMonitor\Models\LoginAttempt;
-use Internal\SecurityMonitor\Models\SecurityLog;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Internal\SecurityMonitor\Models\BlockedIp;
+use Internal\SecurityMonitor\Models\LoginAttempt;
+use Internal\SecurityMonitor\Models\SecurityLog;
 use Laravel\Fortify\Features;
 use Throwable;
 
@@ -1911,9 +1910,10 @@ class ServerSecurityService
     protected function featureEnabled(string $feature): bool
     {
         try {
-            if (class_exists(\Laravel\Fortify\Features::class)) {
-                return \Laravel\Fortify\Features::enabled($feature);
+            if (class_exists(Features::class)) {
+                return Features::enabled($feature);
             }
+
             return false;
         } catch (Throwable) {
             return false;

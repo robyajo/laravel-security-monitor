@@ -10,6 +10,7 @@ class TestUser extends Authenticatable
     use HasSecurityRelations;
 
     protected $table = 'users';
+
     protected $guarded = [];
 
     public function isAdmin(): bool

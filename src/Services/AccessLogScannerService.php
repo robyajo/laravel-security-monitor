@@ -2,10 +2,10 @@
 
 namespace Internal\SecurityMonitor\Services;
 
-use Internal\SecurityMonitor\Models\SecurityLog;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Internal\SecurityMonitor\Models\SecurityLog;
 use Throwable;
 
 /**

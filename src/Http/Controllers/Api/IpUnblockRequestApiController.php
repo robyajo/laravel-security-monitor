@@ -6,7 +6,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
-use Internal\SecurityMonitor\Models\BlockedIp;
 use Internal\SecurityMonitor\Models\IpUnblockRequest;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
 
@@ -50,7 +49,7 @@ class IpUnblockRequestApiController extends Controller
             ], 429);
         }
 
-        $ticketNumber = 'TKT-' . strtoupper(Str::random(8));
+        $ticketNumber = 'TKT-'.strtoupper(Str::random(8));
 
         $ticket = IpUnblockRequest::create([
             'ticket_number' => $ticketNumber,
@@ -116,9 +115,9 @@ class IpUnblockRequestApiController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('ticket_number', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('ip_address', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 

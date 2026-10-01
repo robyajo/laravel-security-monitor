@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
-use Internal\SecurityMonitor\Models\SecurityLog;
 use Internal\SecurityMonitor\Services\ServerSecurityService;
 use Internal\SecurityMonitor\Tests\TestUser;
 

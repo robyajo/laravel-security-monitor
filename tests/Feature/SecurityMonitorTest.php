@@ -49,7 +49,7 @@ test('ip on whitelist is never blocked even after threshold is exceeded', functi
     attackFrom();
 
     for ($i = 0; $i < 5; $i++) {
-        $this->get('/?test=' . urlencode("' OR 1=1 --"));
+        $this->get('/?test='.urlencode("' OR 1=1 --"));
     }
 
     expect(BlockedIp::query()->where('ip_address', '198.51.100.7')->exists())->toBeFalse();
@@ -59,15 +59,15 @@ test('repeated attacks trigger an automatic block', function () {
     attackFrom();
 
     // 1st request
-    $this->get('/?search=' . urlencode('<script>alert(1)</script>'));
+    $this->get('/?search='.urlencode('<script>alert(1)</script>'));
     expect(BlockedIp::query()->where('ip_address', '198.51.100.7')->exists())->toBeFalse();
 
     // 2nd request
-    $this->get('/?search=' . urlencode('<script>alert(2)</script>'));
+    $this->get('/?search='.urlencode('<script>alert(2)</script>'));
     expect(BlockedIp::query()->where('ip_address', '198.51.100.7')->exists())->toBeFalse();
 
     // 3rd request reaches threshold -> auto-blocked
-    $this->get('/?search=' . urlencode('<script>alert(3)</script>'));
+    $this->get('/?search='.urlencode('<script>alert(3)</script>'));
     $block = BlockedIp::query()->where('ip_address', '198.51.100.7')->first();
 
     expect($block)->not->toBeNull()

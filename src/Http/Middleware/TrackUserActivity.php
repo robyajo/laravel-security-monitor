@@ -2,10 +2,10 @@
 
 namespace Internal\SecurityMonitor\Http\Middleware;
 
-use Internal\SecurityMonitor\Services\UserLoginService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Internal\SecurityMonitor\Services\UserLoginService;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 

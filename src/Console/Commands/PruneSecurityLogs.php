@@ -2,8 +2,8 @@
 
 namespace Internal\SecurityMonitor\Console\Commands;
 
-use Internal\SecurityMonitor\Models\SecurityLog;
 use Illuminate\Console\Command;
+use Internal\SecurityMonitor\Models\SecurityLog;
 
 class PruneSecurityLogs extends Command
 {

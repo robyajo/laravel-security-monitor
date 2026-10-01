@@ -26,13 +26,13 @@ class UserSessionApiController extends Controller
         if ($search = $request->input('search')) {
             $loginsQuery->where(function ($q) use ($search) {
                 $q->where('ip_address', 'like', "%{$search}%")
-                  ->orWhere('browser', 'like', "%{$search}%")
-                  ->orWhere('operating_system', 'like', "%{$search}%")
-                  ->orWhere('device_id', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%")
-                         ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhere('browser', 'like', "%{$search}%")
+                    ->orWhere('operating_system', 'like', "%{$search}%")
+                    ->orWhere('device_id', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 

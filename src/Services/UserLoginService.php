@@ -2,14 +2,14 @@
 
 namespace Internal\SecurityMonitor\Services;
 
-use Internal\SecurityMonitor\Models\TrustedIp;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Internal\SecurityMonitor\Models\UserLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Internal\SecurityMonitor\Models\TrustedIp;
+use Internal\SecurityMonitor\Models\UserLogin;
 use Throwable;
 
 class UserLoginService

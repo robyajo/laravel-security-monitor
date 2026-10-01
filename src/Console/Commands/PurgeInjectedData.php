@@ -45,7 +45,7 @@ class PurgeInjectedData extends Command
 
         // Targets can be defined in config('security.purge_targets')
         $allTargets = (array) config('security.purge_targets', []);
-        
+
         // Filter only targets whose models exist
         $validTargets = [];
         foreach ($allTargets as $label => $target) {
@@ -96,6 +96,7 @@ class PurgeInjectedData extends Command
 
             if ($rows->isEmpty()) {
                 $this->line("<fg=gray>{$label}: bersih</>");
+
                 continue;
             }
 
@@ -125,6 +126,7 @@ class PurgeInjectedData extends Command
 
         if ($totalFound === 0) {
             $this->info('Tidak ada data injeksi yang ditemukan.');
+
             return self::SUCCESS;
         }
 
@@ -165,6 +167,6 @@ class PurgeInjectedData extends Command
 
     protected function escapeLike(string $value): string
     {
-        return str_replace(["\\", "%", "_"], ["\\\\", "\%", "\_"], $value);
+        return str_replace(['\\', '%', '_'], ['\\\\', "\%", "\_"], $value);
     }
 }

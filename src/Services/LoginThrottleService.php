@@ -2,10 +2,10 @@
 
 namespace Internal\SecurityMonitor\Services;
 
-use Internal\SecurityMonitor\Models\LoginAttempt;
-use Internal\SecurityMonitor\Models\SecurityLog;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Internal\SecurityMonitor\Models\LoginAttempt;
+use Internal\SecurityMonitor\Models\SecurityLog;
 use Throwable;
 
 /**

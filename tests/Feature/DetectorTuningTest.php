@@ -125,7 +125,7 @@ function detectorFormat(array $threats): string
     }
 
     return implode(', ', array_map(
-        fn(array $threat) => $threat['rule'] . '[' . $threat['level'] . ']' . (($threat['instant'] ?? false) ? ' INSTANT' : ''),
+        fn (array $threat) => $threat['rule'].'['.$threat['level'].']'.(($threat['instant'] ?? false) ? ' INSTANT' : ''),
         $threats
     ));
 }
@@ -136,7 +136,7 @@ test('lalu lintas nyata tidak pernah memicu blokir instan', function () {
     foreach (detectorLegitCases() as $label => $haystacks) {
         $threats = $service->inspectHaystacks($haystacks);
 
-        $instant = array_values(array_filter($threats, fn(array $threat) => ($threat['instant'] ?? false) === true));
+        $instant = array_values(array_filter($threats, fn (array $threat) => ($threat['instant'] ?? false) === true));
 
         expect($instant)->toBe([], sprintf(
             'Input nyata "%s" memicu blokir instan %d hari: %s',
@@ -172,7 +172,7 @@ test('pola serangan tetap terdeteksi setelah pola dirapatkan', function () {
 
         if ($expectsInstant) {
             expect($service->shouldInstantBlock($threats))->toBeTrue(
-                "Payload \"{$label}\" seharusnya memicu blokir instan, hasil: " . detectorFormat($threats)
+                "Payload \"{$label}\" seharusnya memicu blokir instan, hasil: ".detectorFormat($threats)
             );
         }
     }
@@ -183,15 +183,15 @@ test('pola deteksi tidak rawan ReDoS', function () {
     $max = max(500, (int) config('security.max_inspect_length', 4000));
 
     $payloads = [
-        'php + spasi' => '.php' . str_repeat(' ', $max),
-        'titik-koma berulang' => '.php' . str_repeat(';', $max),
-        'titik berulang' => '.php' . str_repeat('.', $max),
-        'ssti operator berulang' => '{{' . str_repeat('a+', $max),
-        'ssti spasi berulang' => '{{ a ' . str_repeat(' ', $max),
-        'php tag + slash' => '<?php ' . str_repeat('/', $max),
-        'preg /e + bintang' => 'preg_replace("/' . $max . str_repeat('*', $max),
-        'select + spasi' => 'select' . str_repeat(' ', $max) . 'from',
-        'kurung siku berulang' => '{{' . str_repeat('[', $max),
+        'php + spasi' => '.php'.str_repeat(' ', $max),
+        'titik-koma berulang' => '.php'.str_repeat(';', $max),
+        'titik berulang' => '.php'.str_repeat('.', $max),
+        'ssti operator berulang' => '{{'.str_repeat('a+', $max),
+        'ssti spasi berulang' => '{{ a '.str_repeat(' ', $max),
+        'php tag + slash' => '<?php '.str_repeat('/', $max),
+        'preg /e + bintang' => 'preg_replace("/'.$max.str_repeat('*', $max),
+        'select + spasi' => 'select'.str_repeat(' ', $max).'from',
+        'kurung siku berulang' => '{{'.str_repeat('[', $max),
         'traversal berulang' => str_repeat('../', $max),
         'null byte berulang' => str_repeat('%00', $max),
     ];

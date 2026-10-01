@@ -2,7 +2,11 @@
 
 namespace Internal\SecurityMonitor;
 
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -34,33 +38,37 @@ class SecurityMonitorServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/security.php', 'security');
+        $this->mergeConfigFrom(__DIR__.'/../config/security.php', 'security');
 
         $this->app->singleton(SecurityMonitorService::class, function ($app) {
-            return new SecurityMonitorService();
+            return new SecurityMonitorService;
         });
 
         $this->app->singleton(LoginThrottleService::class, function ($app) {
-            return new LoginThrottleService($app->make(SecurityMonitorService::class));
+            return new LoginThrottleService(
+                $app->make(SecurityMonitorService::class),
+            );
         });
 
         $this->app->singleton(CaptchaService::class, function ($app) {
-            return new CaptchaService();
+            return new CaptchaService;
         });
 
         $this->app->singleton(UserLoginService::class, function ($app) {
-            return new UserLoginService();
+            return new UserLoginService;
         });
 
         $this->app->singleton(ServerSecurityService::class, function ($app) {
             return new ServerSecurityService(
                 $app->make(SecurityMonitorService::class),
-                $app->make(LoginThrottleService::class)
+                $app->make(LoginThrottleService::class),
             );
         });
 
         $this->app->singleton(AccessLogScannerService::class, function ($app) {
-            return new AccessLogScannerService($app->make(SecurityMonitorService::class));
+            return new AccessLogScannerService(
+                $app->make(SecurityMonitorService::class),
+            );
         });
 
         $this->app->alias(SecurityMonitorService::class, 'security.monitor');
@@ -87,34 +95,74 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         }
 
         // Config
-        $this->publishes([
-            __DIR__ . '/../config/security.php' => config_path('security.php'),
-        ], 'security-config');
+        $this->publishes(
+            [
+                __DIR__.'/../config/security.php' => config_path(
+                    'security.php',
+                ),
+            ],
+            'security-config',
+        );
 
         // Migrations
-        $this->publishes([
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
-        ], 'security-migrations');
+        $this->publishes(
+            [
+                __DIR__.'/../database/migrations' => database_path(
+                    'migrations',
+                ),
+            ],
+            'security-migrations',
+        );
 
         // Nginx Hardened Configuration
-        $this->publishes([
-            __DIR__ . '/../stubs/nginx.conf.stub' => base_path('nginx.conf'),
-        ], 'security-nginx');
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/nginx.conf.stub' => base_path(
+                    'nginx.conf',
+                ),
+            ],
+            'security-nginx',
+        );
 
         // Apache .htaccess Hardened Configuration
-        $this->publishes([
-            __DIR__ . '/../stubs/htaccess.stub' => public_path('.htaccess'),
-        ], 'security-htaccess');
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/htaccess.stub' => public_path('.htaccess'),
+            ],
+            'security-htaccess',
+        );
 
-        // Publish All Assets (Config, Migrations, Nginx, Htaccess)
-        $this->publishes([
-            __DIR__ . '/../config/security.php' => config_path('security.php'),
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
-            __DIR__ . '/../stubs/nginx.conf.stub' => base_path('nginx.conf'),
-            __DIR__ . '/../stubs/htaccess.stub' => public_path('.htaccess'),
-        ], 'security-all');
+        // Default 403 "blocked" error page
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/blocked.blade.php' => resource_path(
+                    'views/errors/blocked.blade.php',
+                ),
+            ],
+            'security-views',
+        );
 
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        // Publish All Assets (Config, Migrations, Nginx, Htaccess, Blocked View)
+        $this->publishes(
+            [
+                __DIR__.'/../config/security.php' => config_path(
+                    'security.php',
+                ),
+                __DIR__.'/../database/migrations' => database_path(
+                    'migrations',
+                ),
+                __DIR__.'/../stubs/nginx.conf.stub' => base_path(
+                    'nginx.conf',
+                ),
+                __DIR__.'/../stubs/htaccess.stub' => public_path('.htaccess'),
+                __DIR__.'/../stubs/blocked.blade.php' => resource_path(
+                    'views/errors/blocked.blade.php',
+                ),
+            ],
+            'security-all',
+        );
+
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 
     protected function registerCommands(): void
@@ -135,15 +183,24 @@ class SecurityMonitorServiceProvider extends ServiceProvider
 
     protected function registerListeners(): void
     {
-        Event::listen(\Illuminate\Auth\Events\Failed::class, LogFailedLoginAttempt::class);
-        Event::listen(\Illuminate\Auth\Events\Login::class, ResetLoginAttempts::class);
-        Event::listen(\Illuminate\Auth\Events\Login::class, RecordUserLogin::class);
+        Event::listen(
+            Failed::class,
+            LogFailedLoginAttempt::class,
+        );
+        Event::listen(
+            Login::class,
+            ResetLoginAttempts::class,
+        );
+        Event::listen(
+            Login::class,
+            RecordUserLogin::class,
+        );
     }
 
     protected function registerRoutes(): void
     {
         if (config('security.routes.enabled', true)) {
-            $this->loadRoutesFrom(__DIR__ . '/../routes/security.php');
+            $this->loadRoutesFrom(__DIR__.'/../routes/security.php');
         }
     }
 
@@ -166,17 +223,35 @@ class SecurityMonitorServiceProvider extends ServiceProvider
                 $schedule->command('security:prune-logs')->dailyAt($pruneAt);
 
                 // Scheduler Heartbeat
-                $schedule->call(function (): void {
-                    Cache::put(ServerSecurityService::HEARTBEAT_KEY, now()->toIso8601String(), now()->addHour());
-                })->everyMinute()->name('security-heartbeat');
+                $schedule
+                    ->call(function (): void {
+                        Cache::put(
+                            ServerSecurityService::HEARTBEAT_KEY,
+                            now()->toIso8601String(),
+                            now()->addHour(),
+                        );
+                    })
+                    ->everyMinute()
+                    ->name('security-heartbeat');
 
                 // Access log auto-scan
                 if (config('security.access_log.auto_scan_enabled', false)) {
-                    $hours = max(1, (int) config('security.access_log.auto_scan_since_hours', 24));
-                    $schedule->command(sprintf(
-                        'security:scan-logs --import --min-level=high --since="%d hours ago"',
-                        $hours
-                    ))->dailyAt('03:00')->name('security-scan-access-logs');
+                    $hours = max(
+                        1,
+                        (int) config(
+                            'security.access_log.auto_scan_since_hours',
+                            24,
+                        ),
+                    );
+                    $schedule
+                        ->command(
+                            sprintf(
+                                'security:scan-logs --import --min-level=high --since="%d hours ago"',
+                                $hours,
+                            ),
+                        )
+                        ->dailyAt('03:00')
+                        ->name('security-scan-access-logs');
                 }
             } catch (\Throwable) {
                 // Ignore schedule registration errors if Schedule is not bound
@@ -192,7 +267,9 @@ class SecurityMonitorServiceProvider extends ServiceProvider
                     return (bool) $user->isAdmin();
                 }
 
-                if (in_array($user->role ?? null, ['admin', 'superadmin'], true)) {
+                if (
+                    in_array($user->role ?? null, ['admin', 'superadmin'], true)
+                ) {
                     return true;
                 }
 
@@ -203,15 +280,20 @@ class SecurityMonitorServiceProvider extends ServiceProvider
 
     protected function registerMiddleware(): void
     {
-        $router = $this->app->make(\Illuminate\Routing\Router::class);
+        $router = $this->app->make(Router::class);
         $router->aliasMiddleware('security.admin', EnsureSecurityAdmin::class);
         $router->aliasMiddleware('security.block', BlockIpAddress::class);
-        $router->aliasMiddleware('security.detect', DetectSecurityThreats::class);
+        $router->aliasMiddleware(
+            'security.detect',
+            DetectSecurityThreats::class,
+        );
         $router->aliasMiddleware('security.activity', TrackUserActivity::class);
 
         if (config('security.auto_register_middleware', false)) {
             $this->app->booted(function (): void {
-                $kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
+                $kernel = $this->app->make(
+                    Kernel::class,
+                );
                 if (method_exists($kernel, 'pushMiddleware')) {
                     $kernel->pushMiddleware(BlockIpAddress::class);
                     $kernel->pushMiddleware(DetectSecurityThreats::class);

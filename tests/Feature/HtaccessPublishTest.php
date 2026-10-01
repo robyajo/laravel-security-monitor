@@ -10,7 +10,7 @@ afterEach(function () {
 
     $publicDir = public_path();
     if (File::isDirectory($publicDir)) {
-        foreach (File::glob($publicDir . '/.htaccess.backup-*') as $backup) {
+        foreach (File::glob($publicDir.'/.htaccess.backup-*') as $backup) {
             File::delete($backup);
         }
     }
@@ -88,7 +88,7 @@ test('security install command appends hardening to existing htaccess and create
         ->and($content)->toContain('Options -Indexes');
 
     // Pastikan berkas cadangan tercipta
-    $backups = File::glob($publicDir . '/.htaccess.backup-*');
+    $backups = File::glob($publicDir.'/.htaccess.backup-*');
     expect(count($backups))->toBeGreaterThanOrEqual(1);
 });
 

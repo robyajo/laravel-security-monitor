@@ -1,12 +1,10 @@
 <?php
 
-use Internal\SecurityMonitor\Models\SecurityLog;
-
-use Internal\SecurityMonitor\Models\BlockedIp;
-
-use Internal\SecurityMonitor\Rules\SafeImageFile;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
+use Internal\SecurityMonitor\Models\BlockedIp;
+use Internal\SecurityMonitor\Models\SecurityLog;
+use Internal\SecurityMonitor\Rules\SafeImageFile;
 
 beforeEach(function () {
     config()->set('security.enabled', true);

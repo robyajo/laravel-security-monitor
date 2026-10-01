@@ -2,10 +2,10 @@
 
 namespace Internal\SecurityMonitor\Http\Middleware;
 
-use Internal\SecurityMonitor\Models\BlockedIp;
-use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Closure;
 use Illuminate\Http\Request;
+use Internal\SecurityMonitor\Models\BlockedIp;
+use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -22,7 +22,7 @@ class BlockIpAddress
         $localIp = $service->resolveLocalIp($request);
 
         if (
-            !$service->enforcementEnabled() ||
+            ! $service->enforcementEnabled() ||
             $service->isWhitelisted($ip, $deviceId, $localIp)
         ) {
             return $next($request);
@@ -58,18 +58,18 @@ class BlockIpAddress
     protected function isAuthRoute(Request $request): bool
     {
         return $request->is(
-            "login",
-            "login/*",
-            "two-factor-challenge",
-            "two-factor-challenge/*",
-            "captcha",
-            "forgot-password",
-            "reset-password",
-            "reset-password/*",
-            "assets/*",
-            "favicon.*",
-            "security/unblock-tickets/submit",
-            "security/unblock-tickets/check/*",
+            'login',
+            'login/*',
+            'two-factor-challenge',
+            'two-factor-challenge/*',
+            'captcha',
+            'forgot-password',
+            'reset-password',
+            'reset-password/*',
+            'assets/*',
+            'favicon.*',
+            'security/unblock-tickets/submit',
+            'security/unblock-tickets/check/*',
         );
     }
 
@@ -94,57 +94,57 @@ class BlockIpAddress
         } else {
             $blockModel = $service->activeBlock($ip, $deviceId, $localIp);
             $reason =
-                $blockModel?->reason ?? "Aktivitas mencurigakan terdeteksi";
+                $blockModel?->reason ?? 'Aktivitas mencurigakan terdeteksi';
         }
 
         $referenceId =
-            "SEC-" .
+            'SEC-'.
             strtoupper(
                 substr(
-                    md5($ip . ($blockModel?->id ?? "manual") . date("Ymd")),
+                    md5($ip.($blockModel?->id ?? 'manual').date('Ymd')),
                     0,
                     8,
                 ),
             );
         $message =
-            "Akses ditolak. Alamat IP atau perangkat Anda diblokir karena terdeteksi aktivitas mencurigakan. " .
-            "Hubungi administrator apabila Anda merasa ini sebuah kesalahan.";
+            'Akses ditolak. Alamat IP atau perangkat Anda diblokir karena terdeteksi aktivitas mencurigakan. '.
+            'Hubungi administrator apabila Anda merasa ini sebuah kesalahan.';
 
-        if ($request->expectsJson() || $request->is("api/*")) {
+        if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json(
                 [
-                    "success" => false,
-                    "message" => $message,
-                    "reason" => $reason,
-                    "ip_address" => $ip,
-                    "device_id" => $deviceId,
-                    "local_ip" => $localIp,
-                    "block_scope" => $blockModel?->block_scope ?? "ip",
-                    "reference_id" => $referenceId,
-                    "expires_at" => $blockModel?->expires_at?->toIso8601String(),
-                    "blocked" => true,
+                    'success' => false,
+                    'message' => $message,
+                    'reason' => $reason,
+                    'ip_address' => $ip,
+                    'device_id' => $deviceId,
+                    'local_ip' => $localIp,
+                    'block_scope' => $blockModel?->block_scope ?? 'ip',
+                    'reference_id' => $referenceId,
+                    'expires_at' => $blockModel?->expires_at?->toIso8601String(),
+                    'blocked' => true,
                 ],
                 403,
             );
         }
 
-        if (view()->exists("errors.blocked")) {
+        if (view()->exists('errors.blocked')) {
             return response()->view(
-                "errors.blocked",
+                'errors.blocked',
                 [
-                    "ip" => $ip,
-                    "deviceId" => $deviceId,
-                    "localIp" => $localIp,
-                    "block" => $blockModel ?? ($block ?? null),
-                    "reason" => $reason ?? $message,
-                    "message" => $message,
-                    "blockedAt" => now(),
-                    "expiresAt" => null,
-                    "remaining" => null,
-                    "referenceId" => $referenceId,
-                    "supportEmail" => config(
-                        "security.support_email",
-                        "security@example.com",
+                    'ip' => $ip,
+                    'deviceId' => $deviceId,
+                    'localIp' => $localIp,
+                    'block' => $blockModel ?? ($block ?? null),
+                    'reason' => $reason ?? $message,
+                    'message' => $message,
+                    'blockedAt' => now(),
+                    'expiresAt' => null,
+                    'remaining' => null,
+                    'referenceId' => $referenceId,
+                    'supportEmail' => config(
+                        'security.support_email',
+                        'security@example.com',
                     ),
                 ],
                 403,
@@ -154,7 +154,7 @@ class BlockIpAddress
         return response(
             "<h1>403 - Akses Ditolak</h1><p>{$message}</p><p>Ref: {$referenceId}</p>",
             403,
-            ["Content-Type" => "text/html; charset=utf-8"],
+            ['Content-Type' => 'text/html; charset=utf-8'],
         );
     }
 
@@ -174,42 +174,42 @@ class BlockIpAddress
         $deviceId = $service->resolveDeviceId($request);
         $localIp = $service->resolveLocalIp($request);
         $referenceId =
-            "SEC-" . strtoupper(substr(md5($ip . date("Ymd")), 0, 8));
+            'SEC-'.strtoupper(substr(md5($ip.date('Ymd')), 0, 8));
 
-        if ($request->expectsJson() || $request->is("api/*")) {
+        if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json(
                 [
-                    "success" => false,
-                    "message" => $message,
-                    "reason" => $reason,
-                    "ip_address" => $ip,
-                    "device_id" => $deviceId,
-                    "local_ip" => $localIp,
-                    "reference_id" => $referenceId,
-                    "blocked" => true,
+                    'success' => false,
+                    'message' => $message,
+                    'reason' => $reason,
+                    'ip_address' => $ip,
+                    'device_id' => $deviceId,
+                    'local_ip' => $localIp,
+                    'reference_id' => $referenceId,
+                    'blocked' => true,
                     ...$extra,
                 ],
                 403,
             );
         }
 
-        if (view()->exists("errors.blocked")) {
+        if (view()->exists('errors.blocked')) {
             return response()->view(
-                "errors.blocked",
+                'errors.blocked',
                 [
-                    "ip" => $ip,
-                    "deviceId" => $deviceId,
-                    "localIp" => $localIp,
-                    "block" => null,
-                    "reason" => $reason ?? $message,
-                    "message" => $message,
-                    "blockedAt" => now(),
-                    "expiresAt" => null,
-                    "remaining" => null,
-                    "referenceId" => $referenceId,
-                    "supportEmail" => config(
-                        "security.support_email",
-                        "security@example.com",
+                    'ip' => $ip,
+                    'deviceId' => $deviceId,
+                    'localIp' => $localIp,
+                    'block' => null,
+                    'reason' => $reason ?? $message,
+                    'message' => $message,
+                    'blockedAt' => now(),
+                    'expiresAt' => null,
+                    'remaining' => null,
+                    'referenceId' => $referenceId,
+                    'supportEmail' => config(
+                        'security.support_email',
+                        'security@example.com',
                     ),
                 ],
                 403,
@@ -219,7 +219,7 @@ class BlockIpAddress
         return response(
             "<h1>403 - Akses Ditolak</h1><p>{$message}</p><p>Ref: {$referenceId}</p>",
             403,
-            ["Content-Type" => "text/html; charset=utf-8"],
+            ['Content-Type' => 'text/html; charset=utf-8'],
         );
     }
 }

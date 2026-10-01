@@ -2,11 +2,11 @@
 
 namespace Internal\SecurityMonitor\Listeners;
 
-use Internal\SecurityMonitor\Services\LoginThrottleService;
-use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Internal\SecurityMonitor\Services\LoginThrottleService;
+use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Throwable;
 
 /**

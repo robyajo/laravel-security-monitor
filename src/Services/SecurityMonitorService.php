@@ -2,13 +2,8 @@
 
 namespace Internal\SecurityMonitor\Services;
 
-use Internal\SecurityMonitor\Models\BlockedIp;
-use Internal\SecurityMonitor\Models\SecurityLog;
-use Internal\SecurityMonitor\Models\TrustedIp;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Support\Facades\Gate;
-use Internal\SecurityMonitor\Models\UserLogin;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Cookie\CookieValuePrefix;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -17,8 +12,13 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Internal\SecurityMonitor\Models\BlockedIp;
+use Internal\SecurityMonitor\Models\SecurityLog;
+use Internal\SecurityMonitor\Models\TrustedIp;
+use Internal\SecurityMonitor\Models\UserLogin;
 use Throwable;
 
 /**
@@ -1175,15 +1175,15 @@ class SecurityMonitorService
             return false;
         }
 
-        if (Gate::has("manage-security-monitor")) {
-            return Gate::forUser($user)->allows("manage-security-monitor");
+        if (Gate::has('manage-security-monitor')) {
+            return Gate::forUser($user)->allows('manage-security-monitor');
         }
 
-        if (method_exists($user, "isAdmin")) {
+        if (method_exists($user, 'isAdmin')) {
             return (bool) $user->isAdmin();
         }
 
-        if (in_array($user->role ?? null, ["admin", "superadmin"], true)) {
+        if (in_array($user->role ?? null, ['admin', 'superadmin'], true)) {
             return true;
         }
 
@@ -1192,7 +1192,7 @@ class SecurityMonitorService
 
     protected function userModel(): string
     {
-        return config("security.user_model", "App\Models\User");
+        return config('security.user_model', "App\Models\User");
     }
 
     /**

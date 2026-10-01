@@ -2,15 +2,12 @@
 
 namespace Internal\SecurityMonitor\Http\Controllers\Api;
 
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Internal\SecurityMonitor\Models\BlockedIp;
 use Internal\SecurityMonitor\Models\SecurityLog;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
-use Throwable;
 
 class BlockedIpApiController extends Controller
 {
@@ -25,9 +22,9 @@ class BlockedIpApiController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('ip_address', 'like', "%{$search}%")
-                  ->orWhere('device_id', 'like', "%{$search}%")
-                  ->orWhere('reason', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('device_id', 'like', "%{$search}%")
+                    ->orWhere('reason', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%");
             });
         }
 

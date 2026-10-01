@@ -33,10 +33,10 @@ class SecurityLogApiController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('path', 'like', "%{$search}%")
-                  ->orWhere('evidence', 'like', "%{$search}%")
-                  ->orWhere('rule_label', 'like', "%{$search}%")
-                  ->orWhere('user_agent', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%");
+                    ->orWhere('evidence', 'like', "%{$search}%")
+                    ->orWhere('rule_label', 'like', "%{$search}%")
+                    ->orWhere('user_agent', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%");
             });
         }
 

@@ -2,6 +2,21 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.0.8] - 2026-10-02
+
+### Added
+
+- Publishable default 403 page `resources/views/errors/blocked.blade.php`
+  (`vendor:publish --tag=security-views`), including a self-contained appeal
+  form wired to the public unblock-ticket endpoint. Integrated into
+  `security:install` with a new `--without-views` option.
+- Laravel Pint configuration (`pint.json`), `composer format` / `composer lint`
+  scripts, and a dedicated "Code Style" CI job.
+
+### Changed
+
+- Applied Laravel Pint code style across the source and test suites.
+
 ## [1.0.7] - 2026-10-02
 
 ### Added

@@ -2,9 +2,8 @@
 
 namespace Internal\SecurityMonitor\Listeners;
 
-use Illuminate\Contracts\Auth\Authenticatable;
-use Internal\SecurityMonitor\Services\UserLoginService;
 use Illuminate\Auth\Events\Login;
+use Internal\SecurityMonitor\Services\UserLoginService;
 use Throwable;
 
 class RecordUserLogin

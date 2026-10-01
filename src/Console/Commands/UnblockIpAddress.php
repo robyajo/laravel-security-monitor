@@ -2,9 +2,9 @@
 
 namespace Internal\SecurityMonitor\Console\Commands;
 
+use Illuminate\Console\Command;
 use Internal\SecurityMonitor\Models\BlockedIp;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
-use Illuminate\Console\Command;
 
 /**
  * Escape hatch so an administrator can never be permanently locked out of the

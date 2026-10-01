@@ -2,10 +2,10 @@
 
 namespace Internal\SecurityMonitor\Http\Middleware;
 
-use Internal\SecurityMonitor\Models\SecurityLog;
-use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Closure;
 use Illuminate\Http\Request;
+use Internal\SecurityMonitor\Models\SecurityLog;
+use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 

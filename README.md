@@ -82,17 +82,19 @@ php artisan security:install
 3. 🌐 **`nginx.conf`**: Konfigurasi produksi Nginx Hardened WAF (Dual-zone rate limit, single-PHP execution `/index.php`, storage sandboxing).
 4. 🛡️ **`public/.htaccess`**: Hardening web server Apache & LiteSpeed (Blokir dotfiles, double extension `.php.jpg`, file backup dump `.sql`, dan matikan directory listing).
     > _Catatan Keamanan_: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
-5. ⚙️ **Penyematan Variabel ke `.env` & `.env.example`**: Installer secara otomatis menambahkan blok konfigurasi lengkap disertai **penjelasan fungsi berbahasa Indonesia** untuk setiap variabel (`SECURITY_*` dan `CAPTCHA_*`) langsung ke berkas `.env` dan `.env.example` aplikasi Anda.
+5. 🚫 **`resources/views/errors/blocked.blade.php`**: Halaman 403 default yang menampilkan alasan blokir, kode referensi, dan **formulir banding** yang terhubung langsung ke endpoint publik tiket banding. Dapat disesuaikan sesuai branding aplikasi Anda.
+6. ⚙️ **Penyematan Variabel ke `.env` & `.env.example`**: Installer secara otomatis menambahkan blok konfigurasi lengkap disertai **penjelasan fungsi berbahasa Indonesia** untuk setiap variabel (`SECURITY_*` dan `CAPTCHA_*`) langsung ke berkas `.env` dan `.env.example` aplikasi Anda.
 
 #### Opsi Perintah `security:install`:
 
-| Opsi                 | Keterangan                                                                         |
-| :------------------- | :--------------------------------------------------------------------------------- |
-| `--force`            | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess`. |
-| `--without-nginx`    | Melewatkan pembuatan berkas `nginx.conf`.                                          |
-| `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess`.                                    |
-| `--with-htaccess`    | Memaksa pembaruan berkas `public/.htaccess`.                                       |
-| `--without-env`      | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`.    |
+| Opsi                 | Keterangan                                                                                         |
+| :------------------- | :------------------------------------------------------------------------------------------------- |
+| `--force`            | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, `public/.htaccess`, dan halaman blokir. |
+| `--without-nginx`    | Melewatkan pembuatan berkas `nginx.conf`.                                                          |
+| `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess`.                                                    |
+| `--without-views`    | Melewatkan publikasi halaman blokir `errors/blocked.blade.php`.                                    |
+| `--with-htaccess`    | Memaksa pembaruan berkas `public/.htaccess`.                                                       |
+| `--without-env`      | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`.                    |
 
 #### Publikasi Aset Secara Parsial (Manual):
 
@@ -109,7 +111,10 @@ php artisan vendor:publish --tag=security-nginx
 # 4. Aturan hardening Apache .htaccess saja
 php artisan vendor:publish --tag=security-htaccess --force
 
-# 5. Seluruh aset sekaligus
+# 5. Halaman blokir default saja
+php artisan vendor:publish --tag=security-views --force
+
+# 6. Seluruh aset sekaligus
 php artisan vendor:publish --tag=security-all --force
 ```
 

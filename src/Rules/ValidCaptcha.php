@@ -2,9 +2,9 @@
 
 namespace Internal\SecurityMonitor\Rules;
 
-use Internal\SecurityMonitor\Services\CaptchaService;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Internal\SecurityMonitor\Services\CaptchaService;
 
 /**
  * Memvalidasi jawaban captcha pada form login.

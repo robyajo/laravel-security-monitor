@@ -35,7 +35,7 @@ use Internal\SecurityMonitor\Services\SecurityMonitorService;
  * @method static array levelBreakdown(int $hours = 24)
  * @method static array attackTrend(string $range = 'week')
  *
- * @see \Internal\SecurityMonitor\Services\SecurityMonitorService
+ * @see SecurityMonitorService
  */
 class SecurityMonitor extends Facade
 {

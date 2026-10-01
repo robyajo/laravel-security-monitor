@@ -2,10 +2,9 @@
 
 namespace Internal\SecurityMonitor\Listeners;
 
-
+use Illuminate\Auth\Events\Login;
 use Internal\SecurityMonitor\Services\LoginThrottleService;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
-use Illuminate\Auth\Events\Login;
 
 /**
  * Mengosongkan riwayat kegagalan login setelah pengguna berhasil masuk,

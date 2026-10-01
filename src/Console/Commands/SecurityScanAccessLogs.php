@@ -2,12 +2,12 @@
 
 namespace Internal\SecurityMonitor\Console\Commands;
 
-use Internal\SecurityMonitor\Services\AccessLogScannerService;
-use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Carbon\CarbonInterface;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Internal\SecurityMonitor\Services\AccessLogScannerService;
+use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Throwable;
 
 /**

@@ -4,7 +4,6 @@ use Internal\SecurityMonitor\Models\BlockedIp;
 use Internal\SecurityMonitor\Models\IpUnblockRequest;
 use Internal\SecurityMonitor\Models\SecurityLog;
 use Internal\SecurityMonitor\Models\TrustedIp;
-use Internal\SecurityMonitor\Models\UserLogin;
 
 beforeEach(function () {
     $this->admin = $this->createAdminUser();

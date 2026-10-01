@@ -25,6 +25,7 @@ class EnsureSecurityAdmin
             if (! Gate::allows('manage-security-monitor')) {
                 return $this->forbidden($request);
             }
+
             return $next($request);
         }
 
