@@ -1,5 +1,5 @@
 {
-    "name": "internal/laravel-security-monitor",
+    "name": "robyajo/laravel-security-monitor",
     "description": "Headless self-hosted WAF, threat detection, IP blocking, login protection, and security auditing for Laravel.",
     "keywords": [
         "laravel",
