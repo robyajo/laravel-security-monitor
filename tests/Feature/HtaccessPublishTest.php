@@ -14,6 +14,16 @@ afterEach(function () {
             File::delete($backup);
         }
     }
+
+    $envPath = base_path('.env');
+    if (File::exists($envPath)) {
+        File::delete($envPath);
+    }
+
+    $envExamplePath = base_path('.env.example');
+    if (File::exists($envExamplePath)) {
+        File::delete($envExamplePath);
+    }
 });
 
 test('htaccess configuration stub can be published using vendor publish tag', function () {
@@ -64,9 +74,7 @@ test('security install command appends hardening to existing htaccess and create
     }
 
     $publishedPath = public_path('.htaccess');
-    File::put($publishedPath, "# Custom User Rewrite Rules
-RewriteEngine On
-");
+    File::put($publishedPath, "# Custom User Rewrite Rules\nRewriteEngine On\n");
 
     $this->artisan('security:install')
         ->assertSuccessful();
@@ -96,4 +104,36 @@ test('security install command respects without-htaccess option', function () {
     ])->assertSuccessful();
 
     expect(File::exists($publishedPath))->toBeFalse();
+});
+
+test('security install command appends environment variables to env and env example', function () {
+    $envPath = base_path('.env');
+    $envExamplePath = base_path('.env.example');
+
+    File::put($envPath, "APP_NAME=Laravel\nAPP_ENV=local\n");
+    File::put($envExamplePath, "APP_NAME=Laravel\nAPP_ENV=local\n");
+
+    $this->artisan('security:install')
+        ->assertSuccessful();
+
+    $envContent = File::get($envPath);
+    $exampleContent = File::get($envExamplePath);
+
+    expect($envContent)->toContain('SECURITY_MONITOR_ENABLED=true')
+        ->and($envContent)->toContain('SECURITY_INSTANT_BLOCK_ENABLED=true')
+        ->and($envContent)->toContain('CAPTCHA_ENABLED=true')
+        ->and($envContent)->toContain('Sakelar utama WAF')
+        ->and($exampleContent)->toContain('SECURITY_MONITOR_ENABLED=true');
+});
+
+test('security install command respects without-env option', function () {
+    $envPath = base_path('.env');
+    File::put($envPath, "APP_NAME=Laravel\nAPP_ENV=local\n");
+
+    $this->artisan('security:install', [
+        '--without-env' => true,
+    ])->assertSuccessful();
+
+    $envContent = File::get($envPath);
+    expect($envContent)->not->toContain('SECURITY_MONITOR_ENABLED');
 });

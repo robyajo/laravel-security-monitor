@@ -1,6 +1,6 @@
 # Laravel Security Monitor (Bulwark)
 
-[![Tests](https://img.shields.io/badge/tests-68%20passed%20(294%20assertions)-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-70%20passed%20(302%20assertions)-brightgreen.svg)]()
 [![PHP Version](https://img.shields.io/badge/php-%5E8.2%20%7C%20%5E8.3%20%7C%20%5E8.4-blue.svg)]()
 [![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%20%7C%20%5E11.0%20%7C%20%5E12.0%20%7C%20%5E13.0-red.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -81,6 +81,7 @@ php artisan security:install
 3. 🌐 **`nginx.conf`**: Konfigurasi produksi Nginx Hardened WAF (Dual-zone rate limit, single-PHP execution `/index.php`, storage sandboxing).
 4. 🛡️ **`public/.htaccess`**: Hardening web server Apache & LiteSpeed (Blokir dotfiles, double extension `.php.jpg`, file backup dump `.sql`, dan matikan directory listing).
    > *Catatan Keamanan*: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
+5. ⚙️ **Penyematan Variabel ke `.env` & `.env.example`**: Installer secara otomatis menambahkan blok konfigurasi lengkap disertai **penjelasan fungsi berbahasa Indonesia** untuk setiap variabel (`SECURITY_*` dan `CAPTCHA_*`) langsung ke berkas `.env` dan `.env.example` aplikasi Anda.
 
 #### Opsi Perintah `security:install`:
 | Opsi | Keterangan |
@@ -422,7 +423,7 @@ Paket ini dilengkapi dengan pengujian menyeluruh menggunakan **Pest PHP** dan **
 ./vendor/bin/pest
 ```
 
-Hasil uji: **68 passed (294 assertions)** 100% Passed mencakup:
+Hasil uji: **70 passed (302 assertions)** 100% Passed mencakup:
 - `DetectorTuningTest`: Verifikasi akurasi pola deteksi dan ketahanan ReDoS.
 - `InstantBlockTest`: Verifikasi zero-tolerance instant blocking pada percobaan pertama.
 - `PolyglotImageTest`: Uji penolakan polyglot image ber-tag PHP dan SVG XSS.

@@ -11,9 +11,10 @@ class SecurityInstallCommand extends Command
                             {--force : Timpa berkas konfigurasi, migrasi, nginx, dan htaccess yang sudah ada}
                             {--without-nginx : Jangan publikasikan berkas nginx.conf}
                             {--without-htaccess : Jangan perbarui berkas public/.htaccess}
+                            {--without-env : Jangan tambahkan variabel konfigurasi ke berkas .env}
                             {--with-htaccess : Paksa perbarui berkas public/.htaccess dengan aturan hardening}';
 
-    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, dan Apache .htaccess)';
+    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, dan .env)';
 
     public function handle(): int
     {
@@ -23,6 +24,7 @@ class SecurityInstallCommand extends Command
         $force = (bool) $this->option('force');
         $withoutNginx = (bool) $this->option('without-nginx');
         $withoutHtaccess = (bool) $this->option('without-htaccess');
+        $withoutEnv = (bool) $this->option('without-env');
 
         // 1. Publish Config
         $this->comment('Mempublikasikan berkas konfigurasi...');
@@ -53,6 +55,12 @@ class SecurityInstallCommand extends Command
             $this->applyHtaccessHardening($force);
         }
 
+        // 5. Append Environment Variables with rich comments to .env & .env.example
+        if (! $withoutEnv) {
+            $this->comment('Menyematkan variabel konfigurasi dan panduan ke berkas .env...');
+            $this->appendEnvironmentVariables();
+        }
+
         $this->newLine();
         $this->info('Instalasi aset berhasil diselesaikan!');
         $this->newLine();
@@ -66,11 +74,12 @@ class SecurityInstallCommand extends Command
         $this->line('     atau <fg=yellow>app/Http/Kernel.php</> (Laravel 10):');
         $this->line('     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\BlockIpAddress::class</>');
         $this->line('     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats::class</>');
+        $this->line('  4. Sesuaikan nilai variabel <fg=yellow>SECURITY_*</> dan <fg=yellow>CAPTCHA_*</> di berkas <fg=yellow>.env</>');
         if (! $withoutNginx) {
-            $this->line('  4. Web Server Nginx: Periksa dan sesuaikan <fg=yellow>nginx.conf</> di root proyek.');
+            $this->line('  5. Web Server Nginx: Periksa dan sesuaikan <fg=yellow>nginx.conf</> di root proyek.');
         }
         if (! $withoutHtaccess) {
-            $this->line('  5. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat');
+            $this->line('  6. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat');
             $this->line('     terhadap upload webshell, double extension, pembacaan dotfile, dan file backup.');
         }
 
@@ -133,5 +142,42 @@ class SecurityInstallCommand extends Command
         File::append($htaccessPath, $hardeningSection);
 
         $this->info('  ✓ Aturan hardening keamanan berhasil ditambahkan ke berkas public/.htaccess.');
+    }
+
+    /**
+     * Sematkan variabel konfigurasi lingkungan dan penjelasannya ke berkas .env & .env.example.
+     */
+    protected function appendEnvironmentVariables(): void
+    {
+        $stubPath = __DIR__ . '/../../../stubs/env.stub';
+        if (! File::exists($stubPath)) {
+            $stubPath = dirname(__DIR__, 2) . '/stubs/env.stub';
+        }
+
+        if (! File::exists($stubPath)) {
+            return;
+        }
+
+        $stubContent = "
+
+" . trim(File::get($stubPath)) . "
+";
+        $envTargets = ['.env', '.env.example'];
+
+        foreach ($envTargets as $envFile) {
+            $targetPath = base_path($envFile);
+            if (! File::exists($targetPath)) {
+                continue;
+            }
+
+            $currentContent = File::get($targetPath);
+            if (str_contains($currentContent, 'SECURITY_MONITOR_ENABLED')) {
+                $this->line("  ✓ Berkas {$envFile} sudah memiliki variabel konfigurasi keamanan.");
+                continue;
+            }
+
+            File::append($targetPath, $stubContent);
+            $this->info("  ✓ Variabel konfigurasi keamanan berhasil ditambahkan ke berkas {$envFile}.");
+        }
     }
 }
