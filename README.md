@@ -1,11 +1,13 @@
 # Laravel Security Monitor (Bulwark)
 
-[![Tests](https://img.shields.io/badge/tests-62%20passed%20(261%20assertions)-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-68%20passed%20(294%20assertions)-brightgreen.svg)]()
 [![PHP Version](https://img.shields.io/badge/php-%5E8.2%20%7C%20%5E8.3%20%7C%20%5E8.4-blue.svg)]()
 [![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%20%7C%20%5E11.0%20%7C%20%5E12.0%20%7C%20%5E13.0-red.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Laravel Security Monitor** adalah paket keamanan komprehensif (*Self-Hosted WAF & Threat Engine*) berbasis **Headless REST API** untuk ekosistem Laravel. Paket ini dirancang khusus untuk memproteksi aplikasi web internal dari serangan siber tingkat lanjut, injeksi payload pentest, eksploitasi webshell, dan brute force tanpa mengikat aplikasi ke template frontend tertentu (React, Vue, Inertia, Blade, Livewire, ataupun Mobile Apps).
+**Laravel Security Monitor** (Bulwark) adalah paket keamanan komprehensif (*Self-Hosted WAF & Threat Engine*) berbasis **Headless REST API** untuk ekosistem Laravel. Paket ini murni PHP Composer library (Zero-NPM / standar Spatie) yang dirancang khusus untuk memproteksi aplikasi web internal dari serangan siber tingkat lanjut, injeksi payload pentest, eksploitasi webshell, dan brute force tanpa mengikat aplikasi ke template frontend tertentu.
+
+> 📚 **Portal Dokumentasi Resmi Lengkap**: Tersedia 25 bab dokumentasi mendalam di direktori [`documents/`](./documents/README.md) serta portal interaktif offline [`documents/index.html`](./documents/index.html).
 
 ---
 
@@ -65,26 +67,45 @@ Tambahkan repositori paket internal pada `composer.json` proyek Anda, lalu jalan
 composer require robyajo/laravel-security-monitor
 ```
 
-### 2. Publikasikan Konfigurasi, Migrasi, dan Nginx WAF
+### 2. Publikasikan Aset Otomatis (`security:install`)
 
-Anda dapat menggunakan perintah interaktif otomatis satu langkah untuk mempublikasikan seluruh aset (termasuk `nginx.conf` yang siap pakai untuk server produksi):
+Gunakan perintah satu langkah untuk mempublikasikan dan menerapkan seluruh aset keamanan secara otomatis:
 
 ```bash
-# Publikasikan konfigurasi, migrasi, dan berkas nginx.conf sekaligus
 php artisan security:install
 ```
 
-Atau publikasikan secara terpisah sesuai kebutuhan:
+#### Aset yang Didapat Pengguna Setelah Menjalankan Perintah Ini:
+1. 📄 **`config/security.php`**: Konfigurasi lengkap WAF, ambang batas blokir, IP whitelist, stepped login lockout, SVG Captcha, dan log scanner.
+2. 🗄️ **`database/migrations/` (6 tabel)**: Menyiapkan tabel `blocked_ips`, `security_logs`, `login_attempts`, `ip_unblock_requests`, `user_logins`, dan `trusted_ips`.
+3. 🌐 **`nginx.conf`**: Konfigurasi produksi Nginx Hardened WAF (Dual-zone rate limit, single-PHP execution `/index.php`, storage sandboxing).
+4. 🛡️ **`public/.htaccess`**: Hardening web server Apache & LiteSpeed (Blokir dotfiles, double extension `.php.jpg`, file backup dump `.sql`, dan matikan directory listing).
+   > *Catatan Keamanan*: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
 
+#### Opsi Perintah `security:install`:
+| Opsi | Keterangan |
+| :--- | :--- |
+| `--force` | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess`. |
+| `--without-nginx` | Melewatkan pembuatan berkas `nginx.conf`. |
+| `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess`. |
+| `--with-htaccess` | Memaksa pembaruan berkas `public/.htaccess`. |
+
+#### Publikasi Aset Secara Parsial (Manual):
 ```bash
-# 1. Konfigurasi
+# 1. Konfigurasi saja
 php artisan vendor:publish --tag=security-config
 
-# 2. Migrasi Database
+# 2. Migrasi database saja
 php artisan vendor:publish --tag=security-migrations
 
-# 3. Konfigurasi Web Server Nginx Hardened WAF
+# 3. Konfigurasi server Nginx saja
 php artisan vendor:publish --tag=security-nginx
+
+# 4. Aturan hardening Apache .htaccess saja
+php artisan vendor:publish --tag=security-htaccess --force
+
+# 5. Seluruh aset sekaligus
+php artisan vendor:publish --tag=security-all --force
 ```
 
 Jalankan migrasi database:
@@ -356,24 +377,42 @@ php artisan security:purge-injected-data --force
 
 ---
 
-## 🌐 Konfigurasi Web Server Nginx Hardened WAF (`nginx.conf`)
+## 🌐 Konfigurasi Web Server Hardened
 
-Paket ini menyertakan template konfigurasi Nginx siap pakai yang telah dioptimalkan dari insiden nyata di lingkungan produksi (`php artisan vendor:publish --tag=security-nginx`).
+Paket ini menyertakan template konfigurasi hardened siap pakai untuk web server **Nginx** maupun **Apache / LiteSpeed / cPanel**.
 
-Fitur proteksi bawaan `nginx.conf`:
+### 1. Nginx Hardened WAF (`nginx.conf`)
+Diterbitkan via `php artisan vendor:publish --tag=security-nginx`:
 1. **Dua Zona Rate Limiting Terpisah**:
-   - `auth_limit`: 5 request/menit (burst 5) untuk endpoint sensitif (`/login`, `/register`, `/forgot-password`, `/reset-password`, `/two-factor-challenge`, `/livewire`, `/oauth`).
-   - `general_limit`: 30 request/detik (burst 50) untuk rute umum Laravel.
+   - `auth_limit`: 5 request/menit (burst 5) untuk endpoint sensitif (`/login`, `/register`, `/forgot-password`, `/reset-password`, dll.).
+   - `general_limit`: 30 request/detik (burst 50) untuk rute umum aplikasi.
 2. **Proteksi Aset Statis Vite / Frontend**:
-   - Direktori `/build/` dibebaskan dari rate-limiting agar pemuatan paralel chunk JS tidak menyebabkan HTTP 429 atau `NS_ERROR_CORRUPTED_CONTENT`. Cache immutable 1 tahun.
+   - Direktori `/build/` dibebaskan dari rate-limiting agar chunk parallel JS tidak memicu HTTP 429 atau `NS_ERROR_CORRUPTED_CONTENT`.
 3. **Strict Single-PHP Execution**:
-   - **Hanya `/index.php`** yang boleh dieksekusi oleh PHP-FPM. Berkas `.php` lain yang berada di direktori publik (termasuk webshell yang lolos) langsung ditolak dengan **HTTP 403**.
-4. **Pencegahan Double Extension & Ekstensi Script Berbahaya**:
-   - Blokir otomatis ekstensi ganda (`.php.jpg`, `.phtml.zip`, `.phar.png`, dll.).
+   - **Hanya `/index.php`** yang boleh dieksekusi oleh PHP-FPM. Berkas skrip lain yang berada di direktori publik langsung ditolak dengan **HTTP 403**.
+4. **Pencegahan Double Extension & Ekstensi Berbahaya**:
+   - Menolak ekstensi ganda (`.php.jpg`, `.phtml.zip`, dll.).
 5. **Sandboxing Direktori Storage / Upload**:
-   - Folder `/storage/` sepenuhnya dimatikan dari FastCGI PHP. Dilengkapi header `X-Content-Type-Options: nosniff` dan `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox` untuk mencegah eksekusi polyglot image ber-tag PHP atau SVG bereksekusi JS di browser.
-6. **Blokir Akses Berkas Sensitif & Dotfiles**:
-   - Menolak berkas cadangan (`.sql`, `.bak`, `.log`, `.env`) dan direktori tersembunyi (`.git`, `.htaccess`).
+   - Folder `/storage/` dimatikan dari eksekusi PHP dengan header `X-Content-Type-Options: nosniff` dan CSP sandbox.
+6. **Blokir Dotfiles & Berkas Backup**:
+   - Menolak akses berkas `.env`, `.git`, `.htaccess`, `.sql`, `.bak`, dan `.log`.
+
+### 2. Apache & LiteSpeed Hardened (`public/.htaccess`)
+Diterapkan otomatis via `php artisan security:install` atau `php artisan vendor:publish --tag=security-htaccess`:
+1. **Front Controller & Authorization Header**: Routing Laravel standar, pemeliharaan header `Authorization` dan `X-XSRF-Token`.
+2. **Blokir Akses ke Dotfile (`<FilesMatch "^\.">`)**:
+   - Menutup akses ke `.htaccess`, `.env`, `.git`, `.htpasswd` (kompatibel Apache 2.4+ `Require all denied` dan Apache 2.2 `Deny from all`).
+3. **Blokir Serangan Ekstensi Ganda (Double Extension Webshell)**:
+   - Menolak berkas berbahaya seperti `shell.php.jpg` atau trik null-byte `wne.php%00.jpg`:
+   ```apache
+   <FilesMatch "\.(php[0-9]?|phtml|pht|phar|phps|asp|aspx|ashx|asmx|jsp|jspx|cgi|pl|py|rb|sh|bash|exe|dll|bat|cmd|scr)\.[a-z0-9]+$">
+       Require all denied
+   </FilesMatch>
+   ```
+4. **Blokir Berkas Backup, Dump Database, dan Log Sensitif**:
+   - Menutup berkas `.sql`, `.bak`, `.old`, `.orig`, `.save`, `.swp`, `.log`, `.ini`, `.conf`, `.yml`, `.yaml`.
+5. **Matikan Directory Listing**:
+   - `Options -Indexes` mencegah browser menampilkan daftar berkas di dalam folder publik/storage.
 
 ## 🧪 Menjalankan Pengujian (Testing)
 
@@ -383,7 +422,7 @@ Paket ini dilengkapi dengan pengujian menyeluruh menggunakan **Pest PHP** dan **
 ./vendor/bin/pest
 ```
 
-Hasil uji: **62 passed (261 assertions)** mencakup:
+Hasil uji: **68 passed (294 assertions)** 100% Passed mencakup:
 - `DetectorTuningTest`: Verifikasi akurasi pola deteksi dan ketahanan ReDoS.
 - `InstantBlockTest`: Verifikasi zero-tolerance instant blocking pada percobaan pertama.
 - `PolyglotImageTest`: Uji penolakan polyglot image ber-tag PHP dan SVG XSS.
@@ -392,6 +431,8 @@ Hasil uji: **62 passed (261 assertions)** mencakup:
 - `ServerSecurityTest`: Audit keamanan lingkungan, baseline SHA-256, dan webshell sanitizer.
 - `AccessLogScanTest`: Uji parser streaming log akses web server.
 - `SecurityMonitorTest`: Uji ambang batas auto-blocking dan rotasi log.
+- `NginxPublishTest`: Verifikasi publikasi konfigurasi hardened virtual host Nginx.
+- `HtaccessPublishTest`: Verifikasi publikasi, penambahan aturan otomatis, dan pencadangan `.htaccess` Apache.
 
 ---
 
