@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `internal/laravel-security-monitor` will be documented in this file.
+All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
 ## [1.0.0] - 2026-10-01
 

@@ -62,7 +62,7 @@
 Tambahkan repositori paket internal pada `composer.json` proyek Anda, lalu jalankan:
 
 ```bash
-composer require internal/laravel-security-monitor
+composer require robyajo/laravel-security-monitor
 ```
 
 ### 2. Publikasikan Konfigurasi & Migrasi
