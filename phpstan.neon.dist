@@ -13,8 +13,11 @@ parameters:
     ignoreErrors:
         # The trait is consumed by the host application's User model.
         - '#Trait Internal\\SecurityMonitor\\Concerns\\HasSecurityRelations is used zero times and is not analysed#'
-        # Larastan does not inspect the host application's Blade views.
-        - '#Call to method Illuminate\\Contracts\\View\\Factory::exists\(\) with .*errors\.blocked.* will always evaluate to true#'
+        # Larastan narrows view()->exists() based on the host's published views,
+        # so its result is environment-dependent.
+        -
+            identifier: method.alreadyNarrowedType
+            path: src/Http/Middleware/BlockIpAddress.php
         # The configured user model is dynamic; `email` is not part of the contract.
         - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$email#'
 

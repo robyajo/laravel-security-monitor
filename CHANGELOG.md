@@ -2,6 +2,17 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.0.11] - 2026-10-02
+
+### Fixed
+
+- CI: `laravel/pint` and `larastan/larastan` are no longer `require-dev`
+  dependencies. Pint requires PHP 8.3 and Larastan 3 requires Laravel 11+, which
+  broke the PHP 8.2 / Laravel 10 matrix jobs. Both tools are now installed only
+  in their dedicated CI jobs; run `composer dev:tools` locally to use them.
+- PHPStan: replaced the environment-dependent `view()->exists()` ignore with an
+  identifier-scoped ignore for `src/Http/Middleware/BlockIpAddress.php`.
+
 ## [1.0.10] - 2026-10-02
 
 ### Changed

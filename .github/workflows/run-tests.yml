@@ -100,7 +100,7 @@ jobs:
                   coverage: none
 
             - name: Install Dependencies
-              run: composer update --prefer-dist --no-interaction --no-audit
+              run: composer require --dev laravel/pint --no-interaction --no-audit
 
             - name: Check Code Style
               run: ./vendor/bin/pint --test
@@ -121,7 +121,7 @@ jobs:
                   coverage: none
 
             - name: Install Dependencies
-              run: composer update --prefer-dist --no-interaction --no-audit
+              run: composer require --dev larastan/larastan --no-interaction --no-audit
 
             - name: Run PHPStan
               run: ./vendor/bin/phpstan analyse --no-progress

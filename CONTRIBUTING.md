@@ -60,3 +60,15 @@ Never report a vulnerability through a public issue or pull request. See
 
 Please keep pull requests focused on a single concern; unrelated refactors make
 review harder.
+
+## Quality Tools (Optional)
+
+The quality tools are intentionally **not** part of `require-dev`, so the test
+matrix stays installable on PHP 8.2 with Laravel 10. Install them on demand:
+
+```bash
+composer dev:tools   # installs larastan/larastan and laravel/pint
+composer analyse     # PHPStan (Larastan) over src/
+composer lint        # Pint dry run
+composer format      # Pint fix
+```

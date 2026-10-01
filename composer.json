@@ -42,13 +42,10 @@
         "illuminate/validation": "^10.0|^11.0|^12.0|^13.0"
     },
     "require-dev": {
-        "larastan/larastan": "^3.12",
-        "laravel/pint": "^1.32",
         "mockery/mockery": "^1.6",
         "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
         "pestphp/pest": "^2.0|^3.0|^4.0",
-        "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0",
-        "phpstan/phpstan": "^2.2"
+        "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0"
     },
     "autoload": {
         "psr-4": {
@@ -65,7 +62,8 @@
         "test:coverage": "pest --coverage",
         "analyse": "phpstan analyse",
         "format": "pint",
-        "lint": "pint --test"
+        "lint": "pint --test",
+        "dev:tools": "composer require --dev larastan/larastan laravel/pint --no-interaction"
     },
     "extra": {
         "laravel": {
