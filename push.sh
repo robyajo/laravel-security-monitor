@@ -128,10 +128,14 @@ if [ -n "$STATUS_OUTPUT" ]; then
 
     # Jika pesan commit belum diberikan lewat argumen, minta input interaktif
     if [ -z "$COMMIT_MSG" ]; then
-        echo -ne "${BOLD}Masukkan pesan commit${NC} (default: 'chore: update repository files'): "
-        read -r INPUT_MSG
-        if [ -n "$INPUT_MSG" ]; then
-            COMMIT_MSG="$INPUT_MSG"
+        if [ -t 0 ]; then
+            echo -ne "${BOLD}Masukkan pesan commit${NC} (default: 'chore: update repository files'): "
+            read -r INPUT_MSG
+            if [ -n "$INPUT_MSG" ]; then
+                COMMIT_MSG="$INPUT_MSG"
+            else
+                COMMIT_MSG="chore: update repository files"
+            fi
         else
             COMMIT_MSG="chore: update repository files"
         fi
@@ -158,12 +162,14 @@ print_success "Commit berhasil di-push ke ${REMOTE_NAME}/${TARGET_BRANCH}!"
 # 3. Penanganan Tag (Opsional)
 echo ""
 if [ -z "$TAG_NAME" ]; then
-    echo -ne "${BOLD}Apakah Anda ingin membuat Git Tag rilis baru sekarang? (y/N): ${NC}"
-    read -r WANT_TAG
-    if [[ "$WANT_TAG" =~ ^[yY]([eE][sS])?$ ]]; then
-        echo -ne "${BOLD}Masukkan nama tag${NC} (contoh: v1.0.0): "
-        read -r INPUT_TAG
-        TAG_NAME="$INPUT_TAG"
+    if [ -t 0 ]; then
+        echo -ne "${BOLD}Apakah Anda ingin membuat Git Tag rilis baru sekarang? (y/N): ${NC}"
+        read -r WANT_TAG
+        if [[ "$WANT_TAG" =~ ^[yY]([eE][sS])?$ ]]; then
+            echo -ne "${BOLD}Masukkan nama tag${NC} (contoh: v1.0.0): "
+            read -r INPUT_TAG
+            TAG_NAME="$INPUT_TAG"
+        fi
     fi
 fi
 
@@ -171,8 +177,11 @@ if [ -n "$TAG_NAME" ]; then
     # Validasi apakah tag sudah pernah ada sebelumnya
     if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
         print_warning "Tag '${TAG_NAME}' sudah ada di repositori lokal."
-        echo -ne "Apakah Anda ingin menimpa (force update) tag ini? (y/N): "
-        read -r OVERWRITE_TAG
+        OVERWRITE_TAG="n"
+        if [ -t 0 ]; then
+            echo -ne "Apakah Anda ingin menimpa (force update) tag ini? (y/N): "
+            read -r OVERWRITE_TAG
+        fi
         if [[ "$OVERWRITE_TAG" =~ ^[yY]([eE][sS])?$ ]]; then
             git tag -d "$TAG_NAME" > /dev/null 2>&1 || true
             git push "$REMOTE_NAME" --delete "$TAG_NAME" > /dev/null 2>&1 || true
@@ -184,8 +193,11 @@ if [ -n "$TAG_NAME" ]; then
             print_info "Pembuatan tag dibatalkan."
         fi
     else
-        echo -ne "${BOLD}Masukkan keterangan rilis untuk tag ${TAG_NAME}${NC} (default: 'Release ${TAG_NAME}'): "
-        read -r TAG_COMMENT
+        TAG_COMMENT=""
+        if [ -t 0 ]; then
+            echo -ne "${BOLD}Masukkan keterangan rilis untuk tag ${TAG_NAME}${NC} (default: 'Release ${TAG_NAME}'): "
+            read -r TAG_COMMENT
+        fi
         if [ -z "$TAG_COMMENT" ]; then
             TAG_COMMENT="Release $TAG_NAME"
         fi
