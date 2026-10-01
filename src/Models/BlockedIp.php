@@ -57,11 +57,14 @@ class BlockedIp extends Model
     ];
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<Model, $this>
      */
     public function blockedBy(): BelongsTo
     {
-        return $this->belongsTo(config('security.user_model', 'App\\Models\\User'), 'blocked_by');
+        return $this->belongsTo(
+            config('security.user_model', 'App\\Models\\User'),
+            'blocked_by',
+        );
     }
 
     /**
@@ -72,9 +75,11 @@ class BlockedIp extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true)
+        return $query
+            ->where('is_active', true)
             ->where(function (Builder $query) {
-                $query->whereNull('expires_at')
+                $query
+                    ->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());
             });
     }
@@ -85,7 +90,8 @@ class BlockedIp extends Model
      */
     public function scopeExpired(Builder $query): Builder
     {
-        return $query->whereNotNull('expires_at')
+        return $query
+            ->whereNotNull('expires_at')
             ->where('expires_at', '<=', now());
     }
 

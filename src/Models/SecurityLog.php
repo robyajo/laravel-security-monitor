@@ -82,11 +82,13 @@ class SecurityLog extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<Model, $this>
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(config('security.user_model', 'App\\Models\\User'));
+        return $this->belongsTo(
+            config('security.user_model', 'App\\Models\\User'),
+        );
     }
 
     /**
@@ -107,10 +109,12 @@ class SecurityLog extends Model
     public function scopeAtLeast(Builder $query, string $level): Builder
     {
         $minimum = self::LEVEL_WEIGHTS[$level] ?? 1;
-        $levels = array_keys(array_filter(
-            self::LEVEL_WEIGHTS,
-            fn (int $weight) => $weight >= $minimum
-        ));
+        $levels = array_keys(
+            array_filter(
+                self::LEVEL_WEIGHTS,
+                fn (int $weight) => $weight >= $minimum,
+            ),
+        );
 
         return $query->whereIn('threat_level', $levels);
     }

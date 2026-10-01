@@ -69,11 +69,13 @@ class UserLogin extends Model
     ];
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<Model, $this>
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(config('security.user_model', 'App\\Models\\User'));
+        return $this->belongsTo(
+            config('security.user_model', 'App\\Models\\User'),
+        );
     }
 
     /**
@@ -84,7 +86,8 @@ class UserLogin extends Model
      */
     public function scopeActive(Builder $query, int $minutes = 5): Builder
     {
-        return $query->where('last_activity_at', '>=', now()->subMinutes($minutes))
+        return $query
+            ->where('last_activity_at', '>=', now()->subMinutes($minutes))
             ->whereNull('logout_at');
     }
 
@@ -97,7 +100,8 @@ class UserLogin extends Model
             return false;
         }
 
-        return $this->last_activity_at !== null && $this->last_activity_at->gte(now()->subMinutes($minutes));
+        return $this->last_activity_at !== null &&
+            $this->last_activity_at->gte(now()->subMinutes($minutes));
     }
 
     /**
@@ -107,6 +111,8 @@ class UserLogin extends Model
     {
         $parts = array_filter([$this->city, $this->region, $this->country]);
 
-        return ! empty($parts) ? implode(', ', $parts) : 'Lokasi Tidak Diketahui';
+        return ! empty($parts)
+            ? implode(', ', $parts)
+            : 'Lokasi Tidak Diketahui';
     }
 }

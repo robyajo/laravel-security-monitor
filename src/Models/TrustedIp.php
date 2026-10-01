@@ -48,11 +48,13 @@ class TrustedIp extends Model
     ];
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<Model, $this>
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(config('security.user_model', 'App\\Models\\User'));
+        return $this->belongsTo(
+            config('security.user_model', 'App\\Models\\User'),
+        );
     }
 
     /**
@@ -67,8 +69,12 @@ class TrustedIp extends Model
     /**
      * Check if a specific IP / device is trusted for a user.
      */
-    public static function isTrusted(string $ip, int $userId, ?string $deviceId = null, ?string $localIp = null): bool
-    {
+    public static function isTrusted(
+        string $ip,
+        int $userId,
+        ?string $deviceId = null,
+        ?string $localIp = null,
+    ): bool {
         return static::query()
             ->where('user_id', $userId)
             ->where('is_active', true)
@@ -87,8 +93,11 @@ class TrustedIp extends Model
     /**
      * Check if an IP / device is trusted by any user.
      */
-    public static function isAnyTrusted(string $ip, ?string $deviceId = null, ?string $localIp = null): bool
-    {
+    public static function isAnyTrusted(
+        string $ip,
+        ?string $deviceId = null,
+        ?string $localIp = null,
+    ): bool {
         return static::query()
             ->where('is_active', true)
             ->where(function (Builder $query) use ($ip, $deviceId, $localIp) {

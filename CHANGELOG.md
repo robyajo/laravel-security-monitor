@@ -2,6 +2,36 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.0.9] - 2026-10-02
+
+### Added
+
+- Static analysis setup: Larastan + PHPStan (`phpstan.neon.dist`,
+  `phpstan-baseline.neon`), a `composer analyse` script, and a dedicated
+  "Static Analysis" CI job.
+- Regression tests covering the CAPTCHA endpoint, login recording, session
+  logout, trusted IP storage, admin auto-unblock, and server scan with admins.
+
+### Fixed
+
+- `pushMiddleware()` was called on the `Illuminate\Contracts\Http\Kernel`
+  interface; middleware auto-registration now narrows to the concrete
+  Foundation kernel before calling it.
+- `CaptchaApiController` called the protected `CaptchaService::render()`; the
+  public `/captcha` endpoint now uses `generate()` and verifies with the correct
+  signature.
+- Several listeners and services referenced a non-existent `User` class
+  (`RecordUserLogin`, `ResetLoginAttempts`, `UserLoginService::trustIp()`,
+  `UserLoginService::getRealtimeActiveUsers()`, and
+  `ServerSecurityService::accountChecks()`), which silently disabled login
+  recording, admin auto-unblock, and the 2FA server audit. All now resolve the
+  configured user model dynamically.
+- Added the missing `UserLoginService::logoutSession()` method used by the
+  admin session endpoint.
+- Corrected model relationship PHPDoc that referenced a non-existent
+  `User` class, and used `getAuthIdentifier()` where the authenticated user
+  contract is in play.
+
 ## [1.0.8] - 2026-10-02
 
 ### Added

@@ -5,7 +5,8 @@ namespace Internal\SecurityMonitor;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Contracts\Http\Kernel as KernelContract;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -183,18 +184,9 @@ class SecurityMonitorServiceProvider extends ServiceProvider
 
     protected function registerListeners(): void
     {
-        Event::listen(
-            Failed::class,
-            LogFailedLoginAttempt::class,
-        );
-        Event::listen(
-            Login::class,
-            ResetLoginAttempts::class,
-        );
-        Event::listen(
-            Login::class,
-            RecordUserLogin::class,
-        );
+        Event::listen(Failed::class, LogFailedLoginAttempt::class);
+        Event::listen(Login::class, ResetLoginAttempts::class);
+        Event::listen(Login::class, RecordUserLogin::class);
     }
 
     protected function registerRoutes(): void
@@ -291,10 +283,9 @@ class SecurityMonitorServiceProvider extends ServiceProvider
 
         if (config('security.auto_register_middleware', false)) {
             $this->app->booted(function (): void {
-                $kernel = $this->app->make(
-                    Kernel::class,
-                );
-                if (method_exists($kernel, 'pushMiddleware')) {
+                $kernel = $this->app->make(KernelContract::class);
+
+                if ($kernel instanceof HttpKernel) {
                     $kernel->pushMiddleware(BlockIpAddress::class);
                     $kernel->pushMiddleware(DetectSecurityThreats::class);
                 }

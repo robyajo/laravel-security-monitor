@@ -1,0 +1,121 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Using nullsafe property access "\?\-\>block_scope" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Http/Middleware/BlockIpAddress.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Http/Middleware/BlockIpAddress.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>reason" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Http/Middleware/BlockIpAddress.php
+
+		-
+			message: '#^Call to function is_object\(\) with GdImage will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Rules/SafeImageFile.php
+
+		-
+			message: '#^Call to function method_exists\(\) with Illuminate\\Http\\UploadedFile and ''get'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Rules/SafeImageFile.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: src/Rules/SafeImageFile.php
+
+		-
+			message: '#^Instanceof between GdImage and GdImage will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Rules/SafeImageFile.php
+
+		-
+			message: '#^Offset ''mime'' on array\{0\: int\<0, max\>, 1\: int\<0, max\>, 2\: int, 3\: string, mime\: string, channels\?\: int, bits\?\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Rules/SafeImageFile.php
+
+		-
+			message: '#^PHPDoc tag @var with type mixed is not subtype of native type Illuminate\\Http\\UploadedFile\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: src/Rules/SafeImageFile.php
+
+		-
+			message: '#^Offset ''bytes'' on array\{0\: non\-falsy\-string, ip\: non\-empty\-string, 1\: non\-empty\-string, user\: non\-empty\-string, 2\: non\-empty\-string, time\: non\-empty\-string, 3\: non\-empty\-string, request\: string, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Services/AccessLogScannerService.php
+
+		-
+			message: '#^PHPDoc tag @var for constant Internal\\SecurityMonitor\\Services\\CaptchaService\:\:FONT with type array\<string, array\<int, int\>\> is not subtype of value array\{A\: array\{14, 17, 17, 31, 17, 17, 17\}, B\: array\{30, 17, 17, 30, 17, 17, 30\}, C\: array\{14, 17, 16, 16, 16, 17, 14\}, D\: array\{30, 17, 17, 17, 17, 17, 30\}, E\: array\{31, 16, 16, 30, 16, 16, 31\}, F\: array\{31, 16, 16, 30, 16, 16, 16\}, G\: array\{14, 17, 16, 23, 17, 17, 14\}, H\: array\{17, 17, 17, 31, 17, 17, 17\}, \.\.\.\}\.$#'
+			identifier: classConstant.phpDocType
+			count: 1
+			path: src/Services/CaptchaService.php
+
+		-
+			message: '#^Call to function method_exists\(\) with Illuminate\\Http\\UploadedFile and ''get'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Services/SecurityMonitorService.php
+
+		-
+			message: '#^Variable \$block in PHPDoc tag @var does not match assigned variable \$blockQuery\.$#'
+			identifier: varTag.differentVariable
+			count: 1
+			path: src/Services/SecurityMonitorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$two_factor_confirmed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/ServerSecurityService.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 2
+			path: src/Services/ServerSecurityService.php
+
+		-
+			message: '#^Offset 1 on array\{non\-falsy\-string, int\<\-1, max\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: src/Services/ServerSecurityService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/UserLoginService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/UserLoginService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/UserLoginService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/UserLoginService.php

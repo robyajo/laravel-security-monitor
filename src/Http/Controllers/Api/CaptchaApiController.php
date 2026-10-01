@@ -10,14 +10,11 @@ use Internal\SecurityMonitor\Services\CaptchaService;
 
 class CaptchaApiController extends Controller
 {
-    public function __construct(
-        protected CaptchaService $captcha
-    ) {}
+    public function __construct(protected CaptchaService $captcha) {}
 
     public function image(Request $request): Response
     {
-        $form = (string) $request->input('form', 'login');
-        $svg = $this->captcha->render($form);
+        $svg = $this->captcha->generate();
 
         return response($svg, 200, [
             'Content-Type' => 'image/svg+xml; charset=utf-8',
@@ -35,13 +32,14 @@ class CaptchaApiController extends Controller
             'form' => ['nullable', 'string'],
         ]);
 
-        $form = $validated['form'] ?? 'login';
-        $valid = $this->captcha->verify($validated['captcha'], $form);
+        $valid = $this->captcha->verify($validated['captcha']);
 
         return response()->json([
             'success' => $valid,
             'valid' => $valid,
-            'message' => $valid ? 'Captcha valid.' : 'Captcha tidak valid atau kedaluwarsa.',
+            'message' => $valid
+                ? 'Captcha valid.'
+                : 'Captcha tidak valid atau kedaluwarsa.',
         ]);
     }
 }

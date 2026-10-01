@@ -30,7 +30,10 @@ class IpUnblockRequest extends Model
 {
     public function getTable()
     {
-        return config('security.table_names.ip_unblock_requests', parent::getTable());
+        return config(
+            'security.table_names.ip_unblock_requests',
+            parent::getTable(),
+        );
     }
 
     protected $fillable = [
@@ -55,11 +58,14 @@ class IpUnblockRequest extends Model
     ];
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<Model, $this>
      */
     public function resolver(): BelongsTo
     {
-        return $this->belongsTo(config('security.user_model', 'App\\Models\\User'), 'resolved_by');
+        return $this->belongsTo(
+            config('security.user_model', 'App\\Models\\User'),
+            'resolved_by',
+        );
     }
 
     /**

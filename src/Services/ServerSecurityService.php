@@ -3,6 +3,7 @@
 namespace Internal\SecurityMonitor\Services;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -71,15 +72,15 @@ class ServerSecurityService
     /** Pola konten mencurigakan untuk mendeteksi webshell/backdoor tersembunyi. */
     protected const MALICIOUS_PATTERNS = [
         'eval_base64' => [
-            'pattern' => '/eval\s*\(\s*base64_decode\s*\(/i',
+            'pattern' => "/eval\s*\(\s*base64_decode\s*\(/i",
             'label' => 'Eksekusi kode terenkode (eval base64_decode)',
         ],
         'eval_gz' => [
-            'pattern' => '/eval\s*\(\s*gzinflate\s*\(/i',
+            'pattern' => "/eval\s*\(\s*gzinflate\s*\(/i",
             'label' => 'Eksekusi kode terkompresi (eval gzinflate)',
         ],
         'eval_rot13' => [
-            'pattern' => '/eval\s*\(\s*str_rot13\s*\(/i',
+            'pattern' => "/eval\s*\(\s*str_rot13\s*\(/i",
             'label' => 'Eksekusi kode rot13 (eval str_rot13)',
         ],
         'eval_request' => [
@@ -99,14 +100,23 @@ class ServerSecurityService
             'label' => 'Penggunaan regex berbahaya (preg_replace /e)',
         ],
         'known_webshell' => [
-            'pattern' => '/\b(c99shell|r57shell|WSO_VERSION|FilesMan|ALFA\s*TEaM|b374k|IndoXploit|weevely|China\s*Chopper)\b/i',
+            'pattern' => "/\b(c99shell|r57shell|WSO_VERSION|FilesMan|ALFA\s*TEaM|b374k|IndoXploit|weevely|China\s*Chopper)\b/i",
             'label' => 'Signature webshell populer terdeteksi',
         ],
     ];
 
     /** Ekstensi media yang tidak boleh memuat skrip atau kode PHP tersembunyi. */
     protected const MEDIA_EXTENSIONS = [
-        'jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'ico', 'pdf', 'txt',
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'svg',
+        'webp',
+        'bmp',
+        'ico',
+        'pdf',
+        'txt',
     ];
 
     /** Direktori yang dipantau untuk perubahan berkas mencurigakan. */
@@ -165,7 +175,10 @@ class ServerSecurityService
      */
     public function scan(bool $force = false): array
     {
-        $minutes = max(1, (int) config('security.server_scan.cache_minutes', 10));
+        $minutes = max(
+            1,
+            (int) config('security.server_scan.cache_minutes', 10),
+        );
 
         if (! $force) {
             $cached = $this->cachedScan();
@@ -228,7 +241,10 @@ class ServerSecurityService
             return null;
         }
 
-        if (! is_array($cached) || ! isset($cached['summary'], $cached['categories'])) {
+        if (
+            ! is_array($cached) ||
+            ! isset($cached['summary'], $cached['categories'])
+        ) {
             return null;
         }
 
@@ -246,16 +262,20 @@ class ServerSecurityService
         try {
             return $callback();
         } catch (Throwable $exception) {
-            return [[
-                'id' => 'scan_failed_'.$group,
-                'category' => 'Lain-lain',
-                'category_id' => 'other',
-                'label' => 'Pemeriksaan kelompok "'.$group.'" gagal dijalankan',
-                'status' => 'warning',
-                'value' => null,
-                'detail' => $exception->getMessage(),
-                'recommendation' => 'Periksa log aplikasi (storage/logs) untuk mengetahui penyebabnya.',
-            ]];
+            return [
+                [
+                    'id' => 'scan_failed_'.$group,
+                    'category' => 'Lain-lain',
+                    'category_id' => 'other',
+                    'label' => 'Pemeriksaan kelompok "'.
+                        $group.
+                        '" gagal dijalankan',
+                    'status' => 'warning',
+                    'value' => null,
+                    'detail' => $exception->getMessage(),
+                    'recommendation' => 'Periksa log aplikasi (storage/logs) untuk mengetahui penyebabnya.',
+                ],
+            ];
         }
     }
 
@@ -298,7 +318,9 @@ class ServerSecurityService
             $debug
                 ? 'Mode debug menampilkan stack trace, jalur berkas, dan potongan konfigurasi (termasuk kredensial) kepada pengunjung.'
                 : 'Mode debug tidak aktif sehingga detail error tidak tampil ke pengunjung.',
-            $debug && $production ? 'Setel APP_DEBUG=false pada .env produksi, lalu jalankan php artisan config:clear.' : null,
+            $debug && $production
+                ? 'Setel APP_DEBUG=false pada .env produksi, lalu jalankan php artisan config:clear.'
+                : null,
         );
 
         $key = (string) config('app.key', '');
@@ -325,7 +347,9 @@ class ServerSecurityService
             $production && ! $https
                 ? 'Aplikasi produksi sebaiknya hanya diakses melalui HTTPS agar kredensial dan token tidak dikirim dalam bentuk polos.'
                 : 'APP_URL tidak menunjukkan penggunaan HTTP polos pada produksi.',
-            $production && ! $https ? 'Setel APP_URL=https://... dan paksa redirect HTTP ke HTTPS di nginx/Apache.' : null,
+            $production && ! $https
+                ? 'Setel APP_URL=https://... dan paksa redirect HTTP ke HTTPS di nginx/Apache.'
+                : null,
         );
 
         $sessionSecure = (bool) config('session.secure', false);
@@ -339,7 +363,9 @@ class ServerSecurityService
             $https && ! $sessionSecure
                 ? 'Cookie session masih boleh dikirim melalui HTTP sehingga rentan dicuri pada jaringan yang tidak aman.'
                 : 'Pengaturan cookie session sesuai dengan skema URL aplikasi.',
-            $https && ! $sessionSecure ? 'Setel SESSION_SECURE_COOKIE=true pada .env.' : null,
+            $https && ! $sessionSecure
+                ? 'Setel SESSION_SECURE_COOKIE=true pada .env.'
+                : null,
         );
 
         $encrypted = (bool) config('session.encrypt', false);
@@ -353,7 +379,9 @@ class ServerSecurityService
             $production && ! $encrypted
                 ? 'Tanpa enkripsi, isi cookie session dapat dibaca (walau tetap ditandatangani) bila ada kebocoran.'
                 : 'Isi cookie session dienkripsi.',
-            $production && ! $encrypted ? 'Setel SESSION_ENCRYPT=true pada .env (pengguna akan diminta login ulang).' : null,
+            $production && ! $encrypted
+                ? 'Setel SESSION_ENCRYPT=true pada .env (pengguna akan diminta login ulang).'
+                : null,
         );
 
         $twoFactor = $this->featureEnabled('two-factor-authentication');
@@ -367,7 +395,9 @@ class ServerSecurityService
             $twoFactor
                 ? 'Akun dapat dilindungi dengan aplikasi authenticator.'
                 : 'Tanpa 2FA, satu password yang bocor sudah cukup untuk menguasai panel admin (seperti pada insiden marker "wne").',
-            $twoFactor ? null : 'Aktifkan Features::twoFactorAuthentication() di config/fortify.php.',
+            $twoFactor
+                ? null
+                : 'Aktifkan Features::twoFactorAuthentication() di config/fortify.php.',
         );
 
         $registration = $this->featureEnabled('registration');
@@ -381,10 +411,14 @@ class ServerSecurityService
             $registration
                 ? 'Halaman pendaftaran terbuka untuk umum sehingga siapa pun dapat membuat akun.'
                 : 'Pendaftaran akun publik tidak dibuka.',
-            $registration ? 'Nonaktifkan fitur registration pada config/fortify.php bila akun hanya dibuat oleh admin.' : null,
+            $registration
+                ? 'Nonaktifkan fitur registration pada config/fortify.php bila akun hanya dibuat oleh admin.'
+                : null,
         );
 
-        $captchaEnabled = (bool) config('captcha.enabled', true) && (bool) config('captcha.for.login', true);
+        $captchaEnabled =
+            (bool) config('captcha.enabled', true) &&
+            (bool) config('captcha.for.login', true);
         $checks[] = $this->check(
             'captcha_login',
             'Aplikasi',
@@ -395,7 +429,9 @@ class ServerSecurityService
             $captchaEnabled
                 ? 'Percobaan login otomatis (credential stuffing) tertahan sebelum memverifikasi password.'
                 : 'Tanpa captcha, bot dapat mencoba ribuan kombinasi password tanpa hambatan tambahan.',
-            $captchaEnabled ? null : 'Setel CAPTCHA_ENABLED=true dan CAPTCHA_ON_LOGIN=true.',
+            $captchaEnabled
+                ? null
+                : 'Setel CAPTCHA_ENABLED=true dan CAPTCHA_ON_LOGIN=true.',
         );
 
         // Dibaca sama seperti CheckPublicApiHeader agar hasil pemeriksaan konsisten.
@@ -411,7 +447,9 @@ class ServerSecurityService
             $defaultKey
                 ? 'Kunci API masih kosong atau memakai nilai contoh yang tertulis di dokumentasi sehingga mudah ditebak.'
                 : 'Kunci API sudah diganti dari nilai contoh.',
-            $defaultKey ? 'Ganti PUBLIC_API_KEY pada .env dengan nilai acak yang panjang.' : null,
+            $defaultKey
+                ? 'Ganti PUBLIC_API_KEY pada .env dengan nilai acak yang panjang.'
+                : null,
         );
 
         $enforced = $this->apiHeaderMiddlewareInstalled();
@@ -425,7 +463,9 @@ class ServerSecurityService
             $enforced
                 ? 'Endpoint api/* menolak request tanpa header X-public.'
                 : 'Endpoint api/master/* dan api/v2/* masih dapat dipanggil tanpa header X-public (terbuka untuk umum).',
-            $enforced ? null : 'Pasang App\Http\Middleware\CheckPublicApiHeader pada grup middleware api di routes/api.php.',
+            $enforced
+                ? null
+                : "Pasang App\Http\Middleware\CheckPublicApiHeader pada grup middleware api di routes/api.php.",
         );
 
         // Dibaca sama seperti bootstrap/app.php (trustProxies).
@@ -440,7 +480,9 @@ class ServerSecurityService
             $proxies === ''
                 ? 'Tanpa TRUSTED_PROXIES, IP klien dibaca dari koneksi langsung. Di belakang nginx/load balancer semua request tampak berasal dari IP proxy sehingga blokir IP tidak efektif.'
                 : 'Header X-Forwarded-* hanya dipercaya dari proxy yang terdaftar.',
-            $proxies === '' ? 'Isi TRUSTED_PROXIES dengan IP proxy (mis. 10.0.0.1) bila aplikasi berada di belakang nginx/load balancer.' : null,
+            $proxies === ''
+                ? 'Isi TRUSTED_PROXIES dengan IP proxy (mis. 10.0.0.1) bila aplikasi berada di belakang nginx/load balancer.'
+                : null,
         );
 
         $monitor = $this->security->enabled();
@@ -467,7 +509,9 @@ class ServerSecurityService
             $this->security->enforcementEnabled()
                 ? 'Request dari IP yang diblokir ditolak dengan HTTP 403.'
                 : 'IP terblokir masih dapat mengakses aplikasi; hanya tercatat di log.',
-            $this->security->enforcementEnabled() ? null : 'Setel SECURITY_BLOCK_ENFORCEMENT=true pada .env.',
+            $this->security->enforcementEnabled()
+                ? null
+                : 'Setel SECURITY_BLOCK_ENFORCEMENT=true pada .env.',
         );
 
         $instant = (bool) config('security.instant_block.enabled', true);
@@ -481,7 +525,9 @@ class ServerSecurityService
             $instant
                 ? 'Pola serangan berbahaya (webshell, path traversal, SSTI, scanner) memblokir IP pada percobaan pertama.'
                 : 'Pola serangan berbahaya hanya dicatat, tidak langsung memblokir IP.',
-            $instant ? null : 'Setel SECURITY_INSTANT_BLOCK_ENABLED=true pada .env.',
+            $instant
+                ? null
+                : 'Setel SECURITY_INSTANT_BLOCK_ENABLED=true pada .env.',
         );
 
         $whitelist = array_filter((array) config('security.whitelist', []));
@@ -495,7 +541,9 @@ class ServerSecurityService
             $whitelist === []
                 ? 'Tanpa whitelist, admin yang salah memicu deteksi dapat ikut terblokir (harus dibuka lewat CLI).'
                 : 'IP pada daftar putih tidak pernah diblokir otomatis.',
-            $whitelist === [] ? 'Tambahkan IP kantor/internal ke SECURITY_IP_WHITELIST.' : null,
+            $whitelist === []
+                ? 'Tambahkan IP kantor/internal ke SECURITY_IP_WHITELIST.'
+                : null,
         );
 
         return $checks;
@@ -514,9 +562,18 @@ class ServerSecurityService
     {
         $checks = [];
         $connection = (string) config('database.default', 'mysql');
-        $driver = (string) config("database.connections.{$connection}.driver", $connection);
-        $database = (string) config("database.connections.{$connection}.database", '');
-        $username = (string) config("database.connections.{$connection}.username", '');
+        $driver = (string) config(
+            "database.connections.{$connection}.driver",
+            $connection,
+        );
+        $database = (string) config(
+            "database.connections.{$connection}.database",
+            '',
+        );
+        $username = (string) config(
+            "database.connections.{$connection}.username",
+            '',
+        );
 
         try {
             DB::connection($connection)->getPdo();
@@ -531,14 +588,22 @@ class ServerSecurityService
             'database',
             'Koneksi database',
             $reachable ? 'ok' : 'critical',
-            $reachable ? $driver.' / '.($database !== '' ? $database : '(default)') : 'gagal terhubung',
+            $reachable
+                ? $driver.' / '.($database !== '' ? $database : '(default)')
+                : 'gagal terhubung',
             $reachable
                 ? 'Koneksi database dapat dibuka oleh aplikasi.'
                 : 'Aplikasi tidak dapat terhubung ke database sehingga data keamanan tidak dapat dibaca/ditulis.',
-            $reachable ? null : 'Periksa DB_HOST, DB_DATABASE, DB_USERNAME, dan DB_PASSWORD pada .env.',
+            $reachable
+                ? null
+                : 'Periksa DB_HOST, DB_DATABASE, DB_USERNAME, dan DB_PASSWORD pada .env.',
         );
 
-        $weakUser = in_array(strtolower($username), ['root', 'postgres', 'sa', 'admin'], true);
+        $weakUser = in_array(
+            strtolower($username),
+            ['root', 'postgres', 'sa', 'admin'],
+            true,
+        );
         $checks[] = $this->check(
             'db_privileges',
             'Database & Antrian',
@@ -549,7 +614,9 @@ class ServerSecurityService
             $weakUser
                 ? 'Aplikasi memakai akun superuser database. Bila kredensial bocor (mis. lewat .env), seluruh server database dapat dikuasai.'
                 : 'Aplikasi tidak memakai akun superuser database.',
-            $weakUser ? 'Buat user MySQL khusus aplikasi dengan hak terbatas pada satu database.' : null,
+            $weakUser
+                ? 'Buat user MySQL khusus aplikasi dengan hak terbatas pada satu database.'
+                : null,
         );
 
         $pending = $this->pendingMigrations();
@@ -559,10 +626,14 @@ class ServerSecurityService
             'database',
             'Migrasi database',
             $pending === [] ? 'ok' : 'warning',
-            $pending === [] ? 'semua migrasi dijalankan' : count($pending).' belum dijalankan',
+            $pending === []
+                ? 'semua migrasi dijalankan'
+                : count($pending).' belum dijalankan',
             $pending === []
                 ? 'Struktur tabel sesuai berkas migrasi.'
-                : 'Ada migrasi belum dijalankan: '.implode(', ', array_slice($pending, 0, 5)).(count($pending) > 5 ? ', ...' : ''),
+                : 'Ada migrasi belum dijalankan: '.
+                    implode(', ', array_slice($pending, 0, 5)).
+                    (count($pending) > 5 ? ', ...' : ''),
             $pending === [] ? null : 'Jalankan php artisan migrate.',
         );
 
@@ -577,7 +648,9 @@ class ServerSecurityService
             $queue === 'sync'
                 ? 'Driver "sync" menjalankan pekerjaan di dalam request sehingga pekerjaan berat (prune log, notifikasi) memperlambat respons pengguna.'
                 : 'Pekerjaan berat yang dikirim ke antrian diproses di luar request pengguna.',
-            $queue === 'sync' ? 'Setel QUEUE_CONNECTION=database dan jalankan php artisan queue:work.' : null,
+            $queue === 'sync'
+                ? 'Setel QUEUE_CONNECTION=database dan jalankan php artisan queue:work.'
+                : null,
         );
 
         $failedJobs = $this->countTable('failed_jobs');
@@ -587,11 +660,15 @@ class ServerSecurityService
             'database',
             'Pekerjaan antrian yang gagal',
             $failedJobs > 0 ? 'warning' : 'ok',
-            $failedJobs === null ? 'tabel tidak tersedia' : (string) $failedJobs,
+            $failedJobs === null
+                ? 'tabel tidak tersedia'
+                : (string) $failedJobs,
             $failedJobs > 0
                 ? 'Ada pekerjaan antrian yang gagal; bila berulang dapat menandakan masalah konfigurasi atau data.'
                 : 'Tidak ada pekerjaan antrian yang gagal.',
-            $failedJobs > 0 ? 'Periksa dengan php artisan queue:failed, lalu hapus setelah diperbaiki.' : null,
+            $failedJobs > 0
+                ? 'Periksa dengan php artisan queue:failed, lalu hapus setelah diperbaiki.'
+                : null,
         );
 
         $cache = (string) config('cache.default', 'database');
@@ -605,7 +682,9 @@ class ServerSecurityService
             $cache === 'array'
                 ? 'Cache "array" hanya hidup selama satu request sehingga pembatas login, anti-flood log, dan heartbeat scheduler tidak berfungsi lintas request.'
                 : 'Cache bersifat persisten sehingga pembatas login dan anti-flood berfungsi benar.',
-            $cache === 'array' ? 'Setel CACHE_STORE=database (atau redis).' : null,
+            $cache === 'array'
+                ? 'Setel CACHE_STORE=database (atau redis).'
+                : null,
         );
 
         return $checks;
@@ -645,11 +724,15 @@ class ServerSecurityService
             'files',
             'Folder yang harus dapat ditulis aplikasi',
             $notWritable === [] ? 'ok' : 'warning',
-            $notWritable === [] ? 'semua dapat ditulis' : 'tidak dapat ditulis: '.implode(', ', $notWritable),
+            $notWritable === []
+                ? 'semua dapat ditulis'
+                : 'tidak dapat ditulis: '.implode(', ', $notWritable),
             $notWritable === []
                 ? 'Folder runtime dapat ditulis oleh user web server.'
                 : 'Folder runtime yang tidak dapat ditulis menyebabkan aplikasi gagal menyimpan log, session, atau cache.',
-            $notWritable === [] ? null : 'Perbaiki kepemilikan folder (mis. chown -R www-data:www-data storage bootstrap/cache).',
+            $notWritable === []
+                ? null
+                : 'Perbaiki kepemilikan folder (mis. chown -R www-data:www-data storage bootstrap/cache).',
         );
 
         $publicWritable = is_writable(public_path());
@@ -663,7 +746,9 @@ class ServerSecurityService
             $publicWritable
                 ? 'Bila web server dapat menulis ke folder public, berkas yang berhasil diunggah lewat celah apa pun dapat langsung diakses sebagai URL (penyebab insiden wne.php).'
                 : 'Folder public tidak dapat ditulis oleh user web server sehingga webshell tidak dapat ditaruh di webroot.',
-            $publicWritable ? 'Setel kepemilikan folder public ke user deploy (bukan www-data) dengan izin 755.' : null,
+            $publicWritable
+                ? 'Setel kepemilikan folder public ke user deploy (bukan www-data) dengan izin 755.'
+                : null,
         );
 
         $envPermissions = $this->envFilePermissions();
@@ -689,7 +774,9 @@ class ServerSecurityService
             $envInPublic
                 ? 'Berkas .env yang berada di folder public dapat diunduh langsung dan membocorkan kredensial database serta APP_KEY.'
                 : 'Tidak ada berkas .env yang bocor ke folder publik.',
-            $envInPublic ? 'Hapus public/.env dan pastikan dotfile ditolak oleh web server.' : null,
+            $envInPublic
+                ? 'Hapus public/.env dan pastikan dotfile ditolak oleh web server.'
+                : null,
         );
 
         $publicScan = $this->scanDangerousFiles(public_path(), ['build']);
@@ -699,11 +786,16 @@ class ServerSecurityService
             'files',
             'Berkas berbahaya di folder public',
             $publicScan['files'] === [] ? 'ok' : 'critical',
-            $publicScan['files'] === [] ? $publicScan['count'].' berkas diperiksa' : count($publicScan['files']).' berkas mencurigakan',
+            $publicScan['files'] === []
+                ? $publicScan['count'].' berkas diperiksa'
+                : count($publicScan['files']).' berkas mencurigakan',
             $publicScan['files'] === []
                 ? 'Tidak ditemukan berkas dengan ekstensi dapat dieksekusi (selain index.php) di folder public.'
-                : 'Ditemukan berkas yang dapat dieksekusi/diunduh di folder publik: '.implode(', ', array_slice($publicScan['files'], 0, 8)),
-            $publicScan['files'] === [] ? null : 'Periksa berkas tersebut, hapus bila bukan bagian aplikasi, dan ganti kredensial yang mungkin bocor.',
+                : 'Ditemukan berkas yang dapat dieksekusi/diunduh di folder publik: '.
+                    implode(', ', array_slice($publicScan['files'], 0, 8)),
+            $publicScan['files'] === []
+                ? null
+                : 'Periksa berkas tersebut, hapus bila bukan bagian aplikasi, dan ganti kredensial yang mungkin bocor.',
         );
 
         $uploadPath = storage_path('app/public');
@@ -714,11 +806,16 @@ class ServerSecurityService
             'files',
             'Berkas berbahaya di folder unggahan',
             $uploadScan['files'] === [] ? 'ok' : 'critical',
-            $uploadScan['files'] === [] ? $uploadScan['count'].' berkas diperiksa' : count($uploadScan['files']).' berkas mencurigakan',
+            $uploadScan['files'] === []
+                ? $uploadScan['count'].' berkas diperiksa'
+                : count($uploadScan['files']).' berkas mencurigakan',
             $uploadScan['files'] === []
                 ? 'Folder unggahan publik hanya berisi berkas non-eksekusi.'
-                : 'Ada berkas berekstensi skrip di folder unggahan: '.implode(', ', array_slice($uploadScan['files'], 0, 8)),
-            $uploadScan['files'] === [] ? null : 'Jalankan php artisan security:purge-injected-data --model=... lalu hapus berkas tersebut secara manual.',
+                : 'Ada berkas berekstensi skrip di folder unggahan: '.
+                    implode(', ', array_slice($uploadScan['files'], 0, 8)),
+            $uploadScan['files'] === []
+                ? null
+                : 'Jalankan php artisan security:purge-injected-data --model=... lalu hapus berkas tersebut secara manual.',
         );
 
         $htaccess = [
@@ -740,11 +837,15 @@ class ServerSecurityService
             'files',
             'Aturan .htaccess pertahanan berlapis',
             $missing === [] ? 'ok' : 'warning',
-            $missing === [] ? 'terpasang' : 'belum ada: '.implode(', ', $missing),
+            $missing === []
+                ? 'terpasang'
+                : 'belum ada: '.implode(', ', $missing),
             $missing === []
                 ? 'Penolakan dotfile, double extension, dan eksekusi PHP di folder unggahan sudah terpasang untuk Apache.'
                 : 'Tanpa .htaccess ini, server berbasis Apache dapat mengeksekusi berkas yang diunggah ke folder publik.',
-            $missing === [] ? null : 'Salin aturan hardening dari DOCS/security-monitor.md ke berkas tersebut.',
+            $missing === []
+                ? null
+                : 'Salin aturan hardening dari DOCS/security-monitor.md ke berkas tersebut.',
         );
 
         $storageLink = public_path('storage');
@@ -754,11 +855,17 @@ class ServerSecurityService
             'files',
             'Tautan public/storage',
             'info',
-            is_link($storageLink) ? 'symlink' : (File::exists($storageLink) ? 'folder biasa' : 'belum dibuat'),
+            is_link($storageLink)
+                ? 'symlink'
+                : (File::exists($storageLink)
+                    ? 'folder biasa'
+                    : 'belum dibuat'),
             is_link($storageLink)
                 ? 'Folder unggahan diakses melalui symlink sehingga tetap berada di luar webroot aslinya.'
                 : 'Tanpa symlink php artisan storage:link, berkas unggahan disalin ke dalam folder public.',
-            File::exists($storageLink) ? null : 'Jalankan php artisan storage:link.',
+            File::exists($storageLink)
+                ? null
+                : 'Jalankan php artisan storage:link.',
         );
 
         $disk = $this->diskUsage();
@@ -774,7 +881,10 @@ class ServerSecurityService
         );
 
         $logSize = $this->directorySize(storage_path('logs'));
-        $warningMb = max(1, (int) config('security.server_scan.log_size_warning_mb', 100));
+        $warningMb = max(
+            1,
+            (int) config('security.server_scan.log_size_warning_mb', 100),
+        );
         $logMb = $logSize / 1_048_576;
         $checks[] = $this->check(
             'log_size',
@@ -786,7 +896,9 @@ class ServerSecurityService
             $logMb >= $warningMb
                 ? 'Berkas log tumbuh besar. Selain memenuhi disk, log yang menumpuk dapat memperlambat proses debugging dan menyulitkan pencarian insiden.'
                 : 'Ukuran log masih wajar.',
-            $logMb >= $warningMb ? 'Kosongkan log lama (mis. truncate storage/logs/laravel.log) atau naikkan rotasi log.' : null,
+            $logMb >= $warningMb
+                ? 'Kosongkan log lama (mis. truncate storage/logs/laravel.log) atau naikkan rotasi log.'
+                : null,
         );
 
         $accessLogs = $this->accessLogFiles();
@@ -796,7 +908,9 @@ class ServerSecurityService
             'files',
             'Access log web server dapat dibaca',
             $accessLogs === [] ? 'warning' : 'ok',
-            $accessLogs === [] ? 'tidak ditemukan' : count($accessLogs).' berkas',
+            $accessLogs === []
+                ? 'tidak ditemukan'
+                : count($accessLogs).' berkas',
             $accessLogs === []
                 ? 'Serangan yang ditolak web server sebelum sampai ke PHP (mis. berkas .php yang di-return 403, probe .env, scanning massal) hanya tercatat di access log, sehingga tidak akan pernah muncul di Log Keamanan.'
                 : 'Tersedia: '.implode(', ', array_slice($accessLogs, 0, 3)),
@@ -821,8 +935,16 @@ class ServerSecurityService
     {
         $checks = [];
 
-        $maxAdmins = max(1, (int) config('security.server_scan.max_admin_accounts', 5));
-        $admins = $this->adminQuery()->get(['id', 'name', 'email', 'two_factor_confirmed_at']);
+        $maxAdmins = max(
+            1,
+            (int) config('security.server_scan.max_admin_accounts', 5),
+        );
+        $admins = $this->adminQuery()->get([
+            'id',
+            'name',
+            'email',
+            'two_factor_confirmed_at',
+        ]);
         $adminCount = $admins->count();
 
         $checks[] = $this->check(
@@ -830,11 +952,17 @@ class ServerSecurityService
             'Akun & Akses',
             'accounts',
             'Jumlah akun administrator',
-            $adminCount === 0 ? 'critical' : ($adminCount > $maxAdmins ? 'warning' : 'ok'),
+            $adminCount === 0
+                ? 'critical'
+                : ($adminCount > $maxAdmins
+                    ? 'warning'
+                    : 'ok'),
             (string) $adminCount.' akun',
             match (true) {
                 $adminCount === 0 => 'Tidak ada akun ber-role admin sehingga panel keamanan tidak dapat diakses siapa pun.',
-                $adminCount > $maxAdmins => 'Jumlah akun admin melebihi batas wajar ('.$maxAdmins.'). Semakin banyak akun istimewa, semakin luas permukaan serangan.',
+                $adminCount > $maxAdmins => 'Jumlah akun admin melebihi batas wajar ('.
+                    $maxAdmins.
+                    '). Semakin banyak akun istimewa, semakin luas permukaan serangan.',
                 default => 'Jumlah akun administrator masih dalam batas wajar.',
             },
             match (true) {
@@ -844,7 +972,9 @@ class ServerSecurityService
             },
         );
 
-        $withoutTwoFactor = $admins->filter(fn (User $user): bool => $user->two_factor_confirmed_at === null);
+        $withoutTwoFactor = $admins->filter(
+            fn ($user): bool => $user->two_factor_confirmed_at === null,
+        );
         $checks[] = $this->check(
             'admin_two_factor',
             'Akun & Akses',
@@ -853,11 +983,20 @@ class ServerSecurityService
             $withoutTwoFactor->isEmpty() ? 'ok' : 'warning',
             $withoutTwoFactor->isEmpty()
                 ? 'seluruh admin memakai 2FA'
-                : $withoutTwoFactor->count().' dari '.$adminCount.' admin belum 2FA',
+                : $withoutTwoFactor->count().
+                    ' dari '.
+                    $adminCount.
+                    ' admin belum 2FA',
             $withoutTwoFactor->isEmpty()
                 ? 'Semua akun admin dilindungi faktor kedua.'
-                : 'Akun admin tanpa 2FA dapat dikuasai hanya dengan menebak/mencuri password: '.implode(', ', $withoutTwoFactor->take(5)->pluck('email')->all()),
-            $withoutTwoFactor->isEmpty() ? null : 'Minta setiap admin mengaktifkan 2FA melalui halaman Pengaturan > Keamanan.',
+                : 'Akun admin tanpa 2FA dapat dikuasai hanya dengan menebak/mencuri password: '.
+                    implode(
+                        ', ',
+                        $withoutTwoFactor->take(5)->pluck('email')->all(),
+                    ),
+            $withoutTwoFactor->isEmpty()
+                ? null
+                : 'Minta setiap admin mengaktifkan 2FA melalui halaman Pengaturan > Keamanan.',
         );
 
         $lockouts = $this->lockoutCount();
@@ -871,7 +1010,9 @@ class ServerSecurityService
             $lockouts > 0
                 ? 'Ada akun yang terkunci karena percobaan login gagal berulang; periksa apakah ini serangan brute force atau pengguna lupa password.'
                 : 'Tidak ada akun yang sedang terkunci.',
-            $lockouts > 0 ? 'Tinjau daftar di bawah halaman ini; buka blokir bila pengguna sah.' : null,
+            $lockouts > 0
+                ? 'Tinjau daftar di bawah halaman ini; buka blokir bila pengguna sah.'
+                : null,
         );
 
         $blocked = BlockedIp::query()->active()->count();
@@ -910,11 +1051,17 @@ class ServerSecurityService
             'integrity',
             'Baseline hash berkas penting',
             $baseline === null ? 'warning' : 'ok',
-            $baseline === null ? 'belum dibuat' : 'dibuat '.$this->humanDate($baseline['created_at'] ?? null),
+            $baseline === null
+                ? 'belum dibuat'
+                : 'dibuat '.$this->humanDate($baseline['created_at'] ?? null),
             $baseline === null
                 ? 'Tanpa baseline, perubahan berkas penting (mis. backdoor pada index.php atau middleware) tidak dapat dibedakan dari perubahan resmi.'
-                : 'Baseline berisi '.count((array) ($baseline['files'] ?? [])).' berkas yang dipantau.',
-            $baseline === null ? 'Klik "Buat Baseline" pada halaman ini (atau jalankan php artisan security:baseline).' : null,
+                : 'Baseline berisi '.
+                    count((array) ($baseline['files'] ?? [])).
+                    ' berkas yang dipantau.',
+            $baseline === null
+                ? 'Klik "Buat Baseline" pada halaman ini (atau jalankan php artisan security:baseline).'
+                : null,
         );
 
         $report = $this->integrityReport();
@@ -936,19 +1083,32 @@ class ServerSecurityService
                 $status,
                 $changed === [] && $report['added'] === []
                     ? 'tidak ada perubahan'
-                    : count($report['modified']).' diubah, '.count($report['missing']).' hilang, '.count($report['added']).' baru',
+                    : count($report['modified']).
+                        ' diubah, '.
+                        count($report['missing']).
+                        ' hilang, '.
+                        count($report['added']).
+                        ' baru',
                 match (true) {
-                    $report['missing'] !== [] => 'Berkas yang dipantau hilang: '.implode(', ', array_slice($report['missing'], 0, 5)),
-                    $report['modified'] !== [] => 'Berkas yang dipantau berubah: '.implode(', ', array_slice($report['modified'], 0, 5)),
-                    $report['added'] !== [] => 'Berkas baru pada lokasi terpantau: '.implode(', ', array_slice($report['added'], 0, 5)),
+                    $report['missing'] !== [] => 'Berkas yang dipantau hilang: '.
+                        implode(', ', array_slice($report['missing'], 0, 5)),
+                    $report['modified'] !== [] => 'Berkas yang dipantau berubah: '.
+                        implode(', ', array_slice($report['modified'], 0, 5)),
+                    $report['added'] !== [] => 'Berkas baru pada lokasi terpantau: '.
+                        implode(', ', array_slice($report['added'], 0, 5)),
                     default => 'Tidak ada perbedaan hash antara berkas saat ini dan baseline.',
                 },
-                $status === 'ok' ? null : 'Bila perubahan tersebut bukan berasal dari deployment resmi, pulihkan berkas dari repositori dan buat ulang baseline.',
+                $status === 'ok'
+                    ? null
+                    : 'Bila perubahan tersebut bukan berasal dari deployment resmi, pulihkan berkas dari repositori dan buat ulang baseline.',
             );
         }
 
         $recent = $this->recentChanges();
-        $days = max(1, (int) config('security.server_scan.recent_changes_days', 7));
+        $days = max(
+            1,
+            (int) config('security.server_scan.recent_changes_days', 7),
+        );
         $checks[] = $this->check(
             'recent_changes',
             'Integritas Berkas',
@@ -958,7 +1118,8 @@ class ServerSecurityService
             (string) $recent['count'].' berkas dalam '.$days.' hari',
             $recent['count'] === 0
                 ? 'Tidak ada berkas aplikasi yang berubah dalam periode pemantauan.'
-                : 'Berkas terbaru: '.implode(', ', array_slice($recent['files'], 0, 6)),
+                : 'Berkas terbaru: '.
+                    implode(', ', array_slice($recent['files'], 0, 6)),
         );
 
         return $checks;
@@ -999,8 +1160,11 @@ class ServerSecurityService
             (string) $errors['count'].' baris error',
             $errors['count'] === 0
                 ? 'Tidak ada baris ERROR baru pada berkas log aplikasi.'
-                : 'Ada error tercatat pada log aplikasi; error yang tampak ke pengunjung dapat membocorkan informasi. Contoh: '.$errors['sample'],
-            $errors['count'] === 0 ? null : 'Periksa storage/logs/laravel.log dan pastikan APP_DEBUG=false pada produksi.',
+                : 'Ada error tercatat pada log aplikasi; error yang tampak ke pengunjung dapat membocorkan informasi. Contoh: '.
+                    $errors['sample'],
+            $errors['count'] === 0
+                ? null
+                : 'Periksa storage/logs/laravel.log dan pastikan APP_DEBUG=false pada produksi.',
         );
 
         $sevenDays = $this->securityLogStats();
@@ -1010,10 +1174,17 @@ class ServerSecurityService
             'monitoring',
             'Aktivitas keamanan 7 hari terakhir',
             'info',
-            (string) $sevenDays['total'].' kejadian ('.$sevenDays['critical'].' kritis)',
+            (string) $sevenDays['total'].
+                ' kejadian ('.
+                $sevenDays['critical'].
+                ' kritis)',
             $sevenDays['total'] === 0
                 ? 'Belum ada kejadian keamanan tercatat. Ini normal bila tidak ada percobaan serangan.'
-                : 'Tercatat '.$sevenDays['total'].' kejadian, terbanyak: '.($sevenDays['top_event'] ?? '-').'. Log lengkap tersedia di halaman Log Keamanan.',
+                : 'Tercatat '.
+                    $sevenDays['total'].
+                    ' kejadian, terbanyak: '.
+                    ($sevenDays['top_event'] ?? '-').
+                    '. Log lengkap tersedia di halaman Log Keamanan.',
         );
 
         $retention = (int) config('security.log_retention_days', 90);
@@ -1027,7 +1198,9 @@ class ServerSecurityService
             $retention === 0
                 ? 'Log disimpan tanpa batas sehingga tabel dapat tumbuh besar dan memperlambat query.'
                 : 'Log lama dihapus otomatis oleh security:prune-logs setiap pukul 02:30.',
-            $retention === 0 ? 'Setel SECURITY_LOG_RETENTION_DAYS (mis. 90) pada .env.' : null,
+            $retention === 0
+                ? 'Setel SECURITY_LOG_RETENTION_DAYS (mis. 90) pada .env.'
+                : null,
         );
 
         return $checks;
@@ -1079,7 +1252,10 @@ class ServerSecurityService
             $absolute = base_path($relative);
 
             try {
-                if (! File::isFile($absolute) || File::size($absolute) > self::MAX_HASH_BYTES) {
+                if (
+                    ! File::isFile($absolute) ||
+                    File::size($absolute) > self::MAX_HASH_BYTES
+                ) {
                     continue;
                 }
 
@@ -1092,7 +1268,9 @@ class ServerSecurityService
                 $files[$relative] = [
                     'hash' => $hash,
                     'size' => File::size($absolute),
-                    'modified_at' => Carbon::createFromTimestamp((int) File::lastModified($absolute))->toIso8601String(),
+                    'modified_at' => Carbon::createFromTimestamp(
+                        (int) File::lastModified($absolute),
+                    )->toIso8601String(),
                 ];
             } catch (Throwable) {
                 continue;
@@ -1108,7 +1286,14 @@ class ServerSecurityService
         ];
 
         File::ensureDirectoryExists(dirname($this->baselinePath()));
-        File::put($this->baselinePath(), json_encode($baseline, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}');
+        File::put(
+            $this->baselinePath(),
+            json_encode(
+                $baseline,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+            ) ?:
+            '{}',
+        );
 
         $this->forget();
 
@@ -1119,7 +1304,8 @@ class ServerSecurityService
     {
         $this->forget();
 
-        return File::exists($this->baselinePath()) && File::delete($this->baselinePath());
+        return File::exists($this->baselinePath()) &&
+            File::delete($this->baselinePath());
     }
 
     /**
@@ -1164,7 +1350,12 @@ class ServerSecurityService
             }
         }
 
-        $added = array_values(array_diff($this->watchedFiles(), array_map('strval', array_keys($known))));
+        $added = array_values(
+            array_diff(
+                $this->watchedFiles(),
+                array_map('strval', array_keys($known)),
+            ),
+        );
 
         return [
             'modified' => $modified,
@@ -1195,7 +1386,11 @@ class ServerSecurityService
                     continue;
                 }
 
-                $files[] = str_replace('\\', '/', str_replace(base_path().DIRECTORY_SEPARATOR, '', $path));
+                $files[] = str_replace(
+                    '\\',
+                    '/',
+                    str_replace(base_path().DIRECTORY_SEPARATOR, '', $path),
+                );
             }
         }
 
@@ -1247,16 +1442,25 @@ class ServerSecurityService
     public function activeLockouts(): array
     {
         try {
-            return $this->throttle->activeLockouts()->map(fn (LoginAttempt $attempt): array => [
-                'id' => $attempt->id,
-                'email' => $attempt->email,
-                'ip_address' => $attempt->ip_address,
-                'attempts' => $attempt->attempts,
-                'lockout_level' => $attempt->lockout_level,
-                'locked_until' => optional($attempt->locked_until)->toIso8601String(),
-                'remaining' => $attempt->secondsRemaining(),
-                'last_attempt_at' => optional($attempt->last_attempt_at)->toIso8601String(),
-            ])->all();
+            return $this->throttle
+                ->activeLockouts()
+                ->map(
+                    fn (LoginAttempt $attempt): array => [
+                        'id' => $attempt->id,
+                        'email' => $attempt->email,
+                        'ip_address' => $attempt->ip_address,
+                        'attempts' => $attempt->attempts,
+                        'lockout_level' => $attempt->lockout_level,
+                        'locked_until' => optional(
+                            $attempt->locked_until,
+                        )->toIso8601String(),
+                        'remaining' => $attempt->secondsRemaining(),
+                        'last_attempt_at' => optional(
+                            $attempt->last_attempt_at,
+                        )->toIso8601String(),
+                    ],
+                )
+                ->all();
         } catch (Throwable) {
             return [];
         }
@@ -1267,7 +1471,10 @@ class ServerSecurityService
      */
     public function releaseLockout(LoginAttempt $attempt): int
     {
-        $deleted = $this->throttle->release((string) $attempt->email, $attempt->ip_address);
+        $deleted = $this->throttle->release(
+            (string) $attempt->email,
+            $attempt->ip_address,
+        );
         $this->forget();
 
         return $deleted;
@@ -1284,7 +1491,9 @@ class ServerSecurityService
             'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
             'app_env' => (string) config('app.env', 'production'),
-            'debug_mode' => (bool) config('app.debug', false) ? 'aktif' : 'nonaktif',
+            'debug_mode' => (bool) config('app.debug', false)
+                ? 'aktif'
+                : 'nonaktif',
             'database' => (string) config('database.default', 'mysql'),
             'cache' => (string) config('cache.default', 'database'),
             'queue' => (string) config('queue.default', 'sync'),
@@ -1296,7 +1505,10 @@ class ServerSecurityService
 
         if (function_exists('opcache_get_status')) {
             $status = @opcache_get_status(false);
-            $info['opcache'] = is_array($status) && ($status['opcache_enabled'] ?? false) ? 'aktif' : 'nonaktif';
+            $info['opcache'] =
+                is_array($status) && ($status['opcache_enabled'] ?? false)
+                    ? 'aktif'
+                    : 'nonaktif';
         }
 
         return $info;
@@ -1332,7 +1544,7 @@ class ServerSecurityService
             'Folder Publik (public/)',
             ['build', 'vendor', 'node_modules', '.git', 'storage'],
             $items,
-            $scannedPaths
+            $scannedPaths,
         );
 
         // 2. Pindai folder unggahan
@@ -1344,7 +1556,7 @@ class ServerSecurityService
                 'Folder Unggahan (storage/app/public/)',
                 [],
                 $items,
-                $scannedPaths
+                $scannedPaths,
             );
         }
 
@@ -1353,7 +1565,12 @@ class ServerSecurityService
 
         // Urutkan: ancaman critical di atas, lalu berdasarkan waktu modifikasi terbaru
         usort($items, function (array $a, array $b): int {
-            $threatRank = ['critical' => 3, 'high' => 2, 'warning' => 1, 'info' => 0];
+            $threatRank = [
+                'critical' => 3,
+                'high' => 2,
+                'warning' => 1,
+                'info' => 0,
+            ];
             $rankA = $threatRank[$a['threat_level'] ?? 'info'] ?? 0;
             $rankB = $threatRank[$b['threat_level'] ?? 'info'] ?? 0;
 
@@ -1361,15 +1578,25 @@ class ServerSecurityService
                 return $rankB <=> $rankA;
             }
 
-            return strcmp((string) ($b['modified_at'] ?? ''), (string) ($a['modified_at'] ?? ''));
+            return strcmp(
+                (string) ($b['modified_at'] ?? ''),
+                (string) ($a['modified_at'] ?? ''),
+            );
         });
 
         // Batasi maksimal 100 temuan untuk performa antarmuka
         $result = array_slice($items, 0, 100);
 
         try {
-            $minutes = max(1, (int) config('security.server_scan.cache_minutes', 10));
-            Cache::put(self::SUSPICIOUS_CACHE_KEY, $result, now()->addMinutes($minutes));
+            $minutes = max(
+                1,
+                (int) config('security.server_scan.cache_minutes', 10),
+            );
+            Cache::put(
+                self::SUSPICIOUS_CACHE_KEY,
+                $result,
+                now()->addMinutes($minutes),
+            );
         } catch (Throwable) {
             // diabaikan
         }
@@ -1382,33 +1609,55 @@ class ServerSecurityService
      *
      * @return array{success: bool, message: string}
      */
-    public function deleteSuspiciousFile(string $relativePath, ?int $userId = null, ?string $ip = null): array
-    {
+    public function deleteSuspiciousFile(
+        string $relativePath,
+        ?int $userId = null,
+        ?string $ip = null,
+    ): array {
         $relative = str_replace(['\\', "\0"], ['/', ''], trim($relativePath));
         $relative = ltrim($relative, '/');
 
-        if ($relative === '' || str_contains($relative, '..') || preg_match('/^[a-zA-Z]:/', $relative)) {
-            return ['success' => false, 'message' => 'Jalur berkas tidak valid atau memuat path traversal.'];
+        if (
+            $relative === '' ||
+            str_contains($relative, '..') ||
+            preg_match('/^[a-zA-Z]:/', $relative)
+        ) {
+            return [
+                'success' => false,
+                'message' => 'Jalur berkas tidak valid atau memuat path traversal.',
+            ];
         }
 
         $absolute = base_path($relative);
         $real = realpath($absolute);
 
         if ($real === false || ! File::isFile($real)) {
-            return ['success' => false, 'message' => 'Berkas tidak ditemukan pada server.'];
+            return [
+                'success' => false,
+                'message' => 'Berkas tidak ditemukan pada server.',
+            ];
         }
 
         $normalizedReal = str_replace('\\', '/', $real);
         $normalizedBase = str_replace('\\', '/', base_path());
 
         if (! str_starts_with($normalizedReal, $normalizedBase)) {
-            return ['success' => false, 'message' => 'Jalur berkas berada di luar direktori aplikasi.'];
+            return [
+                'success' => false,
+                'message' => 'Jalur berkas berada di luar direktori aplikasi.',
+            ];
         }
 
-        $relativeToApp = ltrim(substr($normalizedReal, strlen($normalizedBase)), '/');
+        $relativeToApp = ltrim(
+            substr($normalizedReal, strlen($normalizedBase)),
+            '/',
+        );
 
         if (! $this->isDeletablePath($relativeToApp)) {
-            return ['success' => false, 'message' => 'Berkas sistem inti dilindungi dan tidak dapat dihapus melalui fitur ini demi stabilitas aplikasi.'];
+            return [
+                'success' => false,
+                'message' => 'Berkas sistem inti dilindungi dan tidak dapat dihapus melalui fitur ini demi stabilitas aplikasi.',
+            ];
         }
 
         $size = (int) File::size($real);
@@ -1418,7 +1667,10 @@ class ServerSecurityService
         $deleted = File::delete($real);
 
         if (! $deleted) {
-            return ['success' => false, 'message' => 'Gagal menghapus berkas dari disk. Periksa izin akses (permission) berkas di server.'];
+            return [
+                'success' => false,
+                'message' => 'Gagal menghapus berkas dari disk. Periksa izin akses (permission) berkas di server.',
+            ];
         }
 
         $this->security->log([
@@ -1429,7 +1681,9 @@ class ServerSecurityService
             'method' => 'DELETE',
             'path' => '/security/server/suspicious-files',
             'rule_label' => 'Berkas mencurigakan dihapus oleh admin',
-            'evidence' => "Admin menghapus berkas '{$relativeToApp}' (SHA-256: {$hash}, Ukuran: {$this->humanBytes((float) $size)}).",
+            'evidence' => "Admin menghapus berkas '{$relativeToApp}' (SHA-256: {$hash}, Ukuran: {$this->humanBytes(
+                (float) $size,
+            )}).",
             'action_taken' => 'file_deleted',
         ]);
 
@@ -1449,7 +1703,10 @@ class ServerSecurityService
         $normalized = str_replace('\\', '/', trim($relative));
         $normalized = ltrim($normalized, '/');
 
-        $configured = (array) config('security.server_scan.suspicious_files_exclude', []);
+        $configured = (array) config(
+            'security.server_scan.suspicious_files_exclude',
+            [],
+        );
         $patterns = array_merge(self::DEFAULT_SUSPICIOUS_EXCLUDES, $configured);
 
         foreach ($patterns as $pattern) {
@@ -1460,7 +1717,11 @@ class ServerSecurityService
                 continue;
             }
 
-            if ($normalized === $pattern || fnmatch($pattern, $normalized) || Str::is($pattern, $normalized)) {
+            if (
+                $normalized === $pattern ||
+                fnmatch($pattern, $normalized) ||
+                Str::is($pattern, $normalized)
+            ) {
                 return true;
             }
         }
@@ -1507,13 +1768,13 @@ class ServerSecurityService
         }
 
         if (
-            str_starts_with($relative, 'vendor/')
-            || str_starts_with($relative, 'node_modules/')
-            || str_starts_with($relative, '.git/')
-            || str_starts_with($relative, 'config/')
-            || str_starts_with($relative, 'bootstrap/')
-            || str_starts_with($relative, 'routes/')
-            || str_starts_with($relative, 'database/')
+            str_starts_with($relative, 'vendor/') ||
+            str_starts_with($relative, 'node_modules/') ||
+            str_starts_with($relative, '.git/') ||
+            str_starts_with($relative, 'config/') ||
+            str_starts_with($relative, 'bootstrap/') ||
+            str_starts_with($relative, 'routes/') ||
+            str_starts_with($relative, 'database/')
         ) {
             return false;
         }
@@ -1534,19 +1795,26 @@ class ServerSecurityService
         string $locationLabel,
         array $skipDirectories,
         array &$items,
-        array &$scannedPaths
+        array &$scannedPaths,
     ): void {
         if (! File::isDirectory($root)) {
             return;
         }
 
-        $limit = max(500, (int) config('security.server_scan.max_files_scanned', 20000));
+        $limit = max(
+            500,
+            (int) config('security.server_scan.max_files_scanned', 20000),
+        );
         $count = 0;
 
         try {
             $iterator = new \RecursiveIteratorIterator(
                 new \RecursiveCallbackFilterIterator(
-                    new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO),
+                    new \RecursiveDirectoryIterator(
+                        $root,
+                        \FilesystemIterator::SKIP_DOTS |
+                            \FilesystemIterator::CURRENT_AS_FILEINFO,
+                    ),
                     function (\SplFileInfo $file) use ($skipDirectories): bool {
                         if (! $file->isDir()) {
                             return true;
@@ -1554,11 +1822,11 @@ class ServerSecurityService
 
                         $name = $file->getFilename();
 
-                        return ! in_array($name, $skipDirectories, true)
-                            && ! in_array($name, self::SKIPPED_DIRECTORIES, true);
-                    }
+                        return ! in_array($name, $skipDirectories, true) &&
+                            ! in_array($name, self::SKIPPED_DIRECTORIES, true);
+                    },
                 ),
-                \RecursiveIteratorIterator::SELF_FIRST
+                \RecursiveIteratorIterator::SELF_FIRST,
             );
 
             foreach ($iterator as $file) {
@@ -1579,7 +1847,10 @@ class ServerSecurityService
                 $scannedPaths[$normalizedPath] = true;
 
                 $baseNormalized = str_replace('\\', '/', base_path());
-                $relative = ltrim(str_replace($baseNormalized.'/', '', $normalizedPath), '/');
+                $relative = ltrim(
+                    str_replace($baseNormalized.'/', '', $normalizedPath),
+                    '/',
+                );
 
                 $filename = $file->getFilename();
                 $extension = strtolower($file->getExtension());
@@ -1592,17 +1863,35 @@ class ServerSecurityService
                 }
 
                 // Cek 1: Ekstensi berbahaya di webroot atau folder unggahan
-                $isDangerousExt = in_array($extension, self::DANGEROUS_EXTENSIONS, true);
+                $isDangerousExt = in_array(
+                    $extension,
+                    self::DANGEROUS_EXTENSIONS,
+                    true,
+                );
 
                 // Cek 2: File dotfile berbahaya (.env di public, atau file tersembunyi berakhiran skrip)
-                $isDotScript = str_starts_with($filename, '.') && ($isDangerousExt || str_starts_with($filename, '.env'));
+                $isDotScript =
+                    str_starts_with($filename, '.') &&
+                    ($isDangerousExt || str_starts_with($filename, '.env'));
 
                 // Cek 3: Double extension (misal: image.php.jpg atau doc.phtml.png)
-                $hasDoubleExt = preg_match('/\.(?:php[0-9]?|phtml|phar|sh|cgi|asp|jsp)\.[a-z0-9]+$/i', $filename) === 1
-                    || preg_match('/\.[a-z0-9]+\.(?:php[0-9]?|phtml|phar|sh|cgi|asp|jsp)$/i', $filename) === 1;
+                $hasDoubleExt =
+                    preg_match(
+                        '/\.(?:php[0-9]?|phtml|phar|sh|cgi|asp|jsp)\.[a-z0-9]+$/i',
+                        $filename,
+                    ) === 1 ||
+                    preg_match(
+                        '/\.[a-z0-9]+\.(?:php[0-9]?|phtml|phar|sh|cgi|asp|jsp)$/i',
+                        $filename,
+                    ) === 1;
 
                 // Cek 4: Konten mencurigakan (webshell patterns & tag PHP pada media)
-                $contentCheck = $this->inspectFileContent($pathname, $filename, $extension, $size);
+                $contentCheck = $this->inspectFileContent(
+                    $pathname,
+                    $filename,
+                    $extension,
+                    $size,
+                );
 
                 $threatLevel = null;
                 $category = null;
@@ -1621,13 +1910,15 @@ class ServerSecurityService
                 } elseif ($isDotScript) {
                     $threatLevel = 'critical';
                     $category = 'Berkas Tersembunyi Berbahaya';
-                    $reason = 'Berkas tersembunyi (dotfile) berekstensi skrip atau berkas konfigurasi sensitif (.env) di lokasi publik.';
+                    $reason =
+                        'Berkas tersembunyi (dotfile) berekstensi skrip atau berkas konfigurasi sensitif (.env) di lokasi publik.';
                 } elseif ($isDangerousExt) {
                     $threatLevel = 'critical';
                     $category = 'Ekstensi Skrip Terlarang';
-                    $reason = $locationKey === 'storage_public'
-                        ? "Berkas berekstensi eksekusi (.{$extension}) ditemukan di folder unggahan pengguna. Berkas ini berpotensi berupa webshell backdoor."
-                        : "Berkas berekstensi eksekusi (.{$extension}) ditemukan di folder public (webroot).";
+                    $reason =
+                        $locationKey === 'storage_public'
+                            ? "Berkas berekstensi eksekusi (.{$extension}) ditemukan di folder unggahan pengguna. Berkas ini berpotensi berupa webshell backdoor."
+                            : "Berkas berekstensi eksekusi (.{$extension}) ditemukan di folder public (webroot).";
                 }
 
                 if ($threatLevel !== null) {
@@ -1639,12 +1930,19 @@ class ServerSecurityService
                         'location_key' => $locationKey,
                         'threat_level' => $threatLevel,
                         'category' => $category ?? 'Berkas Mencurigakan',
-                        'reason' => $reason ?? 'Berkas terdeteksi tidak wajar pada pemeriksaan keamanan server.',
+                        'reason' => $reason ??
+                            'Berkas terdeteksi tidak wajar pada pemeriksaan keamanan server.',
                         'snippet' => $snippet,
                         'size' => $this->humanBytes((float) $size),
                         'size_bytes' => $size,
-                        'modified_at' => Carbon::createFromTimestamp($mtime)->toIso8601String(),
-                        'modified_at_human' => $this->humanDate(Carbon::createFromTimestamp($mtime)->toIso8601String()),
+                        'modified_at' => Carbon::createFromTimestamp(
+                            $mtime,
+                        )->toIso8601String(),
+                        'modified_at_human' => $this->humanDate(
+                            Carbon::createFromTimestamp(
+                                $mtime,
+                            )->toIso8601String(),
+                        ),
                         'is_deletable' => $this->isDeletablePath($relative),
                     ];
                 }
@@ -1660,8 +1958,10 @@ class ServerSecurityService
      * @param  array<int, array<string, mixed>>  $items
      * @param  array<string, bool>  $scannedPaths
      */
-    protected function collectSuspiciousFromIntegrity(array &$items, array &$scannedPaths): void
-    {
+    protected function collectSuspiciousFromIntegrity(
+        array &$items,
+        array &$scannedPaths,
+    ): void {
         $report = $this->integrityReport();
         $candidates = array_merge($report['modified'], $report['added']);
 
@@ -1686,7 +1986,12 @@ class ServerSecurityService
             $filename = basename($absolute);
             $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-            $contentCheck = $this->inspectFileContent($absolute, $filename, $extension, $size);
+            $contentCheck = $this->inspectFileContent(
+                $absolute,
+                $filename,
+                $extension,
+                $size,
+            );
 
             if ($contentCheck['is_suspicious']) {
                 $mtime = (int) File::lastModified($absolute);
@@ -1703,8 +2008,12 @@ class ServerSecurityService
                     'snippet' => $contentCheck['snippet'],
                     'size' => $this->humanBytes((float) $size),
                     'size_bytes' => $size,
-                    'modified_at' => Carbon::createFromTimestamp($mtime)->toIso8601String(),
-                    'modified_at_human' => $this->humanDate(Carbon::createFromTimestamp($mtime)->toIso8601String()),
+                    'modified_at' => Carbon::createFromTimestamp(
+                        $mtime,
+                    )->toIso8601String(),
+                    'modified_at_human' => $this->humanDate(
+                        Carbon::createFromTimestamp($mtime)->toIso8601String(),
+                    ),
                     'is_deletable' => $this->isDeletablePath($relative),
                 ];
             }
@@ -1716,30 +2025,79 @@ class ServerSecurityService
      *
      * @return array{is_suspicious: bool, category: string|null, reason: string|null, snippet: string|null}
      */
-    protected function inspectFileContent(string $pathname, string $filename, string $extension, int $size): array
-    {
+    protected function inspectFileContent(
+        string $pathname,
+        string $filename,
+        string $extension,
+        int $size,
+    ): array {
         if ($size <= 0 || $size > 2_097_152) {
-            return ['is_suspicious' => false, 'category' => null, 'reason' => null, 'snippet' => null];
+            return [
+                'is_suspicious' => false,
+                'category' => null,
+                'reason' => null,
+                'snippet' => null,
+            ];
         }
 
         $isMedia = in_array($extension, self::MEDIA_EXTENSIONS, true);
-        $isScript = in_array($extension, array_merge(self::DANGEROUS_EXTENSIONS, ['txt', 'html', 'htm', 'inc', 'bak', 'old']), true);
+        $isScript = in_array(
+            $extension,
+            array_merge(self::DANGEROUS_EXTENSIONS, [
+                'txt',
+                'html',
+                'htm',
+                'inc',
+                'bak',
+                'old',
+            ]),
+            true,
+        );
 
         if (! $isMedia && ! $isScript) {
-            return ['is_suspicious' => false, 'category' => null, 'reason' => null, 'snippet' => null];
+            return [
+                'is_suspicious' => false,
+                'category' => null,
+                'reason' => null,
+                'snippet' => null,
+            ];
         }
 
         try {
-            $content = (string) @file_get_contents($pathname, false, null, 0, 524_288);
+            $content = (string) @file_get_contents(
+                $pathname,
+                false,
+                null,
+                0,
+                524_288,
+            );
         } catch (Throwable) {
-            return ['is_suspicious' => false, 'category' => null, 'reason' => null, 'snippet' => null];
+            return [
+                'is_suspicious' => false,
+                'category' => null,
+                'reason' => null,
+                'snippet' => null,
+            ];
         }
 
         if ($content === '') {
-            return ['is_suspicious' => false, 'category' => null, 'reason' => null, 'snippet' => null];
+            return [
+                'is_suspicious' => false,
+                'category' => null,
+                'reason' => null,
+                'snippet' => null,
+            ];
         }
 
-        if ($isMedia && preg_match('/<\?php[\s\r\n\t;\$\/]|<\?=\s*[\$a-zA-Z_0-9\'"\(]/i', $content, $m, PREG_OFFSET_CAPTURE)) {
+        if (
+            $isMedia &&
+            preg_match(
+                '/<\?php[\s\r\n\t;\$\/]|<\?=\s*[\$a-zA-Z_0-9\'"\(]/i',
+                $content,
+                $m,
+                PREG_OFFSET_CAPTURE,
+            )
+        ) {
             $offset = (int) ($m[0][1] ?? 0);
             $rawSnippet = substr($content, max(0, $offset - 10), 80);
             $snippet = preg_replace('/[^\x20-\x7E]/', ' ', $rawSnippet);
@@ -1753,7 +2111,14 @@ class ServerSecurityService
         }
 
         foreach (self::MALICIOUS_PATTERNS as $rule) {
-            if (preg_match($rule['pattern'], $content, $matches, PREG_OFFSET_CAPTURE)) {
+            if (
+                preg_match(
+                    $rule['pattern'],
+                    $content,
+                    $matches,
+                    PREG_OFFSET_CAPTURE,
+                )
+            ) {
                 $offset = (int) ($matches[0][1] ?? 0);
                 $rawSnippet = substr($content, max(0, $offset - 20), 100);
                 $snippet = preg_replace('/[^\x20-\x7E]/', ' ', $rawSnippet);
@@ -1767,7 +2132,12 @@ class ServerSecurityService
             }
         }
 
-        return ['is_suspicious' => false, 'category' => null, 'reason' => null, 'snippet' => null];
+        return [
+            'is_suspicious' => false,
+            'category' => null,
+            'reason' => null,
+            'snippet' => null,
+        ];
     }
 
     /*
@@ -1816,7 +2186,10 @@ class ServerSecurityService
             $counts[array_key_exists($status, $counts) ? $status : 'info']++;
         }
 
-        $score = max(0, 100 - ($counts['critical'] * 12) - ($counts['warning'] * 4));
+        $score = max(
+            0,
+            100 - $counts['critical'] * 12 - $counts['warning'] * 4,
+        );
 
         return [
             'total' => count($checks),
@@ -1886,16 +2259,16 @@ class ServerSecurityService
     }
 
     /**
-     * @return Builder<User>
+     * @return Builder<Model>
      */
     protected function adminQuery()
     {
-        return ($this->userModel())::query()->where('role', 'admin');
+        return $this->userModel()::query()->where('role', 'admin');
     }
 
     protected function userModel(): string
     {
-        return config('security.user_model', 'App\Models\User');
+        return config('security.user_model', "App\Models\User");
     }
 
     protected function lockoutCount(): int
@@ -1935,7 +2308,9 @@ class ServerSecurityService
             $ran = $migrator->getRepository()->getRan();
             $files = array_map(
                 fn (string $file): string => $migrator->getMigrationName($file),
-                array_values($migrator->getMigrationFiles([database_path('migrations')]))
+                array_values(
+                    $migrator->getMigrationFiles([database_path('migrations')]),
+                ),
             );
 
             return array_values(array_diff($files, $ran));
@@ -1963,7 +2338,10 @@ class ServerSecurityService
         }
 
         foreach ($middleware as $class) {
-            if (is_string($class) && str_contains($class, 'CheckPublicApiHeader')) {
+            if (
+                is_string($class) &&
+                str_contains($class, 'CheckPublicApiHeader')
+            ) {
                 return true;
             }
         }
@@ -2005,7 +2383,9 @@ class ServerSecurityService
             'detail' => $worldReadable
                 ? 'Berkas .env dapat dibaca oleh semua user sistem sehingga kredensial database, APP_KEY, dan kunci API berisiko bocor.'
                 : 'Berkas .env hanya dapat dibaca pemiliknya.',
-            'recommendation' => $worldReadable ? 'Jalankan chmod 600 .env dan pastikan pemiliknya adalah user deploy.' : null,
+            'recommendation' => $worldReadable
+                ? 'Jalankan chmod 600 .env dan pastikan pemiliknya adalah user deploy.'
+                : null,
         ];
     }
 
@@ -2015,20 +2395,29 @@ class ServerSecurityService
      * @param  array<int, string>  $skipDirectories
      * @return array{files: array<int, string>, count: int}
      */
-    protected function scanDangerousFiles(string $root, array $skipDirectories): array
-    {
+    protected function scanDangerousFiles(
+        string $root,
+        array $skipDirectories,
+    ): array {
         if (! File::isDirectory($root)) {
             return ['files' => [], 'count' => 0];
         }
 
-        $limit = max(100, (int) config('security.server_scan.max_files_scanned', 20000));
+        $limit = max(
+            100,
+            (int) config('security.server_scan.max_files_scanned', 20000),
+        );
         $suspicious = [];
         $scanned = 0;
 
         try {
             $iterator = new \RecursiveIteratorIterator(
                 new \RecursiveCallbackFilterIterator(
-                    new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO),
+                    new \RecursiveDirectoryIterator(
+                        $root,
+                        \FilesystemIterator::SKIP_DOTS |
+                            \FilesystemIterator::CURRENT_AS_FILEINFO,
+                    ),
                     function (\SplFileInfo $file) use ($skipDirectories): bool {
                         if (! $file->isDir()) {
                             return true;
@@ -2036,10 +2425,11 @@ class ServerSecurityService
 
                         $name = $file->getFilename();
 
-                        return ! in_array($name, $skipDirectories, true) && ! in_array($name, self::SKIPPED_DIRECTORIES, true);
-                    }
+                        return ! in_array($name, $skipDirectories, true) &&
+                            ! in_array($name, self::SKIPPED_DIRECTORIES, true);
+                    },
                 ),
-                \RecursiveIteratorIterator::SELF_FIRST
+                \RecursiveIteratorIterator::SELF_FIRST,
             );
 
             foreach ($iterator as $file) {
@@ -2054,11 +2444,15 @@ class ServerSecurityService
                 $name = $file->getFilename();
                 $extension = strtolower($file->getExtension());
 
-                $dangerous = in_array($extension, self::DANGEROUS_EXTENSIONS, true)
-                    || str_starts_with($name, '.env');
+                $dangerous =
+                    in_array($extension, self::DANGEROUS_EXTENSIONS, true) ||
+                    str_starts_with($name, '.env');
 
                 // index.php adalah front controller resmi aplikasi.
-                if ($dangerous && $file->getPathname() === public_path('index.php')) {
+                if (
+                    $dangerous &&
+                    $file->getPathname() === public_path('index.php')
+                ) {
                     $dangerous = false;
                 }
 
@@ -2066,7 +2460,15 @@ class ServerSecurityService
                     continue;
                 }
 
-                $relative = str_replace('\\', '/', str_replace($root.DIRECTORY_SEPARATOR, '', $file->getPathname()));
+                $relative = str_replace(
+                    '\\',
+                    '/',
+                    str_replace(
+                        $root.DIRECTORY_SEPARATOR,
+                        '',
+                        $file->getPathname(),
+                    ),
+                );
                 $suspicious[] = $relative;
 
                 if (count($suspicious) >= 25) {
@@ -2105,8 +2507,14 @@ class ServerSecurityService
         }
 
         $freePercent = (int) round(($free / $total) * 100);
-        $critical = max(1, (int) config('security.server_scan.disk_critical_percent', 10));
-        $warning = max($critical, (int) config('security.server_scan.disk_warning_percent', 20));
+        $critical = max(
+            1,
+            (int) config('security.server_scan.disk_critical_percent', 10),
+        );
+        $warning = max(
+            $critical,
+            (int) config('security.server_scan.disk_warning_percent', 20),
+        );
 
         return [
             'status' => match (true) {
@@ -2114,15 +2522,20 @@ class ServerSecurityService
                 $freePercent <= $warning => 'warning',
                 default => 'ok',
             },
-            'value' => $freePercent.'% tersisa ('.$this->humanBytes((float) $free).' dari '.$this->humanBytes((float) $total).')',
+            'value' => $freePercent.
+                '% tersisa ('.
+                $this->humanBytes((float) $free).
+                ' dari '.
+                $this->humanBytes((float) $total).
+                ')',
             'detail' => match (true) {
                 $freePercent <= $critical => 'Ruang disk hampir habis. Aplikasi dapat gagal menyimpan log, session, dan file unggahan.',
                 $freePercent <= $warning => 'Ruang disk menipis sehingga perlu dibersihkan sebelum mengganggu operasional.',
                 default => 'Ruang penyimpanan masih memadai.',
             },
             'recommendation' => $freePercent <= $warning
-                ? 'Bersihkan log lama, berkas cache, dan cadangan usang; atau tambah kapasitas disk.'
-                : null,
+                    ? 'Bersihkan log lama, berkas cache, dan cadangan usang; atau tambah kapasitas disk.'
+                    : null,
         ];
     }
 
@@ -2176,9 +2589,15 @@ class ServerSecurityService
      */
     protected function recentChanges(): array
     {
-        $days = max(1, (int) config('security.server_scan.recent_changes_days', 7));
+        $days = max(
+            1,
+            (int) config('security.server_scan.recent_changes_days', 7),
+        );
         $threshold = now()->subDays($days)->getTimestamp();
-        $limit = max(500, (int) config('security.server_scan.max_files_scanned', 20000));
+        $limit = max(
+            500,
+            (int) config('security.server_scan.max_files_scanned', 20000),
+        );
 
         $files = [];
         $scanned = 0;
@@ -2193,20 +2612,31 @@ class ServerSecurityService
             try {
                 $iterator = new \RecursiveIteratorIterator(
                     new \RecursiveCallbackFilterIterator(
-                        new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO),
+                        new \RecursiveDirectoryIterator(
+                            $root,
+                            \FilesystemIterator::SKIP_DOTS |
+                                \FilesystemIterator::CURRENT_AS_FILEINFO,
+                        ),
                         function (\SplFileInfo $file) use ($directory): bool {
                             if (! $file->isDir()) {
                                 return true;
                             }
 
-                            if ($directory === 'public' && $file->getFilename() === 'build') {
+                            if (
+                                $directory === 'public' &&
+                                $file->getFilename() === 'build'
+                            ) {
                                 return false;
                             }
 
-                            return ! in_array($file->getFilename(), ['vendor', 'node_modules', '.git', 'storage'], true);
-                        }
+                            return ! in_array(
+                                $file->getFilename(),
+                                ['vendor', 'node_modules', '.git', 'storage'],
+                                true,
+                            );
+                        },
                     ),
-                    \RecursiveIteratorIterator::SELF_FIRST
+                    \RecursiveIteratorIterator::SELF_FIRST,
                 );
 
                 foreach ($iterator as $file) {
@@ -2222,7 +2652,15 @@ class ServerSecurityService
                         continue;
                     }
 
-                    $relative = str_replace('\\', '/', str_replace(base_path().DIRECTORY_SEPARATOR, '', $file->getPathname()));
+                    $relative = str_replace(
+                        '\\',
+                        '/',
+                        str_replace(
+                            base_path().DIRECTORY_SEPARATOR,
+                            '',
+                            $file->getPathname(),
+                        ),
+                    );
                     $files[$relative] = $file->getMTime();
                 }
             } catch (Throwable) {
@@ -2277,7 +2715,9 @@ class ServerSecurityService
             'detail' => $stale
                 ? 'Penjadwal terakhir terlihat lebih dari 5 menit lalu sehingga tugas terjadwal (prune log, baseline) kemungkinan tidak berjalan.'
                 : 'Penjadwal berjalan normal sesuai jadwal setiap menit.',
-            'recommendation' => $stale ? 'Periksa cron schedule:run pada server.' : null,
+            'recommendation' => $stale
+                ? 'Periksa cron schedule:run pada server.'
+                : null,
         ];
     }
 
@@ -2319,11 +2759,17 @@ class ServerSecurityService
         $sample = '';
 
         foreach (explode("\n", $content) as $line) {
-            if (! str_contains($line, '.ERROR') && ! str_contains($line, 'ERROR:')) {
+            if (
+                ! str_contains($line, '.ERROR') &&
+                ! str_contains($line, 'ERROR:')
+            ) {
                 continue;
             }
 
-            if (! str_starts_with(trim($line), '[') || ! str_contains($line, $today)) {
+            if (
+                ! str_starts_with(trim($line), '[') ||
+                ! str_contains($line, $today)
+            ) {
                 continue;
             }
 
@@ -2343,10 +2789,16 @@ class ServerSecurityService
     protected function securityLogStats(int $days = 7): array
     {
         try {
-            $query = SecurityLog::query()->where('created_at', '>=', now()->subDays($days));
+            $query = SecurityLog::query()->where(
+                'created_at',
+                '>=',
+                now()->subDays($days),
+            );
 
             $total = (clone $query)->count();
-            $critical = (clone $query)->whereIn('threat_level', ['high', 'critical'])->count();
+            $critical = (clone $query)
+                ->whereIn('threat_level', ['high', 'critical'])
+                ->count();
             $top = (clone $query)
                 ->selectRaw('event_type, COUNT(*) as total')
                 ->groupBy('event_type')
@@ -2386,6 +2838,8 @@ class ServerSecurityService
             $index++;
         }
 
-        return number_format($bytes, $index === 0 ? 0 : 1, ',', '.').' '.$units[$index];
+        return number_format($bytes, $index === 0 ? 0 : 1, ',', '.').
+            ' '.
+            $units[$index];
     }
 }

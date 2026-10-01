@@ -2,8 +2,9 @@
 
 namespace Internal\SecurityMonitor\Tests;
 
-use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Contracts\Http\Kernel as KernelContract;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Schema;
 use Internal\SecurityMonitor\Http\Middleware\BlockIpAddress;
 use Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats;
@@ -14,9 +15,7 @@ abstract class TestCase extends OrchestraTestCase
 {
     protected function getPackageProviders($app): array
     {
-        return [
-            SecurityMonitorServiceProvider::class,
-        ];
+        return [SecurityMonitorServiceProvider::class];
     }
 
     protected function defineEnvironment($app): void
@@ -34,9 +33,12 @@ abstract class TestCase extends OrchestraTestCase
         $app['config']->set('security.block_enforcement', true);
         $app['config']->set('security.routes.enabled', true);
 
-        $kernel = $app->make(Kernel::class);
-        $kernel->pushMiddleware(BlockIpAddress::class);
-        $kernel->pushMiddleware(DetectSecurityThreats::class);
+        $kernel = $app->make(KernelContract::class);
+
+        if ($kernel instanceof HttpKernel) {
+            $kernel->pushMiddleware(BlockIpAddress::class);
+            $kernel->pushMiddleware(DetectSecurityThreats::class);
+        }
     }
 
     protected function defineRoutes($router): void
@@ -60,6 +62,7 @@ abstract class TestCase extends OrchestraTestCase
             $table->string('email')->unique();
             $table->string('password');
             $table->string('role')->default('user');
+            $table->timestamp('two_factor_confirmed_at')->nullable();
             $table->timestamps();
         });
 
@@ -68,21 +71,31 @@ abstract class TestCase extends OrchestraTestCase
 
     protected function createAdminUser(array $attributes = []): TestUser
     {
-        return TestUser::create(array_merge([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password'),
-            'role' => 'admin',
-        ], $attributes));
+        return TestUser::create(
+            array_merge(
+                [
+                    'name' => 'Admin User',
+                    'email' => 'admin@example.com',
+                    'password' => bcrypt('password'),
+                    'role' => 'admin',
+                ],
+                $attributes,
+            ),
+        );
     }
 
     protected function createRegularUser(array $attributes = []): TestUser
     {
-        return TestUser::create(array_merge([
-            'name' => 'Regular User',
-            'email' => 'user@example.com',
-            'password' => bcrypt('password'),
-            'role' => 'user',
-        ], $attributes));
+        return TestUser::create(
+            array_merge(
+                [
+                    'name' => 'Regular User',
+                    'email' => 'user@example.com',
+                    'password' => bcrypt('password'),
+                    'role' => 'user',
+                ],
+                $attributes,
+            ),
+        );
     }
 }

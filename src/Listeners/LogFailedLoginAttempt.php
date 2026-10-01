@@ -26,13 +26,18 @@ class LogFailedLoginAttempt
 
     public function handle(Failed $event): void
     {
-        $email = $event->credentials['email'] ?? $event->credentials['username'] ?? null;
+        $email =
+            $event->credentials['email'] ??
+            ($event->credentials['username'] ?? null);
         $ip = $this->request->ip();
 
         // Cooldown bertingkat berlaku juga pada IP yang masuk whitelist, karena
         // ini proteksi akun (bukan proteksi IP).
         try {
-            $this->throttle->registerFailure(is_string($email) ? $email : null, $ip);
+            $this->throttle->registerFailure(
+                is_string($email) ? $email : null,
+                $ip,
+            );
         } catch (Throwable) {
             // Proteksi akun tidak boleh menggagalkan respons login.
         }
@@ -43,16 +48,25 @@ class LogFailedLoginAttempt
 
         $this->service->log([
             'ip_address' => (string) ($ip ?? 'unknown'),
-            'user_id' => $event->user?->getKey(),
+            'user_id' => $event->user?->getAuthIdentifier(),
             'event_type' => 'login_failed',
             'threat_level' => 'medium',
             'method' => Str::limit($this->request->method(), 10, ''),
             'path' => '/'.ltrim($this->request->path(), '/'),
             'full_url' => Str::limit($this->request->fullUrl(), 2000, ''),
             'rule_label' => 'Percobaan login gagal',
-            'evidence' => 'Login gagal untuk akun: '.Str::limit((string) $email, 120, ''),
-            'user_agent' => Str::limit((string) $this->request->userAgent(), 500, ''),
-            'referer' => Str::limit((string) $this->request->headers->get('referer'), 500, ''),
+            'evidence' => 'Login gagal untuk akun: '.
+                Str::limit((string) $email, 120, ''),
+            'user_agent' => Str::limit(
+                (string) $this->request->userAgent(),
+                500,
+                '',
+            ),
+            'referer' => Str::limit(
+                (string) $this->request->headers->get('referer'),
+                500,
+                '',
+            ),
             'action_taken' => 'logged',
         ]);
 

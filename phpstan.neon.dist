@@ -1,0 +1,18 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+    excludePaths:
+        - vendor
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # The trait is consumed by the host application's User model.
+        - '#Trait Internal\\SecurityMonitor\\Concerns\\HasSecurityRelations is used zero times and is not analysed#'
+        # Larastan does not inspect the host application's Blade views.
+        - '#Call to method Illuminate\\Contracts\\View\\Factory::exists\(\) with .*errors\.blocked.* will always evaluate to true#'
+        # The configured user model is dynamic; `email` is not part of the contract.
+        - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$email#'
