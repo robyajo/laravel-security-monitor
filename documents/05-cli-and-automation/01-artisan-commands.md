@@ -16,11 +16,17 @@ php artisan security:install [options]
 - Jika `public/.htaccess` sudah ada: installer membuat berkas backup otomatis (`.htaccess.backup-YYYYMMDD_HHMMSS`) dan menambahkan blok hardening keamanan di bagian bawah berkas tanpa merusak aturan kustom pengguna.
 - Jika sudah terpasang: installer mendeteksi signature hardening dan tidak menduplikasi aturan.
 
+### Mekanisme Penyematan Variabel `.env` & `.env.example`:
+- Installer secara otomatis memeriksa apakah blok konfigurasi `SECURITY_*` dan `CAPTCHA_*` sudah ada di `.env` dan `.env.example`.
+- Jika belum ada, installer menyematkan blok variabel lingkungan lengkap dengan komentar dokumentasi berbahasa Indonesia di akhir berkas.
+- Opsi `--without-env` dapat digunakan untuk melewati langkah ini jika Anda ingin mengonfigurasi variabel lingkungan secara manual.
+
 ### Opsi:
 - `--force`: Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess` dengan template bawaan.
 - `--without-nginx`: Melewatkan publikasi berkas `nginx.conf`.
 - `--without-htaccess`: Melewatkan publikasi atau penambahan aturan pada `public/.htaccess`.
 - `--with-htaccess`: Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan.
+- `--without-env`: Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`.
 
 ---
 

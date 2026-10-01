@@ -1,7 +1,7 @@
 # Laravel Security Monitor (Bulwark)
 
 [![Tests](https://img.shields.io/badge/tests-70%20passed%20(302%20assertions)-brightgreen.svg)]()
-[![PHP Version](https://img.shields.io/badge/php-%5E8.2%20%7C%20%5E8.3%20%7C%20%5E8.4-blue.svg)]()
+[![PHP Version](https://img.shields.io/badge/php-%5E8.2%20%7C%20%5E8.3%20%7C%20%5E8.4%20%7C%20%5E8.5-blue.svg)]()
 [![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%20%7C%20%5E11.0%20%7C%20%5E12.0%20%7C%20%5E13.0-red.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -52,7 +52,7 @@
 
 ## 📋 Persyaratan Sistem
 
-- PHP: `^8.2`, `^8.3`, atau `^8.4`
+- PHP: `^8.2`, `^8.3`, `^8.4`, atau `^8.5`
 - Laravel: `^10.0`, `^11.0`, `^12.0`, atau `^13.0`
 
 ---
@@ -90,6 +90,7 @@ php artisan security:install
 | `--without-nginx` | Melewatkan pembuatan berkas `nginx.conf`. |
 | `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess`. |
 | `--with-htaccess` | Memaksa pembaruan berkas `public/.htaccess`. |
+| `--without-env` | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`. |
 
 #### Publikasi Aset Secara Parsial (Manual):
 ```bash

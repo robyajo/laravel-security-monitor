@@ -9,7 +9,7 @@ Halaman ini memandu proses instalasi paket **`robyajo/laravel-security-monitor`*
 ## 1. Persyaratan Sistem
 
 Pastikan lingkungan server Anda memenuhi spesifikasi minimum berikut:
-- **PHP**: `^8.2`, `^8.3`, atau `^8.4`
+- **PHP**: `^8.2`, `^8.3`, `^8.4`, atau `^8.5`
 - **Laravel**: `^10.0`, `^11.0`, `^12.0`, atau `^13.0`
 - **Ekstensi PHP**: `pdo`, `mbstring`, `json`, `filter`, `openssl` (tanpa memerlukan ekstensi `gd` atau `imagick` berkat implementasi pure SVG CAPTCHA).
 
@@ -61,6 +61,9 @@ Perintah ini akan secara otomatis:
    - Jika berkas belum ada: membuat `public/.htaccess` baru dengan aturan rewrite standar Laravel + blok hardening keamanan.
    - Jika berkas sudah ada: membuat cadangan otomatis `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan blok hardening keamanan di bagian bawah berkas tanpa merusak aturan rewrite kustom Anda.
    - Jika sudah memiliki aturan hardening: mendeteksi dan mempertahankan berkas yang sudah terlindungi.
+5. **Menyematkan Variabel Lingkungan ke `.env` & `.env.example`**:
+   - Menambahkan blok konfigurasi lengkap (`SECURITY_*` dan `CAPTCHA_*`) disertai dokumentasi penjelasan fungsi berbahasa Indonesia langsung di bagian bawah berkas `.env` dan `.env.example`.
+   - Menggunakan deteksi cerdas agar tidak terjadi duplikasi jika variabel sudah pernah ditambahkan sebelumnya.
 
 ### Opsi Perintah:
 | Opsi | Fungsi |
@@ -69,6 +72,7 @@ Perintah ini akan secara otomatis:
 | `--without-nginx` | Melewatkan publikasi berkas `nginx.conf` jika server Anda tidak menggunakan web server Nginx. |
 | `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess` jika Anda menggunakan Nginx murni dan tidak memerlukan Apache `.htaccess`. |
 | `--with-htaccess` | Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan paket. |
+| `--without-env` | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`. |
 
 ---
 
