@@ -93,6 +93,9 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 ### Authenticated User
 - `POST /api/security/trusted-ips/save-my-ip`: Save current IP as trusted.
 
+### Nginx Publishing
+- `php artisan vendor:publish --tag=security-nginx`: Publishes `nginx.conf` template with dual-zone rate limiting, strict single-PHP execution (`/index.php` only), storage sandboxing (nosniff + CSP sandbox), and double-extension blocking.
+
 ### Admin Protected (`auth` + `security.admin`)
 - **Logs**: `GET /logs`, `DELETE /logs/clear`, `DELETE /logs/{id}`.
 - **Blocked IPs**: `GET /blocked-ips`, `POST /blocked-ips`, `GET /blocked-ips/{id}`, `PATCH /blocked-ips/{id}/toggle`, `DELETE /blocked-ips/{id}`.
@@ -106,6 +109,7 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 
 | Command | Purpose |
 | :--- | :--- |
+| `security:install` | Publish all package assets: config, migrations, and hardened `nginx.conf` with interactive options. |
 | `security:scan-logs` | Stream & parse Apache/Nginx access logs for zero-tolerance attacks; auto-block offending IPs. |
 | `security:baseline` | Audit, create (`--create`), or destroy (`--destroy`) SHA-256 integrity baseline. |
 | `security:unblock-ip {ip}` | Lift block on IP or device immediately. |

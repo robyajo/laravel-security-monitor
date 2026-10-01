@@ -78,7 +78,7 @@ When working in this repository, you MUST activate the relevant skills located i
 ```text
 src/
 ├── Concerns/                # Reusable Eloquent traits (HasSecurityRelations)
-├── Console/Commands/        # Artisan commands (security:scan-logs, security:baseline, etc.)
+├── Console/Commands/        # Artisan commands (security:install, security:scan-logs, security:baseline, etc.)
 ├── Facades/                 # Static facade accessors (SecurityMonitor)
 ├── Http/
 │   ├── Controllers/Api/     # Headless JSON REST API controllers
@@ -96,6 +96,9 @@ database/migrations/         # Consolidated package migrations
 
 routes/
 └── security.php             # Headless REST API routes
+
+stubs/
+└── nginx.conf.stub          # Hardened Nginx WAF configuration template
 ```
 
 ---

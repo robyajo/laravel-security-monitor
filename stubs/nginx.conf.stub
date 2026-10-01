@@ -1,0 +1,128 @@
+# =====================================================================
+# KOMINFO SUPERAPP API - NGINX CONFIGURATION
+# =====================================================================
+# CATATAN PENEMPATAN RATE LIMITING:
+# Dua direktif limit_req_zone di bawah ini WAJIB diletakkan di dalam blok
+# "http { ... }" (misalnya di /etc/nginx/nginx.conf atau berkas terpisah
+# /etc/nginx/conf.d/rate_limit.conf) jika server Nginx belum memilikinya:
+#
+#   limit_req_zone $binary_remote_addr zone=auth_limit:10m rate=5r/m;
+#   limit_req_zone $binary_remote_addr zone=general_limit:10m rate=30r/s;
+# =====================================================================
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name superapp-api.pekanbaru.go.id;
+    root /var/www/superapp-api.pekanbaru.go.id/kominfo-superapp-api/public;
+
+    # Batasi ukuran payload request untuk mencegah DoS / upload raksasa
+    client_max_body_size 5M;
+
+    # Kode HTTP saat request melebihi ambang batas rate limit
+    limit_req_status 429;
+
+    # ---------------------------------------------------------------------
+    # DAFTAR IP PENYERANG YANG DIBLOKIR MANUAL DI LEVEL NGINX
+    # ---------------------------------------------------------------------
+    deny 104.207.74.38;
+
+    # Header keamanan HTTP
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    index index.php;
+    charset utf-8;
+
+    # ---------------------------------------------------------------------
+    # RATE LIMITING: Endpoint Otentikasi & Sensitif
+    # Membatasi brute-force login, register, reset password, dan livewire
+    # (5 request per menit dengan toleransi burst 5 tanpa jeda).
+    # ---------------------------------------------------------------------
+    location ~* ^/(login|register|forgot-password|reset-password|two-factor-challenge|livewire|oauth) {
+        limit_req zone=auth_limit burst=5 nodelay;
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # Sebagai default semua request diarahkan ke front controller Laravel.
+    location / {
+        limit_req zone=general_limit burst=50 nodelay;
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # ---------------------------------------------------------------------
+    # ASET STATIS VITE / FRONTEND BUILD (JS, CSS, Font, Webp, SVG)
+    # - WAJIB bebas dari rate-limiting agar saat browser memuat puluhan chunk JS
+    #   secara paralel tidak memicu HTTP 429 atau koneksi terputus (NS_ERROR_CORRUPTED_CONTENT).
+    # - try_files $uri =404: jika file tidak ada, langsung kembalikan 404 murni (bukan text/html Laravel).
+    # - Cache immutable 1 tahun karena Vite menyematkan hash unik pada nama berkas.
+    # ---------------------------------------------------------------------
+    location ^~ /build/ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        access_log off;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    # ---------------------------------------------------------------------
+    # KEAMANAN: hanya /index.php yang boleh dieksekusi sebagai PHP.
+    # Semua berkas .php lain (termasuk hasil upload webshell seperti
+    # wne.php atau wne.php%00.jpg) ditolak, bukan dijalankan.
+    # ---------------------------------------------------------------------
+    location ~ \.php$ {
+        return 403;
+    }
+
+    # Double extension: shell.php.jpg, wne.php;.png, shell.phtml.zip
+    location ~* \.(php[0-9]?|phtml|pht|phar|phps|asp|aspx|ashx|asmx|jsp|jspx|cgi|pl|py|rb|sh|bash|exe|dll|bat|cmd|scr)\. {
+        return 403;
+    }
+
+    # ---------------------------------------------------------------------
+    # PROTEKSI FOLDER STORAGE / UPLOAD (Anti-Webshell & Polyglot)
+    # - Tidak ada pemrosesan FastCGI sama sekali di folder ini.
+    # - Tolak ekstensi script dan file dokumen aktif (HTML/SVG ber-script).
+    # - Paksa nosniff dan sandbox CSP agar gambar tidak bisa dieksekusi browser.
+    # ---------------------------------------------------------------------
+    location ^~ /storage/ {
+        location ~* \.(php[0-9]?|phtml|pht|phar|pl|py|sh|bash|cgi|exe|dll|bat|cmd|htm|html|shtml)$ {
+            return 403;
+        }
+
+        # Cegah MIME confusion / sniffing pada file gambar polyglot
+        add_header X-Content-Type-Options "nosniff" always;
+        # Sandboxing untuk aset statis agar tidak mengeksekusi JavaScript
+        add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox" always;
+
+        try_files $uri =404;
+    }
+
+    # Berkas backup / dump tidak boleh diunduh bila ikut tersalin ke public.
+    location ~* \.(sql|bak|old|orig|save|swp|log|env)$ {
+        return 403;
+    }
+
+    # /index.php ditangani oleh blok "location = /index.php" di bawah.
+    # Nginx selalu memeriksa exact match (=) lebih dahulu sebelum regex,
+    # sehingga aturan penolakan di atas tidak memblokir index.php.
+    location = /index.php {
+        limit_req zone=general_limit burst=50 nodelay;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    # Dotfiles (.env, .git, .htaccess, .htpasswd) tidak boleh diakses.
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}

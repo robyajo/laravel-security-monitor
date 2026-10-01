@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Internal\SecurityMonitor\Console\Commands\PruneSecurityLogs;
 use Internal\SecurityMonitor\Console\Commands\PurgeInjectedData;
 use Internal\SecurityMonitor\Console\Commands\SecurityBaselineCommand;
+use Internal\SecurityMonitor\Console\Commands\SecurityInstallCommand;
 use Internal\SecurityMonitor\Console\Commands\SecurityScanAccessLogs;
 use Internal\SecurityMonitor\Console\Commands\UnblockIpAddress;
 use Internal\SecurityMonitor\Http\Middleware\BlockIpAddress;
@@ -95,6 +96,18 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             __DIR__ . '/../database/migrations' => database_path('migrations'),
         ], 'security-migrations');
 
+        // Nginx Hardened Configuration
+        $this->publishes([
+            __DIR__ . '/../stubs/nginx.conf.stub' => base_path('nginx.conf'),
+        ], 'security-nginx');
+
+        // Publish All Assets (Config, Migrations, Nginx)
+        $this->publishes([
+            __DIR__ . '/../config/security.php' => config_path('security.php'),
+            __DIR__ . '/../database/migrations' => database_path('migrations'),
+            __DIR__ . '/../stubs/nginx.conf.stub' => base_path('nginx.conf'),
+        ], 'security-all');
+
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
     }
 
@@ -105,6 +118,7 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         }
 
         $this->commands([
+            SecurityInstallCommand::class,
             PruneSecurityLogs::class,
             UnblockIpAddress::class,
             SecurityScanAccessLogs::class,

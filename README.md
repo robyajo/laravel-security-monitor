@@ -65,18 +65,26 @@ Tambahkan repositori paket internal pada `composer.json` proyek Anda, lalu jalan
 composer require robyajo/laravel-security-monitor
 ```
 
-### 2. Publikasikan Konfigurasi & Migrasi
+### 2. Publikasikan Konfigurasi, Migrasi, dan Nginx WAF
 
-Publikasikan berkas konfigurasi `config/security.php`:
+Anda dapat menggunakan perintah interaktif otomatis satu langkah untuk mempublikasikan seluruh aset (termasuk `nginx.conf` yang siap pakai untuk server produksi):
 
 ```bash
-php artisan vendor:publish --tag=security-config
+# Publikasikan konfigurasi, migrasi, dan berkas nginx.conf sekaligus
+php artisan security:install
 ```
 
-Publikasikan berkas migrasi database:
+Atau publikasikan secara terpisah sesuai kebutuhan:
 
 ```bash
+# 1. Konfigurasi
+php artisan vendor:publish --tag=security-config
+
+# 2. Migrasi Database
 php artisan vendor:publish --tag=security-migrations
+
+# 3. Konfigurasi Web Server Nginx Hardened WAF
+php artisan vendor:publish --tag=security-nginx
 ```
 
 Jalankan migrasi database:
@@ -344,6 +352,28 @@ php artisan security:purge-injected-data --force
 ```
 
 ---
+
+
+---
+
+## 🌐 Konfigurasi Web Server Nginx Hardened WAF (`nginx.conf`)
+
+Paket ini menyertakan template konfigurasi Nginx siap pakai yang telah dioptimalkan dari insiden nyata di lingkungan produksi (`php artisan vendor:publish --tag=security-nginx`).
+
+Fitur proteksi bawaan `nginx.conf`:
+1. **Dua Zona Rate Limiting Terpisah**:
+   - `auth_limit`: 5 request/menit (burst 5) untuk endpoint sensitif (`/login`, `/register`, `/forgot-password`, `/reset-password`, `/two-factor-challenge`, `/livewire`, `/oauth`).
+   - `general_limit`: 30 request/detik (burst 50) untuk rute umum Laravel.
+2. **Proteksi Aset Statis Vite / Frontend**:
+   - Direktori `/build/` dibebaskan dari rate-limiting agar pemuatan paralel chunk JS tidak menyebabkan HTTP 429 atau `NS_ERROR_CORRUPTED_CONTENT`. Cache immutable 1 tahun.
+3. **Strict Single-PHP Execution**:
+   - **Hanya `/index.php`** yang boleh dieksekusi oleh PHP-FPM. Berkas `.php` lain yang berada di direktori publik (termasuk webshell yang lolos) langsung ditolak dengan **HTTP 403**.
+4. **Pencegahan Double Extension & Ekstensi Script Berbahaya**:
+   - Blokir otomatis ekstensi ganda (`.php.jpg`, `.phtml.zip`, `.phar.png`, dll.).
+5. **Sandboxing Direktori Storage / Upload**:
+   - Folder `/storage/` sepenuhnya dimatikan dari FastCGI PHP. Dilengkapi header `X-Content-Type-Options: nosniff` dan `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox` untuk mencegah eksekusi polyglot image ber-tag PHP atau SVG bereksekusi JS di browser.
+6. **Blokir Akses Berkas Sensitif & Dotfiles**:
+   - Menolak berkas cadangan (`.sql`, `.bak`, `.log`, `.env`) dan direktori tersembunyi (`.git`, `.htaccess`).
 
 ## 🧪 Menjalankan Pengujian (Testing)
 
