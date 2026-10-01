@@ -1,7 +1,7 @@
 # Laravel Security Monitor (Bulwark)
 ## Dokumentasi Resmi & Panduan Penggunaan Lengkap
 
-> **Versi Paket**: `1.0.2` | **PHP**: `^8.2 | ^8.3 | ^8.4 | ^8.5` | **Laravel**: `^10.0 | ^11.0 | ^12.0 | ^13.0` | **Lisensi**: `MIT`
+> **Versi Paket**: `1.0.3` | **PHP**: `^8.2 | ^8.3 | ^8.4 | ^8.5` | **Laravel**: `^10.0 | ^11.0 | ^12.0 | ^13.0` | **Lisensi**: `MIT`
 
 Selamat datang di dokumentasi resmi **`robyajo/laravel-security-monitor`** (Bulwark). Dokumentasi ini dirancang untuk memberikan panduan komprehensif mulai dari konsep arsitektur, instalasi, konfigurasi, integrasi REST API headless, modul keamanan tingkat lanjut, otomasi Artisan CLI, hingga hardening web server Nginx di lingkungan produksi.
 
