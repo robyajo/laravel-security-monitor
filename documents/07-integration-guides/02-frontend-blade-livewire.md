@@ -9,6 +9,7 @@ Jika aplikasi host Anda menggunakan template berbasis Blade atau Livewire, integ
 Jika request bukan panggilan JSON API, middleware `BlockIpAddress` secara otomatis memeriksa apakah berkas view Blade `errors.blocked` tersedia di aplikasi Anda (`resources/views/errors/blocked.blade.php`).
 
 Jika ada, paket akan me-render view tersebut dengan meneruskan variabel:
+
 - `$ip`: Alamat IP klien yang diblokir.
 - `$deviceId`: Fingerprint perangkat klien (jika ada).
 - `$localIp`: IP lokal klien.
@@ -18,6 +19,7 @@ Jika ada, paket akan me-render view tersebut dengan meneruskan variabel:
 - `$supportEmail`: Alamat email bantuan dari konfigurasi.
 
 ### Contoh Template Blade Cantik: `resources/views/errors/blocked.blade.php`
+
 ```blade
 <!DOCTYPE html>
 <html lang="id">
@@ -46,7 +48,7 @@ Jika ada, paket akan me-render view tersebut dengan meneruskan variabel:
         <span class="badge">Akses Ditolak (403)</span>
         <h1>Perlindungan Keamanan Aktif</h1>
         <p>{{ $message }}</p>
-        
+
         <div class="meta-box">
             <div class="meta-row">
                 <span class="meta-label">ID Referensi:</span>
@@ -81,7 +83,7 @@ Jika ada, paket akan me-render view tersebut dengan meneruskan variabel:
 ```blade
 <div class="mb-4">
     <label for="captcha" class="block text-sm font-medium text-gray-700">Kode Keamanan</label>
-    
+
     <div class="flex items-center space-x-3 mt-1 mb-2">
         <img id="captcha-svg" src="{{ route('security.captcha.image') }}" alt="Captcha" class="border rounded p-1 bg-white h-12" />
         <button type="button" onclick="document.getElementById('captcha-svg').src='{{ route('security.captcha.image') }}?t='+Date.now()" class="text-xs text-blue-600 hover:underline">
@@ -90,7 +92,7 @@ Jika ada, paket akan me-render view tersebut dengan meneruskan variabel:
     </div>
 
     <input type="text" name="captcha" id="captcha" required maxlength="6" class="uppercase font-mono tracking-widest border rounded px-3 py-2 w-full" placeholder="Ketik kode di atas" />
-    
+
     @error('captcha')
         <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
     @enderror
@@ -136,4 +138,47 @@ class LoginForm extends Component
         return view('livewire.login-form');
     }
 }
+```
+
+---
+
+## 4. Dashboard Monitoring Livewire Starter Kit Siap Pakai
+
+Jika aplikasi host Anda dibangun di atas **Laravel Livewire Starter Kit** (Livewire + Flux UI), Anda tidak perlu membangun panel monitoring dari nol. Paket menyediakan enam halaman Livewire siap pakai yang dapat dipublikasikan dengan satu perintah:
+
+```bash
+php artisan vendor:publish --tag=starterkit-livewire
+```
+
+Perintah tersebut menyalin berkas berikut ke aplikasi Anda:
+
+| Berkas yang Dipublikasikan                             | Deskripsi                                                   |
+| :----------------------------------------------------- | :---------------------------------------------------------- |
+| `resources/views/pages/security/overview.blade.php`    | Statistik, tren serangan, dan top attacker.                 |
+| `resources/views/pages/security/logs.blade.php`        | Tabel log keamanan dengan filter dan aksi bersihkan/hapus.  |
+| `resources/views/pages/security/blocked-ips.blade.php` | Manajemen karantina IP (blokir manual, toggle, unblock).    |
+| `resources/views/pages/security/server.blade.php`      | Audit integritas, pemindai webshell, baseline, dan lockout. |
+| `resources/views/pages/security/sessions.blade.php`    | Sesi pengguna aktif, riwayat login, dan IP terpercaya.      |
+| `resources/views/pages/security/tickets.blade.php`     | Review tiket banding (approve/reject + auto-unblock).       |
+| `resources/views/pages/security/layout.blade.php`      | Sub-layout navigasi antar modul keamanan.                   |
+
+Setelah dipublikasikan, aktifkan dashboard melalui `.env`:
+
+```dotenv
+SECURITY_DASHBOARD_ENABLED=true
+SECURITY_DASHBOARD_PREFIX=security
+```
+
+Panel dapat diakses pada `/security`. Halaman-halaman tersebut merupakan **single-file Livewire component** (`pages::security.*`) sehingga otomatis memakai layout starter kit (`layouts::app`).
+
+> 🔒 **Wajib Login**: Rute dashboard memakai middleware `web` + `auth`, dan secara bawaan juga `security.admin` (Gate `manage-security-monitor`). Untuk mengizinkan semua pengguna yang sudah login (tanpa syarat admin), kosongkan `security.dashboard.admin_middleware` pada `config/security.php`.
+
+### Menambahkan Tautan di Sidebar Starter Kit
+
+Untuk memunculkan tautan ke panel, tambahkan item berikut pada `resources/views/layouts/app/sidebar.blade.php` di dalam `<flux:sidebar.nav>`:
+
+```blade
+<flux:sidebar.item icon="shield-check" :href="route('security.dashboard.overview')" :current="request()->routeIs('security.dashboard.*')" wire:navigate>
+    {{ __('Security Monitor') }}
+</flux:sidebar.item>
 ```

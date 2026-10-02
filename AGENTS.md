@@ -10,6 +10,7 @@ This repository is **`robyajo/laravel-security-monitor`** (Bulwark), an enterpri
 - **Package Type**: `library` (Composer only)
 
 ### 1.1. Zero NPM / Pure PHP Principle (Spatie-Standard)
+
 - **100% Pure PHP**: This package MUST NOT introduce any NPM, Node.js, or frontend build step dependency.
 - **Spatie-Style Core Integration**: Like popular Spatie packages (`spatie/laravel-permission`, `spatie/laravel-activitylog`, `spatie/laravel-honeypot`), once installed via `composer require`, the package hooks directly and cleanly into Laravel Core:
   1. **Package Auto-Discovery**: `SecurityMonitorServiceProvider` & `SecurityMonitor` Facade.
@@ -83,11 +84,13 @@ When working in this repository, you MUST activate the relevant skills located i
 ## 4. Critical Architecture Rules & Constraints
 
 ### 4.1. Zero-Tolerance Threat Detection & ReDoS Safety
+
 - **Zero-Tolerance Signatures**: Null-byte upload (`.php%00.jpg`), double extensions (`.php.jpg`), path traversal (`../../../public/`), sensitive probe (`.htaccess`, `.env`, `.git`), and SSTI canary (`{{7*7}}`) must trigger an instant block on the very first request without requiring repeated attempts.
 - **Strict ReDoS Immunity**: Detection regular expressions must never contain unbounded nested quantifiers like `(a+)+` or `(.*[a-z])+`. Always ensure new regex patterns pass `Tests\Feature\DetectorTuningTest`.
 - **False-Positive Prevention**: Detection patterns must not trigger on normal admin actions, valid filenames, standard search queries, or legitimate JSON payloads.
 
 ### 4.2. Decoupled Models and Database Tables
+
 - **Never Hardcode User Model**: Always resolve the host application's user model dynamically:
   ```php
   $userModel = config('security.user_model', 'App\Models\User');
@@ -102,10 +105,12 @@ When working in this repository, you MUST activate the relevant skills located i
 - **Eloquent Host Integration**: Host apps integrate with the package using `Internal\SecurityMonitor\Concerns\HasSecurityRelations` on their `User` model.
 
 ### 4.3. Device-Level Quarantine & Reverse Proxy Support
+
 - Support both `block_scope = 'ip'` (entire router/NAT) and `block_scope = 'device'` (specific `device_id` and `local_ip`).
 - Client IP resolution must account for trusted reverse proxy headers (`CF-Connecting-IP`, `X-Real-IP`, `X-Forwarded-For`).
 
 ### 4.4. Server Security & Safe Sanitization
+
 - `ServerSecurityService::deleteSuspiciousFile()` must strictly validate:
   1. No path traversal (`..` or null-bytes).
   2. The target file must reside strictly inside `base_path()`.
@@ -152,10 +157,15 @@ config/
 database/migrations/       # Consolidated package migrations
 
 routes/
-└── security.php           # Headless REST API routes
+├── security.php           # Headless REST API routes
+└── security-dashboard.php # Optional Livewire Starter Kit dashboard routes (auth + security.admin)
 
 stubs/
-└── nginx.conf.stub        # Hardened Nginx WAF configuration template
+├── nginx.conf.stub        # Hardened Nginx WAF configuration template
+├── htaccess.stub          # Hardened Apache .htaccess template
+├── blocked.blade.php      # Default 403 "blocked" page
+├── env.stub               # Documented SECURITY_* / CAPTCHA_* environment block
+└── livewire/pages/security/ # Livewire Starter Kit monitoring dashboard (publish tag: starterkit-livewire)
 ```
 
 ---

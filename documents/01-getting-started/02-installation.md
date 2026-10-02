@@ -9,6 +9,7 @@ Halaman ini memandu proses instalasi paket **`robyajo/laravel-security-monitor`*
 ## 1. Persyaratan Sistem
 
 Pastikan lingkungan server Anda memenuhi spesifikasi minimum berikut:
+
 - **PHP**: `^8.2`, `^8.3`, `^8.4`, atau `^8.5`
 - **Laravel**: `^10.0`, `^11.0`, `^12.0`, atau `^13.0`
 - **Ekstensi PHP**: `pdo`, `mbstring`, `json`, `filter`, `openssl` (tanpa memerlukan ekstensi `gd` atau `imagick` berkat implementasi pure SVG CAPTCHA).
@@ -18,12 +19,15 @@ Pastikan lingkungan server Anda memenuhi spesifikasi minimum berikut:
 ## 2. Pemasangan via Composer
 
 ### Menggunakan Packagist (Publik)
+
 Jika paket sudah diterbitkan di Packagist:
+
 ```bash
 composer require robyajo/laravel-security-monitor
 ```
 
 ### Menggunakan Repositori Lokal / Private Git (Monorepo atau Path)
+
 Jika Anda menggunakan paket ini secara internal sebelum publikasi ke Packagist, tambahkan konfigurasi repositori pada berkas `composer.json` proyek Laravel Anda:
 
 ```json
@@ -39,6 +43,7 @@ Jika Anda menggunakan paket ini secara internal sebelum publikasi ke Packagist, 
 ```
 
 Kemudian pasang paket:
+
 ```bash
 composer require robyajo/laravel-security-monitor:@dev
 ```
@@ -54,6 +59,7 @@ php artisan security:install
 ```
 
 Perintah ini akan secara otomatis:
+
 1. Mempublikasikan berkas konfigurasi `config/security.php`.
 2. Mempublikasikan berkas migrasi database ke `database/migrations/`.
 3. Mempublikasikan template virtual host `nginx.conf` di root proyek.
@@ -66,13 +72,14 @@ Perintah ini akan secara otomatis:
    - Menggunakan deteksi cerdas agar tidak terjadi duplikasi jika variabel sudah pernah ditambahkan sebelumnya.
 
 ### Opsi Perintah:
-| Opsi | Fungsi |
-| :--- | :--- |
-| `--force` | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess` dengan template bawaan paket. |
-| `--without-nginx` | Melewatkan publikasi berkas `nginx.conf` jika server Anda tidak menggunakan web server Nginx. |
+
+| Opsi                 | Fungsi                                                                                                                    |
+| :------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| `--force`            | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess` dengan template bawaan paket.           |
+| `--without-nginx`    | Melewatkan publikasi berkas `nginx.conf` jika server Anda tidak menggunakan web server Nginx.                             |
 | `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess` jika Anda menggunakan Nginx murni dan tidak memerlukan Apache `.htaccess`. |
-| `--with-htaccess` | Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan paket. |
-| `--without-env` | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`. |
+| `--with-htaccess`    | Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan paket.                                       |
+| `--without-env`      | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`.                                           |
 
 ---
 
@@ -81,33 +88,50 @@ Perintah ini akan secara otomatis:
 Jika Anda ingin mempublikasikan aset secara bertahap atau terpisah:
 
 ### 1. Publikasikan Konfigurasi Saja
+
 ```bash
 php artisan vendor:publish --tag=security-config
 ```
+
 Berkas akan ditempatkan di: `config/security.php`.
 
 ### 2. Publikasikan Migrasi Saja
+
 ```bash
 php artisan vendor:publish --tag=security-migrations
 ```
+
 Berkas migrasi akan disalin ke folder `database/migrations/`.
 
 ### 3. Publikasikan Template Nginx WAF Hardened Saja
+
 ```bash
 php artisan vendor:publish --tag=security-nginx
 ```
+
 Berkas akan ditempatkan di root proyek: `nginx.conf`.
 
 ### 4. Publikasikan Template Apache `.htaccess` Hardened Saja
+
 ```bash
 php artisan vendor:publish --tag=security-htaccess --force
 ```
+
 Berkas akan ditempatkan di: `public/.htaccess`.
 
 ### 5. Publikasikan Seluruh Aset Sekaligus
+
 ```bash
 php artisan vendor:publish --tag=security-all --force
 ```
+
+### 6. Publikasikan Dashboard Monitoring Livewire Starter Kit
+
+```bash
+php artisan vendor:publish --tag=starterkit-livewire
+```
+
+Perintah ini menyalin enam halaman Livewire (single-file component) ke `resources/views/pages/security/` beserta blok konfigurasi `dashboard` pada `config/security.php`. Dashboard bersifat opsional dan **wajib login** (lihat bagian [Dashboard Monitoring Livewire](#8-dashboard-monitoring-livewire-starter-kit-opsional)).
 
 ---
 
@@ -120,9 +144,10 @@ php artisan migrate
 ```
 
 Tabel-tabel yang dibuat secara default:
+
 1. `blocked_ips`: Menyimpan daftar karantina IP dan perangkat aktif/kedaluwarsa beserta hit counter.
 2. `security_logs`: Log audit ancaman keamanan, pola yang terdeteksi, bukti payload, dan aksi mitigasi.
-3. `login_attempts`: Pelacakan kegagalan login bertingkat (*stepped lockout*) per kombinasi email & IP.
+3. `login_attempts`: Pelacakan kegagalan login bertingkat (_stepped lockout_) per kombinasi email & IP.
 4. `ip_unblock_requests`: Tiket banding pembukaan blokir yang diajukan oleh pengguna publik.
 5. `user_logins`: Rekam jejak riwayat login pengguna, detail perangkat/browser, sesi aktif, dan waktu aktivitas terakhir.
 6. `trusted_ips`: Daftar alamat IP terpercaya per pengguna untuk otorisasi akses khusus.
@@ -148,6 +173,7 @@ class User extends Authenticatable
 ```
 
 Metode relasi Eloquent yang otomatis tersedia:
+
 - `$user->logins()`: Mengambil seluruh riwayat login (`HasMany` ke `UserLogin`).
 - `$user->trustedIps()`: Mengambil daftar IP terpercaya milik pengguna (`HasMany` ke `TrustedIp`).
 - `$user->securityLogs()`: Mengambil audit ancaman yang diasosiasikan dengan akun ini (`HasMany` ke `SecurityLog`).
@@ -160,12 +186,12 @@ Metode relasi Eloquent yang otomatis tersedia:
 
 Paket menyediakan 4 middleware terisolasi:
 
-| Alias | Kelas Middleware | Peran |
-| :--- | :--- | :--- |
-| `security.block` | `Internal\SecurityMonitor\Http\Middleware\BlockIpAddress` | Menolak request dari IP/perangkat yang sedang terblokir aktif (HTTP 403). |
-| `security.detect`| `Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats` | Menginspeksi payload request terhadap tanda-tanda serangan siber dan mengaktifkan auto-block/instant block. |
-| `security.admin` | `Internal\SecurityMonitor\Http\Middleware\EnsureSecurityAdmin` | Memastikan hanya user dengan wewenang admin yang dapat mengakses REST API admin. |
-| `security.activity`| `Internal\SecurityMonitor\Http\Middleware\TrackUserActivity` | Memperbarui heartbeat aktivitas login pengguna di database (ter-throttle 45 detik). |
+| Alias               | Kelas Middleware                                                 | Peran                                                                                                       |
+| :------------------ | :--------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| `security.block`    | `Internal\SecurityMonitor\Http\Middleware\BlockIpAddress`        | Menolak request dari IP/perangkat yang sedang terblokir aktif (HTTP 403).                                   |
+| `security.detect`   | `Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats` | Menginspeksi payload request terhadap tanda-tanda serangan siber dan mengaktifkan auto-block/instant block. |
+| `security.admin`    | `Internal\SecurityMonitor\Http\Middleware\EnsureSecurityAdmin`   | Memastikan hanya user dengan wewenang admin yang dapat mengakses REST API admin.                            |
+| `security.activity` | `Internal\SecurityMonitor\Http\Middleware\TrackUserActivity`     | Memperbarui heartbeat aktivitas login pengguna di database (ter-throttle 45 detik).                         |
 
 ### Pendaftaran pada Laravel 11 / 12 / 13 (`bootstrap/app.php`)
 
@@ -209,3 +235,37 @@ protected $middleware = [
 ```
 
 > **Tips Opsi Otomatis (Zero-Touch)**: Jika Anda mengatur `SECURITY_AUTO_REGISTER_MIDDLEWARE=true` di berkas `.env`, paket akan otomatis menyuntikkan `BlockIpAddress` dan `DetectSecurityThreats` ke Kernel HTTP aplikasi secara otomatis saat booting.
+
+---
+
+## 8. Dashboard Monitoring Livewire Starter Kit (Opsional)
+
+Paket tetap 100% headless secara default. Bila aplikasi host menggunakan **Laravel Livewire Starter Kit** (Livewire + Flux UI), Anda dapat mengaktifkan panel monitoring siap pakai:
+
+```bash
+# 1. Publikasikan tampilan + konfigurasi
+php artisan vendor:publish --tag=starterkit-livewire
+
+# 2. Aktifkan di .env
+#    SECURITY_DASHBOARD_ENABLED=true
+#    SECURITY_DASHBOARD_PREFIX=security
+
+# 3. Bersihkan cache
+php artisan optimize:clear
+```
+
+Panel tersedia di `/security` dan berisi enam modul: **Overview**, **Security Logs**, **Blocked IPs**, **Server Audit**, **User Sessions**, dan **Unblock Appeals**.
+
+### Keamanan & Kontrol Akses
+
+- Rute hanya didaftarkan ketika `security.dashboard.enabled=true` **dan** Livewire terpasang.
+- Seluruh rute memakai middleware `web` + `auth` (wajib login) dan, secara bawaan, `security.admin` (Gate `manage-security-monitor`).
+- Kustomisasi melalui `config/security.php`:
+  ```php
+  'dashboard' => [
+      'enabled' => (bool) env('SECURITY_DASHBOARD_ENABLED', false),
+      'prefix' => env('SECURITY_DASHBOARD_PREFIX', 'security'),
+      'middleware' => ['web', 'auth'],
+      'admin_middleware' => ['Internal\\SecurityMonitor\\Http\\Middleware\\EnsureSecurityAdmin'],
+  ],
+  ```

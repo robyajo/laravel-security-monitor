@@ -84,6 +84,7 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         $this->registerCommands();
         $this->registerListeners();
         $this->registerRoutes();
+        $this->registerDashboardRoutes();
         $this->registerSchedule();
         $this->registerGate();
         $this->registerMiddleware();
@@ -163,6 +164,34 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             'security-all',
         );
 
+        // Livewire Starter Kit Monitoring Dashboard (views + configuration).
+        //
+        // Publishes the Blade/single-file Livewire pages that make up the
+        // monitoring dashboard, tailored for the official Laravel Livewire
+        // Starter Kit (Flux UI), together with the package configuration.
+        $dashboardAssets = [
+            __DIR__.'/../stubs/livewire/pages/security' => resource_path(
+                'views/pages/security',
+            ),
+            __DIR__.'/../config/security.php' => config_path('security.php'),
+        ];
+
+        $this->publishes($dashboardAssets, 'starterkit-livewire');
+        $this->publishes($dashboardAssets, 'security-dashboard');
+
+        // Backwards/typo-compatible alias so that both spellings work.
+        $this->publishes($dashboardAssets, 'staterkit-livewire');
+
+        // Monitoring views only (no configuration overwrite).
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/livewire/pages/security' => resource_path(
+                    'views/pages/security',
+                ),
+            ],
+            'security-dashboard-views',
+        );
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 
@@ -194,6 +223,28 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         if (config('security.routes.enabled', true)) {
             $this->loadRoutesFrom(__DIR__.'/../routes/security.php');
         }
+    }
+
+    /**
+     * Register the optional Livewire Starter Kit monitoring dashboard.
+     *
+     * The dashboard is only wired up when it has been explicitly enabled via
+     * "security.dashboard.enabled" and the Livewire package is installed in the
+     * host application. Its views are published separately using:
+     *
+     *     php artisan vendor:publish --tag=starterkit-livewire
+     */
+    protected function registerDashboardRoutes(): void
+    {
+        if (! config('security.dashboard.enabled', false)) {
+            return;
+        }
+
+        if (! class_exists(\Livewire\Livewire::class)) {
+            return;
+        }
+
+        $this->loadRoutesFrom(__DIR__.'/../routes/security-dashboard.php');
     }
 
     protected function registerSchedule(): void

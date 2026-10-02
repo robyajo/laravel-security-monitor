@@ -676,6 +676,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Livewire Starter Kit Dashboard
+    |--------------------------------------------------------------------------
+    |
+    | Panel monitoring berbasis Livewire yang dapat dipublikasikan ke dalam
+    | aplikasi host melalui perintah:
+    |
+    |     php artisan vendor:publish --tag=starterkit-livewire
+    |
+    | Publikasi tersebut menyalin berkas Blade (single-file Livewire component)
+    | ke resources/views/pages/security beserta konfigurasi ini. Seluruh halaman
+    | WAJIB melalui autentikasi (middleware "auth") dan secara default juga
+    | dibatasi oleh Gate "manage-security-monitor" (middleware "security.admin").
+    |
+    | Dashboard dinonaktifkan secara default agar paket tetap 100% headless
+    | sampai pengguna secara sengaja mengaktifkannya.
+    |
+    */
+    'dashboard' => [
+        'enabled' => (bool) env('SECURITY_DASHBOARD_ENABLED', false),
+        'prefix' => env('SECURITY_DASHBOARD_PREFIX', 'security'),
+        'middleware' => ['web', 'auth'],
+        'admin_middleware' => ['Internal\\SecurityMonitor\\Http\\Middleware\\EnsureSecurityAdmin'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Automatic Schedule Configuration
     |--------------------------------------------------------------------------
     |

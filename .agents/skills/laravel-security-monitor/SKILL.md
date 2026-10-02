@@ -54,18 +54,20 @@ metadata:
 ## 2. Threat Detection & Zero-Tolerance Engine
 
 ### Instant Block vs. Progressive Threshold
+
 - **Zero-Tolerance Signatures** (`config('security.instant_block.signatures')`):
   - Null-byte upload: `\.php%00\.jpg`, `\.php\0\.png`.
   - Double extensions: `\.php\.(?:jpe?g|png|gif|webp|svg)`.
   - Path traversal: `(?:\.\.[\/\\])+`, `\.\.%2f`, `\.\.%5c`.
   - Probes for sensitive files: `\.htaccess`, `\.env`, `\.git/config`.
   - SSTI canary probes: `\{\{7\*7\}\}`, `\$\{7\*7\}`.
-  - *Action*: Triggered on the **very first attempt** without waiting for threshold, immediately writing to `blocked_ips` (default: 720 hours / 30 days) and returning HTTP 403.
+  - _Action_: Triggered on the **very first attempt** without waiting for threshold, immediately writing to `blocked_ips` (default: 720 hours / 30 days) and returning HTTP 403.
 - **Progressive Threat Threshold** (`config('security.auto_block.*')`):
   - Suspicious queries (SQLi patterns, XSS probes, scanner UAs) increment threat scores in a sliding window (default: 3 occurrences in 10 minutes).
   - Reaching threshold escalates to automatic quarantine with configurable duration (default: 24 hours).
 
 ### Validation Rules
+
 - `SafeImageFile`:
   - Inspects file binary headers and contents.
   - Rejects polyglot JPEGs/PNGs containing embedded `<?php` or `<?=`.
@@ -81,11 +83,13 @@ metadata:
 ## 3. Server Security & Integrity Scanner
 
 ### Integrity Baseline (`ServerSecurityService`)
+
 - Monitored files (`config('security.server_scan.integrity_paths')`): `app/`, `config/`, `routes/`, `public/index.php`, `bootstrap/app.php`.
 - SHA-256 hash map stored in `storage/app/security-baseline.json`.
 - `integrityReport()` returns modified, missing, and newly added files.
 
 ### Suspicious File & Webshell Detection
+
 - Scans `public/` and `storage/app/public/` for executable extensions (`.php`, `.phtml`, `.php5`, `.phar`).
 - Matches known webshell signatures (e.g., `b374k`, `c99`, `r57`, `wso`, `eval(base64_decode(`).
 - `deleteSuspiciousFile($relativePath, $userId)`:
@@ -101,15 +105,18 @@ metadata:
 All endpoints use prefix `/api/security` (configurable in `config/security.php`):
 
 ### Public
+
 - `GET /api/security/captcha`: SVG captcha challenge.
 - `POST /api/security/captcha/verify`: Stateless captcha verification.
 - `POST /api/security/unblock-tickets/submit`: Appeal ticket submission (30m cooldown).
 - `GET /api/security/unblock-tickets/check/{ticketNumber}`: Appeal status lookup.
 
 ### Authenticated User
+
 - `POST /api/security/trusted-ips/save-my-ip`: Save current IP as trusted.
 
 ### Admin Protected (`auth` + `security.admin`)
+
 - **Logs**: `GET /logs`, `DELETE /logs/clear`, `DELETE /logs/{id}`.
 - **Blocked IPs**: `GET /blocked-ips`, `POST /blocked-ips`, `GET /blocked-ips/{id}`, `PATCH /blocked-ips/{id}/toggle`, `DELETE /blocked-ips/{id}`.
 - **Server Audit**: `GET /server`, `POST /server/baseline`, `DELETE /server/baseline`, `DELETE /server/suspicious-files`, `DELETE /lockouts/{id}`.
@@ -117,23 +124,25 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 - **Appeals**: `GET /unblock-tickets`, `POST /unblock-tickets/{id}/respond`, `DELETE /unblock-tickets/{id}`.
 
 ### Web Server Hardening & Publishing
+
 - `php artisan vendor:publish --tag=security-nginx`: Publishes `nginx.conf` template with dual-zone rate limiting, strict single-PHP execution (`/index.php` only), storage sandboxing (nosniff + CSP sandbox), and double-extension blocking.
 - `php artisan vendor:publish --tag=security-htaccess`: Publishes `public/.htaccess` template with Apache hardening (dotfile protection, double extension blocking, dump/log protection, directory indexing disabled).
 - `php artisan vendor:publish --tag=security-all`: Publishes config, migrations, `nginx.conf`, and `public/.htaccess` in a single command.
-- `php artisan security:install`: Interactive one-stop command that publishes assets and auto-appends hardening rules to `public/.htaccess` with automatic backup.
+- `php artisan vendor:publish --tag=starterkit-livewire`: Publishes the optional Livewire Starter Kit monitoring dashboard (six single-file Livewire pages under `resources/views/pages/security/`) plus the `dashboard` configuration block. The dashboard is disabled by default and, once enabled via `SECURITY_DASHBOARD_ENABLED=true`, is served under `/security` behind the `web` + `auth` + `security.admin` middleware.
+- `php artisan security:install`: Interactive one-stop command that publishes assets and auto-appends hardening rules to `public/.htaccess` with automatic backup. Add `--with-dashboard` to also publish the Livewire dashboard.
 
 ---
 
 ## 5. Artisan CLI Commands
 
-| Command | Purpose |
-| :--- | :--- |
-| `security:install` | Publish all package assets: config, migrations, and hardened `nginx.conf` with interactive options. |
-| `security:scan-logs` | Stream & parse Apache/Nginx access logs for zero-tolerance attacks; auto-block offending IPs. |
-| `security:baseline` | Audit, create (`--create`), or destroy (`--prune`) SHA-256 integrity baseline. |
-| `security:unblock-ip {ip}` | Lift block on IP or device immediately (emergency escape hatch). |
-| `security:prune-logs {--days=}` | Remove logs older than retention period (default: 90 days). |
-| `security:purge-injected-data {--force}` | Scan & clean residual pentest payloads from application database tables. |
+| Command                                  | Purpose                                                                                             |
+| :--------------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| `security:install`                       | Publish all package assets: config, migrations, and hardened `nginx.conf` with interactive options. |
+| `security:scan-logs`                     | Stream & parse Apache/Nginx access logs for zero-tolerance attacks; auto-block offending IPs.       |
+| `security:baseline`                      | Audit, create (`--create`), or destroy (`--prune`) SHA-256 integrity baseline.                      |
+| `security:unblock-ip {ip}`               | Lift block on IP or device immediately (emergency escape hatch).                                    |
+| `security:prune-logs {--days=}`          | Remove logs older than retention period (default: 90 days).                                         |
+| `security:purge-injected-data {--force}` | Scan & clean residual pentest payloads from application database tables.                            |
 
 ---
 
