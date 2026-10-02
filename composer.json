@@ -104,7 +104,8 @@
         "exclude": [
             "/.agents",
             "/AGENTS.md",
-            "/DOCS",
+            "/documents",
+            "/web",
             "/.github",
             "/.gitattributes",
             "/.gitignore",

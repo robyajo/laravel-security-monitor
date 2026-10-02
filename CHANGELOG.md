@@ -2,6 +2,22 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.1.1] - 2026-10-02
+
+### Changed
+
+- Distribution: the Astro documentation site (`web/`) and the `documents/`
+  folder are now excluded from the Composer/Packagist archive via
+  `export-ignore` and `archive.exclude`. The previous `/DOCS` entry was
+  case-sensitive and never matched the lowercase `documents/` folder, so the
+  documentation was shipped to consumers by accident.
+
+### Added
+
+- Official documentation site (Astro + Starlight) maintained in a separate
+  repository (`robyajo/web-laravel-security`). It is not part of the package
+  distribution.
+
 ## [1.1.0] - 2026-10-02
 
 ### Added
