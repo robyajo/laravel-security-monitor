@@ -1,117 +1,117 @@
 {
-  "name": "robyajo/laravel-security-monitor",
-  "description": "Enterprise-grade headless self-hosted WAF, threat detection engine, zero-tolerance blocking, stepped login lockout, pure SVG captcha, and security auditing toolkit for Laravel.",
-  "keywords": [
-    "laravel",
-    "security",
-    "waf",
-    "firewall",
-    "threat-detection",
-    "ip-blocking",
-    "captcha",
-    "svg-captcha",
-    "brute-force",
-    "login-throttle",
-    "webshell-scanner",
-    "security-audit",
-    "headless"
-  ],
-  "homepage": "https://github.com/robyajo/laravel-security-monitor",
-  "support": {
-    "issues": "https://github.com/robyajo/laravel-security-monitor/issues",
-    "source": "https://github.com/robyajo/laravel-security-monitor",
-    "docs": "https://github.com/robyajo/laravel-security-monitor#readme"
-  },
-  "funding": [
-    {
-      "type": "custom",
-      "url": "https://saweria.co/robykartis"
-    }
-  ],
-  "type": "library",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Roby",
-      "email": "robyfull.dev@gmail.com",
-      "role": "Developer"
-    }
-  ],
-  "require": {
-    "php": "^8.2|^8.3|^8.4|^8.5",
-    "illuminate/auth": "^10.0|^11.0|^12.0|^13.0",
-    "illuminate/console": "^10.0|^11.0|^12.0|^13.0",
-    "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
-    "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
-    "illuminate/routing": "^10.0|^11.0|^12.0|^13.0",
-    "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
-    "illuminate/validation": "^10.0|^11.0|^12.0|^13.0"
-  },
-  "require-dev": {
-    "mockery/mockery": "^1.6",
-    "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
-    "pestphp/pest": "^2.0|^3.0|^4.0",
-    "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0"
-  },
-  "suggest": {
-    "livewire/livewire": "Required for the optional Livewire Starter Kit monitoring dashboard (vendor:publish --tag=starterkit-livewire).",
-    "livewire/flux": "Recommended UI component library for the Livewire Starter Kit monitoring dashboard.",
-    "inertiajs/inertia-laravel": "Required for the optional React Starter Kit monitoring dashboard (vendor:publish --tag=starterkit-react)."
-  },
-  "autoload": {
-    "psr-4": {
-      "Internal\\SecurityMonitor\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "Internal\\SecurityMonitor\\Tests\\": "tests/"
-    }
-  },
-  "scripts": {
-    "test": "pest",
-    "test:coverage": "pest --coverage",
-    "analyse": "phpstan analyse",
-    "format": "pint",
-    "lint": "pint --test",
-    "dev:tools": "composer require --dev larastan/larastan laravel/pint --no-interaction"
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "Internal\\SecurityMonitor\\SecurityMonitorServiceProvider"
-      ],
-      "aliases": {
-        "SecurityMonitor": "Internal\\SecurityMonitor\\Facades\\SecurityMonitor"
-      }
-    }
-  },
-  "config": {
-    "sort-packages": true,
-    "allow-plugins": {
-      "pestphp/pest-plugin": true
+    "name": "robyajo/laravel-security-monitor",
+    "description": "Enterprise-grade headless self-hosted WAF, threat detection engine, zero-tolerance blocking, stepped login lockout, pure SVG captcha, and security auditing toolkit for Laravel.",
+    "keywords": [
+        "laravel",
+        "security",
+        "waf",
+        "firewall",
+        "threat-detection",
+        "ip-blocking",
+        "captcha",
+        "svg-captcha",
+        "brute-force",
+        "login-throttle",
+        "webshell-scanner",
+        "security-audit",
+        "headless"
+    ],
+    "homepage": "https://github.com/robyajo/laravel-security-monitor",
+    "support": {
+        "issues": "https://github.com/robyajo/laravel-security-monitor/issues",
+        "source": "https://github.com/robyajo/laravel-security-monitor",
+        "docs": "https://github.com/robyajo/laravel-security-monitor#readme"
     },
-    "audit": {
-      "block": false
+    "funding": [
+        {
+            "type": "custom",
+            "url": "https://saweria.co/robykartis"
+        }
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Roby",
+            "email": "robyfull.dev@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2|^8.3|^8.4|^8.5",
+        "illuminate/auth": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/console": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/routing": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/validation": "^10.0|^11.0|^12.0|^13.0"
     },
-    "policy": {
-      "advisories": {
-        "block": false
-      }
-    }
-  },
-  "archive": {
-    "exclude": [
-      "/.agents",
-      "/AGENTS.md",
-      "/DOCS",
-      "/.github",
-      "/.gitattributes",
-      "/.gitignore",
-      "/push.sh",
-      "/paparan"
-    ]
-  },
-  "minimum-stability": "stable",
-  "prefer-stable": true
+    "require-dev": {
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+        "pestphp/pest": "^2.0|^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0"
+    },
+    "suggest": {
+        "livewire/livewire": "Required for the optional Livewire Starter Kit monitoring dashboard (vendor:publish --tag=starterkit-livewire).",
+        "livewire/flux": "Recommended UI component library for the Livewire Starter Kit monitoring dashboard.",
+        "inertiajs/inertia-laravel": "Required for the optional React Starter Kit monitoring dashboard (vendor:publish --tag=starterkit-react)."
+    },
+    "autoload": {
+        "psr-4": {
+            "Internal\\SecurityMonitor\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Internal\\SecurityMonitor\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "test:coverage": "pest --coverage",
+        "analyse": "phpstan analyse",
+        "format": "pint",
+        "lint": "pint --test",
+        "dev:tools": "composer require --dev larastan/larastan laravel/pint --no-interaction"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Internal\\SecurityMonitor\\SecurityMonitorServiceProvider"
+            ],
+            "aliases": {
+                "SecurityMonitor": "Internal\\SecurityMonitor\\Facades\\SecurityMonitor"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "audit": {
+            "block": false
+        },
+        "policy": {
+            "advisories": {
+                "block": false
+            }
+        }
+    },
+    "archive": {
+        "exclude": [
+            "/.agents",
+            "/AGENTS.md",
+            "/DOCS",
+            "/.github",
+            "/.gitattributes",
+            "/.gitignore",
+            "/push.sh",
+            "/paparan"
+        ]
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }
