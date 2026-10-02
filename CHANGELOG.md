@@ -2,6 +2,43 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Livewire Starter Kit monitoring dashboard** (optional): publish six
+  single-file Livewire pages (Overview, Security Logs, Blocked IPs, Server
+  Audit, User Sessions, Unblock Appeals) with
+  `php artisan vendor:publish --tag=starterkit-livewire`. The dashboard is
+  disabled by default and served under `/security` behind the
+  `web` + `auth` + `security.admin` middleware.
+- **React (Inertia) Starter Kit monitoring dashboard** (optional): publish six
+  server-rendered Inertia + React pages and shared components with
+  `php artisan vendor:publish --tag=starterkit-react`. Backed by the new
+  `Internal\SecurityMonitor\Http\Controllers\Dashboard\*` controllers, so no
+  separate API token is required. Enable with `SECURITY_DASHBOARD_DRIVER=react`.
+- `--with-dashboard` and `--with-react-dashboard` options on
+  `php artisan security:install`.
+- `documents/generate.php`: regenerates the `documents/index.html` portal
+  (Tailwind CSS Play CDN + marked.js + Mermaid.js) from the markdown chapters.
+
+### Changed
+
+- The `dashboard` configuration block gained a `driver` option
+  (`livewire` | `react`) and the new `SECURITY_DASHBOARD_DRIVER` environment
+  variable. Both starter-kit dashboards share the same route prefix and
+  authorization middleware.
+- The documentation portal `documents/index.html` now uses the Tailwind CSS
+  Play CDN instead of hand-written CSS, and its content is generated from the
+  markdown chapters so it never drifts from `documents/`.
+
+### Documentation
+
+- Documented the Livewire and React dashboards in the README, the installation
+  guide, and the frontend integration guides, including the new `.env`
+  variables (`SECURITY_DASHBOARD_ENABLED`, `SECURITY_DASHBOARD_DRIVER`,
+  `SECURITY_DASHBOARD_PREFIX`).
+
 ## [1.0.12] - 2026-10-02
 
 ### Fixed
@@ -109,34 +146,34 @@ All notable changes to `robyajo/laravel-security-monitor` will be documented in 
 ### Added
 
 - **Self-Hosted WAF & Threat Engine**:
-    - Zero-tolerance instant block signatures (null byte, double extensions, path traversal, webshell probes, SSTI canary, polyglot uploads).
-    - Multi-tier progressive threat scoring and auto-blocking with sliding time windows.
-    - ReDoS-hardened regex patterns tuned against real-world incidents.
-    - Reverse proxy support (`CF-Connecting-IP`, `X-Real-IP`, `X-Forwarded-For`).
+  - Zero-tolerance instant block signatures (null byte, double extensions, path traversal, webshell probes, SSTI canary, polyglot uploads).
+  - Multi-tier progressive threat scoring and auto-blocking with sliding time windows.
+  - ReDoS-hardened regex patterns tuned against real-world incidents.
+  - Reverse proxy support (`CF-Connecting-IP`, `X-Real-IP`, `X-Forwarded-For`).
 - **Device-Level Quarantine & Scope**:
-    - Granular blocking via `device_id` and `local_ip` (WebRTC / device fingerprint) to avoid punishing innocent users on shared NAT/router public IPs.
-    - Block scopes: `ip` (entire router) vs `device` (specific client device).
+  - Granular blocking via `device_id` and `local_ip` (WebRTC / device fingerprint) to avoid punishing innocent users on shared NAT/router public IPs.
+  - Block scopes: `ip` (entire router) vs `device` (specific client device).
 - **Public Appeal & Ticket Submissions**:
-    - Public headless REST API for unblock appeal ticket submission and verification.
-    - Admin approval/rejection endpoints with automatic IP/device quarantine release.
+  - Public headless REST API for unblock appeal ticket submission and verification.
+  - Admin approval/rejection endpoints with automatic IP/device quarantine release.
 - **Multi-Tier Stepped Login Protection**:
-    - Stepped progressive lockouts (1m -> 5m -> 15m -> 1h -> 24h) preventing brute force and credential stuffing attacks.
-    - Automatic failed login security event logging.
+  - Stepped progressive lockouts (1m -> 5m -> 15m -> 1h -> 24h) preventing brute force and credential stuffing attacks.
+  - Automatic failed login security event logging.
 - **Zero-Dependency SVG CAPTCHA**:
-    - Pure SVG vector-matrix challenge generator without GD or Imagick PHP extension requirements.
-    - Cryptographically secure one-time stateless session tokens.
+  - Pure SVG vector-matrix challenge generator without GD or Imagick PHP extension requirements.
+  - Cryptographically secure one-time stateless session tokens.
 - **Server Integrity & Security Scanner**:
-    - SHA-256 baseline creation and change verification.
-    - Suspicious file & webshell scanner with safe admin deletion capabilities (traversal protected, vital files protected).
-    - Server configuration audit (PHP version, debug mode, HTTPS cookies, Fortify 2FA).
+  - SHA-256 baseline creation and change verification.
+  - Suspicious file & webshell scanner with safe admin deletion capabilities (traversal protected, vital files protected).
+  - Server configuration audit (PHP version, debug mode, HTTPS cookies, Fortify 2FA).
 - **Apache / Nginx Access Log Scanner**:
-    - Streaming log parser to detect web attacks rejected before reaching Laravel.
-    - Auto-import and zero-tolerance IP blocking from raw server logs.
+  - Streaming log parser to detect web attacks rejected before reaching Laravel.
+  - Auto-import and zero-tolerance IP blocking from raw server logs.
 - **Headless REST API Architecture**:
-    - 100% decoupled from any specific frontend (React/Inertia/Blade/Livewire/Mobile).
-    - Pure JSON endpoints for logs, blocked IPs, server scans, sessions, appeals, and captcha.
+  - 100% decoupled from any specific frontend (React/Inertia/Blade/Livewire/Mobile).
+  - Pure JSON endpoints for logs, blocked IPs, server scans, sessions, appeals, and captcha.
 - **Enterprise Extensibility**:
-    - Configurable user model (`config('security.user_model')`).
-    - Configurable table names (`config('security.table_names.*')`).
-    - `HasSecurityRelations` model trait for seamless user relationship bindings.
-    - Laravel 10, 11, 12, and 13 compatibility.
+  - Configurable user model (`config('security.user_model')`).
+  - Configurable table names (`config('security.table_names.*')`).
+  - `HasSecurityRelations` model trait for seamless user relationship bindings.
+  - Laravel 10, 11, 12, and 13 compatibility.

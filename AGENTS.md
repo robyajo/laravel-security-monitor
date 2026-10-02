@@ -31,7 +31,7 @@ This repository is **`robyajo/laravel-security-monitor`** (Bulwark), an enterpri
 The repository contains an authoritative, 25-chapter documentation suite located in `documents/`. Agents MUST consult these documents for architectural details, schema specs, API payload contracts, and integration recipes:
 
 - **Master Table of Contents**: [`documents/README.md`](./documents/README.md)
-- **Interactive Documentation Portal**: [`documents/index.html`](./documents/index.html) (Offline single-page app with full-text search, dark/light theme, and copy-to-clipboard code snippets)
+- **Interactive Documentation Portal**: [`documents/index.html`](./documents/index.html) (Tailwind CSS Play CDN + marked.js + Mermaid.js single-page app with full-text search, dark/light theme, and copy-to-clipboard code snippets). Regenerate it from the markdown chapters after editing any `documents/**/*.md` file by running `php documents/generate.php`.
 - **Modular Guides**:
   1. `documents/01-getting-started/`:
      - `01-introduction.md` — Philosophy, Spatie-standard core integration, headless architecture, ReDoS safety.
