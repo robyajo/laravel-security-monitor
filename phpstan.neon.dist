@@ -22,6 +22,14 @@ parameters:
         # The configured user model is dynamic; `email` is not part of the contract.
         - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$email#'
 
+        # Inertia is an optional dependency (see the "suggest" section of
+        # composer.json). The React dashboard controllers reference
+        # Inertia\Inertia and Inertia\Response, which only exist when the host
+        # application installs inertiajs/inertia-laravel.
+        -
+            message: '#Inertia#'
+            path: src/Http/Controllers/Dashboard/*
+
         # Pest tests rely on magic `$this`; the official Pest PHPStan plugin is
         # only available for Pest 5, so these are expected when tests are analysed.
         -
