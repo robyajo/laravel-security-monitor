@@ -2,6 +2,31 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.1.3] - 2026-10-03
+
+### Added
+
+- **Log4Shell / JNDI detection** (`log4shell_jndi`): new zero-tolerance
+  instant-block signature that detects `${jndi:...}` payloads in any request
+  part (User-Agent, query string, body, headers), including the common
+  obfuscations `${${lower:j}ndi:...}` and `${j${lower:n}di:...}` as well as
+  URL-encoded forms such as `%24%7Bjndi%3A...`. Previously these payloads were
+  neither detected nor logged, so a Log4Shell probe passed straight through.
+
+### Changed
+
+- README: the install command now uses the explicit stable constraint
+  (`composer require robyajo/laravel-security-monitor:^1.1`) and warns against
+  `@dev`, which forces the unreleased `dev-main` branch instead of a tagged
+  release.
+
+## [1.1.2] - 2026-10-02
+
+### Changed
+
+- README: installation guidance refresh (explicit stable constraint and the
+  `@dev` warning).
+
 ## [1.1.1] - 2026-10-02
 
 ### Changed

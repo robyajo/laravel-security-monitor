@@ -200,6 +200,22 @@ return [
                     '/\b(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,})\b/',
                 ],
             ],
+            [
+                'id' => 'log4shell_jndi',
+                'label' => 'Percobaan Log4Shell / JNDI injection',
+                'target' => 'any',
+                'patterns' => [
+                    // ${jndi:ldap://...} / ${JNDI:ldaps://...} (case-insensitive,
+                    // spasi antar token diizinkan untuk menembus normalisasi).
+                    '/\$\{\s*j\s*n\s*d\s*i\s*:/i',
+                    // Obfuscation klasik: ${${lower:j}ndi:...} / ${${upper:J}NDI:...}
+                    '/\$\{\s*\$\{[^}]{0,80}\}\s*n\s*d\s*i\s*:/i',
+                    // Obfuscation lain: ${j${lower:n}di:...} / ${j${::-n}di:...}
+                    '/\$\{\s*j\s*\$\{[^}]{0,80}\}\s*d\s*i\s*:/i',
+                    // Bentuk ter-URL-encode: %24%7Bjndi%3A / %24%7B%24%7Blower%3Aj%7Dndi%3A
+                    '/%24%7b[a-z0-9%{}._:-]{0,140}ndi%3a/i',
+                ],
+            ],
         ],
     ],
 

