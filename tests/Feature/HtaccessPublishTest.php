@@ -121,7 +121,6 @@ test('security install command appends environment variables to env and env exam
 
     expect($envContent)->toContain('SECURITY_MONITOR_ENABLED=true')
         ->and($envContent)->toContain('SECURITY_INSTANT_BLOCK_ENABLED=true')
-        ->and($envContent)->toContain('CAPTCHA_ENABLED=true')
         ->and($envContent)->toContain('Sakelar utama WAF')
         ->and($exampleContent)->toContain('SECURITY_MONITOR_ENABLED=true');
 });

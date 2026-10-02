@@ -134,7 +134,7 @@ class SecurityInstallCommand extends Command
             "     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats::class</>",
         );
         $this->line(
-            '  4. Sesuaikan nilai variabel <fg=yellow>SECURITY_*</> dan <fg=yellow>CAPTCHA_*</> di berkas <fg=yellow>.env</>',
+            '  4. Sesuaikan nilai variabel <fg=yellow>SECURITY_*</> di berkas <fg=yellow>.env</>',
         );
         if (! $withoutNginx) {
             $this->line(

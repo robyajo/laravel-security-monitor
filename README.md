@@ -32,20 +32,16 @@
     - Sistem pencegahan _credential stuffing_ & _brute force_ berjenjang (1 menit, 5 menit, 15 menit, 1 jam, hingga 24 jam).
     - Pencatatan otomatis riwayat kegagalan otentikasi ke log audit keamanan.
 
-5. **Pure SVG CAPTCHA (Zero Dependency)**:
-    - Generator CAPTCHA berbasis matriks vektor SVG murni tanpa memerlukan ekstensi PHP GD atau Imagick.
-    - Token tantangan sekali pakai (_stateless one-time challenge_) yang aman secara kriptografis.
-
-6. **Server Integrity & Webshell Scanner**:
+5. **Server Integrity & Webshell Scanner**:
     - Pembuatan dan verifikasi baseline hash SHA-256 untuk berkas-berkas aplikasi inti.
     - Pemindaian berkas mencurigakan / webshell (ekstensi ganda, skrip di direktori publik/upload, polyglot media).
     - Fitur penghapusan berkas berbahaya yang aman dengan proteksi path traversal dan berkas sistem vital.
     - Audit konfigurasi keamanan server (`APP_DEBUG`, secure session cookie, Fortify 2FA).
 
-7. **Streaming Access Log Scanner**:
+6. **Streaming Access Log Scanner**:
     - Pemindai berkas log mentah Apache / Nginx secara _streaming_ berdaya hemat memori untuk menangkap penyerang yang ditolak oleh web server sebelum request mencapai proses PHP Laravel.
 
-8. **Headless & Arsitektur Terkopel Longgar**:
+7. **Headless & Arsitektur Terkopel Longgar**:
     - 100% REST API JSON murni.
     - Model `User` dan nama tabel database sepenuhnya dapat dikonfigurasi melalui `config/security.php`.
     - Trait `HasSecurityRelations` untuk kemudahan integrasi relasi Eloquent.
@@ -84,13 +80,13 @@ php artisan security:install
 
 #### Aset yang Didapat Pengguna Setelah Menjalankan Perintah Ini:
 
-1. 📄 **`config/security.php`**: Konfigurasi lengkap WAF, ambang batas blokir, IP whitelist, stepped login lockout, SVG Captcha, dan log scanner.
+1. 📄 **`config/security.php`**: Konfigurasi lengkap WAF, ambang batas blokir, IP whitelist, stepped login lockout, dan log scanner.
 2. 🗄️ **`database/migrations/` (6 tabel)**: Menyiapkan tabel `blocked_ips`, `security_logs`, `login_attempts`, `ip_unblock_requests`, `user_logins`, dan `trusted_ips`.
 3. 🌐 **`nginx.conf`**: Konfigurasi produksi Nginx Hardened WAF (Dual-zone rate limit, single-PHP execution `/index.php`, storage sandboxing).
 4. 🛡️ **`public/.htaccess`**: Hardening web server Apache & LiteSpeed (Blokir dotfiles, double extension `.php.jpg`, file backup dump `.sql`, dan matikan directory listing).
     > _Catatan Keamanan_: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
 5. 🚫 **`resources/views/errors/blocked.blade.php`**: Halaman 403 default yang menampilkan alasan blokir, kode referensi, dan **formulir banding** yang terhubung langsung ke endpoint publik tiket banding. Dapat disesuaikan sesuai branding aplikasi Anda.
-6. ⚙️ **Penyematan Variabel ke `.env` & `.env.example`**: Installer secara otomatis menambahkan blok konfigurasi lengkap disertai **penjelasan fungsi berbahasa Indonesia** untuk setiap variabel (`SECURITY_*` dan `CAPTCHA_*`) langsung ke berkas `.env` dan `.env.example` aplikasi Anda.
+6. ⚙️ **Penyematan Variabel ke `.env` & `.env.example`**: Installer secara otomatis menambahkan blok konfigurasi lengkap disertai **penjelasan fungsi berbahasa Indonesia** untuk setiap variabel (`SECURITY_*`) langsung ke berkas `.env` dan `.env.example` aplikasi Anda.
 7. 📊 **(Opsional) Dashboard monitoring Starter Kit**: Tampilan monitoring Livewire (`resources/views/pages/security/`) atau React (`resources/js/pages/security/`), wajib login. Dipublikasikan bila Anda menambahkan opsi `--with-dashboard` atau `--with-react-dashboard`.
 
 #### Opsi Perintah `security:install`:
@@ -279,8 +275,6 @@ Semua rute REST API didaftarkan secara default dengan prefix `/api/security` (da
 
 | Metode | URI                                                  | Deskripsi                                                                                   |
 | :----- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------ |
-| `GET`  | `/api/security/captcha`                              | Menghasilkan SVG CAPTCHA dan mengembalikan gambar vector langsung beserta `X-Captcha-Token` |
-| `POST` | `/api/security/captcha/verify`                       | Memvalidasi jawaban CAPTCHA (`phrase` & `token`)                                            |
 | `POST` | `/api/security/unblock-tickets/submit`               | Mengirim permohonan banding pembukaan blokir IP/perangkat                                   |
 | `GET`  | `/api/security/unblock-tickets/check/{ticketNumber}` | Memeriksa status tiket permohonan banding                                                   |
 
@@ -379,18 +373,6 @@ use Internal\SecurityMonitor\Rules\SafeAssetPath;
 
 $request->validate([
     'icon_path' => ['required', 'string', new SafeAssetPath],
-]);
-```
-
-### 3. `ValidCaptcha`
-
-Memvalidasi verifikasi CAPTCHA SVG tanpa dependensi:
-
-```php
-use Internal\SecurityMonitor\Rules\ValidCaptcha;
-
-$request->validate([
-    'captcha' => ['required', new ValidCaptcha],
 ]);
 ```
 

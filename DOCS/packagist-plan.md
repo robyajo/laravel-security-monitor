@@ -27,33 +27,27 @@
 
 Berdasarkan evaluasi arsitektur final, strategi rilis **difokuskan 100% pada satu paket utama yang utuh**: **`robyajo/laravel-security-monitor`**.
 
-Modul CAPTCHA (`laravel-captcha`) tidak dipisah menjadi repositori terpisah, melainkan **diintegrasikan secara langsung sebagai subsistem bawaan paket ini** (`CaptchaService`, rule `ValidCaptcha`, dan endpoint `/api/security/captcha`). Hal ini memberikan keuntungan besar:
-1. **Instalasi Satu Pintu**: Pengguna cukup menjalankan `composer require robyajo/laravel-security-monitor` dan langsung mendapatkan WAF, perlindungan brute-force, serta proteksi bot CAPTCHA tanpa harus mengelola beberapa paket terpisah.
-2. **Harmonisasi Proteksi Otentikasi**: Fitur stepped login lockout langsung terhubung dengan verifikasi CAPTCHA SVG bawaan.
-3. **Mengeliminasi Overhead Perawatan**: Mengurangi redundansi pipeline CI, manajemen repositori git, dan rilis versi terpisah.
-
 ---
 
 ## 2. Status Kesiapan Repositori Saat Ini
 
 Repositori paket saat ini telah berdiri sendiri secara penuh di direktori paket:
 
-| Komponen | Status | Catatan Verifikasi |
-| :--- | :---: | :--- |
-| **Pemisahan Kode (Decoupling)** | ✅ 100% Selesai | Seluruh referensi `App\` telah diubah ke `Internal\SecurityMonitor\`. |
-| **Model User Dinamis** | ✅ 100% Selesai | Menggunakan `config('security.user_model')` + Trait `HasSecurityRelations`. |
-| **Nama Tabel Dinamis** | ✅ 100% Selesai | Seluruh model membaca nama tabel dari `config('security.table_names.*')`. |
-| **Zero-Dependency SVG Captcha** | ✅ 100% Selesai | Pure PHP vector math, tanpa ekstensi C `ext-gd` atau `ext-imagick`. |
-| **Bebas Dependensi NPM** | ✅ 100% Selesai | Murni Composer library (`type: library`), nol ketergantungan build tool frontend. |
-| **Uji Otomatis (Testing)** | ✅ 100% Passed | **64 passed (274 assertions)** menggunakan Pest PHP + Orchestra Testbench. |
-| **Dokumentasi Resmi** | ✅ 100% Lengkap | 24 bab panduan di `documents/` + portal interaktif offline `documents/index.html`. |
-| **Workflow CI/CD** | ✅ Siap | Matrix pengujian GitHub Actions di `.github/workflows/run-tests.yml`. |
+| Komponen                        |     Status      | Catatan Verifikasi                                                                 |
+| :------------------------------ | :-------------: | :--------------------------------------------------------------------------------- |
+| **Pemisahan Kode (Decoupling)** | ✅ 100% Selesai | Seluruh referensi `App\` telah diubah ke `Internal\SecurityMonitor\`.              |
+| **Model User Dinamis**          | ✅ 100% Selesai | Menggunakan `config('security.user_model')` + Trait `HasSecurityRelations`.        |
+| **Nama Tabel Dinamis**          | ✅ 100% Selesai | Seluruh model membaca nama tabel dari `config('security.table_names.*')`.          |
+| **Bebas Dependensi NPM**        | ✅ 100% Selesai | Murni Composer library (`type: library`), nol ketergantungan build tool frontend.  |
+| **Uji Otomatis (Testing)**      | ✅ 100% Passed  | **64 passed (274 assertions)** menggunakan Pest PHP + Orchestra Testbench.         |
+| **Dokumentasi Resmi**           | ✅ 100% Lengkap | 24 bab panduan di `documents/` + portal interaktif offline `documents/index.html`. |
+| **Workflow CI/CD**              |     ✅ Siap     | Matrix pengujian GitHub Actions di `.github/workflows/run-tests.yml`.              |
 
 ---
 
 ## 3. Arsitektur Terintegrasi & Dekopling Penuh
 
-Paket ini menggabungkan 7 kapabilitas keamanan enterprise dalam satu kesatuan arsitektur:
+Paket ini menggabungkan 6 kapabilitas keamanan enterprise dalam satu kesatuan arsitektur:
 
 ```mermaid
 graph TD
@@ -64,10 +58,9 @@ graph TD
         Provider --> WAF[1. WAF & Zero-Tolerance Engine<br/>Instant 30d block & sliding window]
         Provider --> Device[2. Device-Level Quarantine<br/>Isolasi perangkat pada Shared IP/NAT]
         Provider --> Lockout[3. Stepped Login Lockout<br/>Penalti eksponensial 1m s/d 24h]
-        Provider --> Captcha[4. Zero-Dep SVG CAPTCHA<br/>Pure PHP vector math tanpa GD/Imagick]
-        Provider --> Integrity[5. Server Integrity & Webshell Scanner<br/>SHA-256 baseline + safe sanitizer]
-        Provider --> LogStream[6. Streaming Access Log Scanner<br/>Parser hemat memori < 15MB]
-        Provider --> Appeals[7. Sistem Tiket Banding Mandiri<br/>Endpoint publik + admin review auto-unblock]
+        Provider --> Integrity[4. Server Integrity & Webshell Scanner<br/>SHA-256 baseline + safe sanitizer]
+        Provider --> LogStream[5. Streaming Access Log Scanner<br/>Parser hemat memori < 15MB]
+        Provider --> Appeals[6. Sistem Tiket Banding Mandiri<br/>Endpoint publik + admin review auto-unblock]
     end
 ```
 
@@ -97,7 +90,7 @@ Berkas `composer.json` telah dikonfigurasi untuk standar katalog Packagist:
 ```json
 {
     "name": "robyajo/laravel-security-monitor",
-    "description": "Enterprise-grade headless self-hosted WAF, threat detection engine, zero-tolerance blocking, stepped login lockout, pure SVG captcha, and security auditing toolkit for Laravel.",
+    "description": "Enterprise-grade headless self-hosted WAF, threat detection engine, zero-tolerance blocking, stepped login lockout, and security auditing toolkit for Laravel.",
     "keywords": [
         "laravel",
         "security",
@@ -105,8 +98,6 @@ Berkas `composer.json` telah dikonfigurasi untuk standar katalog Packagist:
         "firewall",
         "threat-detection",
         "ip-blocking",
-        "captcha",
-        "svg-captcha",
         "brute-force",
         "login-throttle",
         "webshell-scanner",
@@ -186,23 +177,27 @@ Berkas `.github/workflows/run-tests.yml` telah dipasang untuk menguji kompatibil
 ## 7. Checklist Langkah Demi Langkah Menuju Packagist
 
 ### Langkah 1: Inisialisasi & Push ke GitHub Publik
+
 1. Buat repositori baru di GitHub: `https://github.com/robyajo/laravel-security-monitor`.
 2. Pastikan visibility disetel **Public**.
 3. Push seluruh berkas paket ke branch `main`:
-   ```bash
-   git remote add origin https://github.com/robyajo/laravel-security-monitor.git
-   git branch -M main
-   git push -u origin main
-   ```
+    ```bash
+    git remote add origin https://github.com/robyajo/laravel-security-monitor.git
+    git branch -M main
+    git push -u origin main
+    ```
 
 ### Langkah 2: Berikan Tag Rilis Semantic Versioning (SemVer)
+
 Packagist menentukan versi stabil dari Git Tag:
+
 ```bash
 git tag -a v1.0.0 -m "Release v1.0.0: Enterprise-grade Headless WAF and Security Monitor for Laravel"
 git push origin v1.0.0
 ```
 
 ### Langkah 3: Daftarkan di Packagist.org
+
 1. Buka [https://packagist.org/packages/submit](https://packagist.org/packages/submit) dan login menggunakan akun GitHub Anda.
 2. Masukkan URL repositori:
    `https://github.com/robyajo/laravel-security-monitor`
@@ -210,7 +205,9 @@ git push origin v1.0.0
 4. Paket akan terdaftar dengan nama **`robyajo/laravel-security-monitor`**.
 
 ### Langkah 4: Aktifkan GitHub Webhook Otomatis
+
 Agar setiap kali Anda melakukan push atau membuat tag baru paket di Packagist otomatis ter-update:
+
 1. Buka menu pengaturan repositori di GitHub: **Settings** → **Webhooks** → **Add webhook**.
 2. Masukkan Payload URL dari Packagist:
    `https://packagist.org/api/github?username=robyajo`
@@ -261,19 +258,17 @@ php artisan security:scan-logs --dry-run
 
 Daftar lengkap variabel `.env` yang dapat disetel di aplikasi host:
 
-| Variabel `.env` | Default | Deskripsi |
-| :--- | :---: | :--- |
-| `SECURITY_MONITOR_ENABLED` | `true` | Sakelar utama WAF |
-| `SECURITY_BLOCK_ENFORCEMENT` | `true` | Penolakan HTTP 403 untuk IP terblokir |
-| `SECURITY_AUTO_BLOCK_ENABLED` | `true` | Auto-block akumulasi ancaman berulang |
-| `SECURITY_AUTO_BLOCK_THRESHOLD`| `3` | Ambang batas kejadian (default: 3 kali) |
-| `SECURITY_AUTO_BLOCK_WINDOW` | `10` | Jendela evaluasi waktu (menit) |
-| `SECURITY_AUTO_BLOCK_DURATION` | `24` | Durasi auto-block (jam) |
-| `SECURITY_INSTANT_BLOCK_ENABLED`| `true`| Blokir instan pada percobaan pertama untuk ZT |
-| `SECURITY_INSTANT_BLOCK_DURATION`| `720` | Durasi blokir instan (jam; 720 jam = 30 hari) |
-| `SECURITY_LOGIN_LOCKOUT_ENABLED`| `true`| Proteksi brute force bertingkat (1m - 24h) |
-| `CAPTCHA_ENABLED` | `true` | Generator pure SVG vector CAPTCHA |
-| `CAPTCHA_ON_LOGIN` | `true` | Kewajiban CAPTCHA di form login |
-| `SECURITY_LOG_RETENTION_DAYS` | `90` | Masa retensi log (hari) |
-| `SECURITY_SCHEDULE_ENABLED` | `true` | Otomasi tugas scheduler (prune & heartbeat) |
-| `SECURITY_SUPPORT_EMAIL` | `security@example.com` | Email helpdesk di halaman penolakan 403 |
+| Variabel `.env`                   |        Default         | Deskripsi                                     |
+| :-------------------------------- | :--------------------: | :-------------------------------------------- |
+| `SECURITY_MONITOR_ENABLED`        |         `true`         | Sakelar utama WAF                             |
+| `SECURITY_BLOCK_ENFORCEMENT`      |         `true`         | Penolakan HTTP 403 untuk IP terblokir         |
+| `SECURITY_AUTO_BLOCK_ENABLED`     |         `true`         | Auto-block akumulasi ancaman berulang         |
+| `SECURITY_AUTO_BLOCK_THRESHOLD`   |          `3`           | Ambang batas kejadian (default: 3 kali)       |
+| `SECURITY_AUTO_BLOCK_WINDOW`      |          `10`          | Jendela evaluasi waktu (menit)                |
+| `SECURITY_AUTO_BLOCK_DURATION`    |          `24`          | Durasi auto-block (jam)                       |
+| `SECURITY_INSTANT_BLOCK_ENABLED`  |         `true`         | Blokir instan pada percobaan pertama untuk ZT |
+| `SECURITY_INSTANT_BLOCK_DURATION` |         `720`          | Durasi blokir instan (jam; 720 jam = 30 hari) |
+| `SECURITY_LOGIN_LOCKOUT_ENABLED`  |         `true`         | Proteksi brute force bertingkat (1m - 24h)    |
+| `SECURITY_LOG_RETENTION_DAYS`     |          `90`          | Masa retensi log (hari)                       |
+| `SECURITY_SCHEDULE_ENABLED`       |         `true`         | Otomasi tugas scheduler (prune & heartbeat)   |
+| `SECURITY_SUPPORT_EMAIL`          | `security@example.com` | Email helpdesk di halaman penolakan 403       |

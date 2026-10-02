@@ -7,10 +7,13 @@ Seluruh fungsionalitas manajemen paket **`robyajo/laravel-security-monitor`** di
 ## 1. Konvensi URL & Awalan Rute
 
 Secara default, seluruh endpoint berada di bawah prefix:
+
 ```
 /api/security/*
 ```
+
 Prefix ini dapat diubah melalui berkas `.env` menggunakan variabel:
+
 ```dotenv
 SECURITY_ROUTES_PREFIX=api/v1/security
 ```
@@ -22,6 +25,7 @@ SECURITY_ROUTES_PREFIX=api/v1/security
 Seluruh respons dari endpoint API dikembalikan dalam format envelope JSON konsisten:
 
 ### A. Respons Berhasil (Success Envelope)
+
 ```json
 {
     "success": true,
@@ -32,18 +36,18 @@ Seluruh respons dari endpoint API dikembalikan dalam format envelope JSON konsis
 ```
 
 ### B. Respons Kesalahan Validasi (HTTP 422)
+
 ```json
 {
     "message": "Data yang diberikan tidak valid.",
     "errors": {
-        "ip_address": [
-            "Alamat IP tidak valid."
-        ]
+        "ip_address": ["Alamat IP tidak valid."]
     }
 }
 ```
 
 ### C. Respons Ditolak / Dilarang (HTTP 403)
+
 ```json
 {
     "success": false,
@@ -65,14 +69,16 @@ Seluruh respons dari endpoint API dikembalikan dalam format envelope JSON konsis
 
 Endpoint API dibagi menjadi 3 tingkat akses:
 
-| Kategori Akses | Middleware yang Digunakan | Penjelasan |
-| :--- | :--- | :--- |
-| **Publik (Public)** | `api` | Dapat diakses oleh siapa saja tanpa autentikasi (Captcha & Pengajuan Tiket Banding). |
-| **Pengguna (Authenticated)**| `auth` | Memerlukan login pengguna sah (misal menyimpan IP terpercaya sendiri). |
-| **Administrator (Admin)** | `auth` + `security.admin` | Hanya dapat diakses oleh user berwewenang administrator. |
+| Kategori Akses               | Middleware yang Digunakan | Penjelasan                                                                 |
+| :--------------------------- | :------------------------ | :------------------------------------------------------------------------- |
+| **Publik (Public)**          | `api`                     | Dapat diakses oleh siapa saja tanpa autentikasi (Pengajuan Tiket Banding). |
+| **Pengguna (Authenticated)** | `auth`                    | Memerlukan login pengguna sah (misal menyimpan IP terpercaya sendiri).     |
+| **Administrator (Admin)**    | `auth` + `security.admin` | Hanya dapat diakses oleh user berwewenang administrator.                   |
 
 ### Evaluasi Hak Akses Administrator (`EnsureSecurityAdmin`)
+
 Middleware `EnsureSecurityAdmin` mengevaluasi hak akses dengan urutan sebagai berikut:
+
 1. Memeriksa Gate Laravel: `Gate::allows('manage-security-monitor')`.
 2. Jika gate belum didefinisikan secara kustom, memeriksa metode `$user->isAdmin()`.
 3. Memeriksa apakah kolom peran `$user->role` bernilai `'admin'` atau `'superadmin'`.
@@ -83,12 +89,12 @@ Middleware `EnsureSecurityAdmin` mengevaluasi hak akses dengan urutan sebagai be
 
 ## 4. Kode Status HTTP (HTTP Status Codes)
 
-| Kode | Arti | Penggunaan di Paket |
-| :--- | :--- | :--- |
-| **200 OK** | Permintaan Berhasil | Pengambilan data (GET), toggle status, hapus entri. |
-| **201 Created** | Data Berhasil Dibuat | Blokir IP baru (POST), pengajuan tiket banding. |
-| **401 Unauthorized**| Belum Login | Token tidak disertakan atau sesi telah habis. |
-| **403 Forbidden** | Akses Ditolak | Pengguna non-admin mengakses API admin, atau klien yang diblokir WAF. |
-| **404 Not Found** | Data Tidak Ditemukan | ID blokir, log, atau nomor tiket tidak ditemukan di database. |
-| **422 Unprocessable**| Validasi Gagal | Format IP salah, mencoba memblokir IP sendiri atau IP whitelist. |
-| **429 Rate Limited** | Terlalu Banyak Request| Mengajukan lebih dari 1 tiket banding dalam 30 menit. |
+| Kode                  | Arti                   | Penggunaan di Paket                                                   |
+| :-------------------- | :--------------------- | :-------------------------------------------------------------------- |
+| **200 OK**            | Permintaan Berhasil    | Pengambilan data (GET), toggle status, hapus entri.                   |
+| **201 Created**       | Data Berhasil Dibuat   | Blokir IP baru (POST), pengajuan tiket banding.                       |
+| **401 Unauthorized**  | Belum Login            | Token tidak disertakan atau sesi telah habis.                         |
+| **403 Forbidden**     | Akses Ditolak          | Pengguna non-admin mengakses API admin, atau klien yang diblokir WAF. |
+| **404 Not Found**     | Data Tidak Ditemukan   | ID blokir, log, atau nomor tiket tidak ditemukan di database.         |
+| **422 Unprocessable** | Validasi Gagal         | Format IP salah, mencoba memblokir IP sendiri atau IP whitelist.      |
+| **429 Rate Limited**  | Terlalu Banyak Request | Mengajukan lebih dari 1 tiket banding dalam 30 menit.                 |

@@ -62,7 +62,6 @@ class BlockIpAddress
             'login/*',
             'two-factor-challenge',
             'two-factor-challenge/*',
-            'captcha',
             'forgot-password',
             'reset-password',
             'reset-password/*',

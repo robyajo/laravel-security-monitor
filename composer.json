@@ -1,6 +1,6 @@
 {
     "name": "robyajo/laravel-security-monitor",
-    "description": "Enterprise-grade headless self-hosted WAF, threat detection engine, zero-tolerance blocking, stepped login lockout, pure SVG captcha, and security auditing toolkit for Laravel.",
+    "description": "Enterprise-grade headless self-hosted WAF, threat detection engine, zero-tolerance blocking, stepped login lockout, and security auditing toolkit for Laravel.",
     "keywords": [
         "laravel",
         "security",
@@ -8,8 +8,6 @@
         "firewall",
         "threat-detection",
         "ip-blocking",
-        "captcha",
-        "svg-captcha",
         "brute-force",
         "login-throttle",
         "webshell-scanner",

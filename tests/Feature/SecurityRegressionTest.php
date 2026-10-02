@@ -8,28 +8,6 @@ use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Internal\SecurityMonitor\Services\ServerSecurityService;
 use Internal\SecurityMonitor\Services\UserLoginService;
 
-test('captcha image endpoint returns an svg challenge', function () {
-    $response = $this->get(route('security.captcha.image'));
-
-    $response->assertSuccessful();
-
-    expect((string) $response->headers->get('Content-Type'))
-        ->toContain('image/svg+xml')
-        ->and($response->getContent())
-        ->toContain('<svg');
-});
-
-test('captcha verify endpoint reports an invalid answer', function () {
-    $this->get(route('security.captcha.image'));
-
-    $response = $this->postJson(route('security.captcha.verify'), [
-        'captcha' => 'WRONG-ANSWER',
-    ]);
-
-    $response
-        ->assertSuccessful()
-        ->assertJson(['success' => false, 'valid' => false]);
-});
 
 test('login event records a user login session', function () {
     $user = $this->createRegularUser();

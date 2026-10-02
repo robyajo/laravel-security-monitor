@@ -334,7 +334,6 @@ $slides = [
             "Zero-Tolerance Threat Detection",
             "Device-Level Quarantine (isolasi perangkat pada IP publik bersama)",
             "Stepped Login Lockout (penalti bertingkat 1 menit – 24 jam)",
-            "Pure SVG CAPTCHA (tanpa GD/Imagick)",
             "Server Integrity & Webshell Scanner",
             "Streaming Access Log Scanner",
             "Sistem Tiket Banding (appeal) mandiri",
@@ -370,16 +369,6 @@ $slides = [
             "Efektif mencegah brute force dan credential stuffing.",
             "Terhubung otomatis ke event inti Laravel: `Failed` dan `Login`.",
             "Pencabutan blokir manual tersedia lewat CLI dan API admin.",
-        ],
-    ],
-    [
-        "kind" => "content",
-        "title" => "Pure SVG CAPTCHA Tanpa Dependensi",
-        "bullets" => [
-            "Dibuat murni dengan matematika vektor PHP — tanpa `ext-gd`, tanpa Imagick, tanpa library npm.",
-            "Distorsi anti-OCR pada setiap tantangan.",
-            "Token sekali pakai dengan verifikasi stateless.",
-            "Validation Rule `ValidCaptcha` siap dipakai di form mana pun.",
         ],
     ],
     [
@@ -428,7 +417,7 @@ $slides = [
         "kind" => "content",
         "title" => "Headless REST API",
         "bullets" => [
-            "Publik: captcha, verifikasi captcha, submit & cek status tiket banding.",
+            "Publik: submit & cek status tiket banding.",
             "Pengguna terautentikasi: menyimpan IP saat ini sebagai IP terpercaya.",
             "Admin (`auth` + `security.admin`): logs, blocked-ips, server audit, sessions, tickets.",
             "Envelope JSON konsisten dengan status HTTP yang tepat.",

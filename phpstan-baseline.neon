@@ -61,12 +61,6 @@ parameters:
 			path: src/Services/AccessLogScannerService.php
 
 		-
-			message: '#^PHPDoc tag @var for constant Internal\\SecurityMonitor\\Services\\CaptchaService\:\:FONT with type array\<string, array\<int, int\>\> is not subtype of value array\{A\: array\{14, 17, 17, 31, 17, 17, 17\}, B\: array\{30, 17, 17, 30, 17, 17, 30\}, C\: array\{14, 17, 16, 16, 16, 17, 14\}, D\: array\{30, 17, 17, 17, 17, 17, 30\}, E\: array\{31, 16, 16, 30, 16, 16, 31\}, F\: array\{31, 16, 16, 30, 16, 16, 16\}, G\: array\{14, 17, 16, 23, 17, 17, 14\}, H\: array\{17, 17, 17, 31, 17, 17, 17\}, \.\.\.\}\.$#'
-			identifier: classConstant.phpDocType
-			count: 1
-			path: src/Services/CaptchaService.php
-
-		-
 			message: '#^Call to function method_exists\(\) with Illuminate\\Http\\UploadedFile and ''get'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1

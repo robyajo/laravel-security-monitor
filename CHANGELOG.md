@@ -2,6 +2,16 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [1.1.4] - 2026-10-03
+
+### Removed
+
+- **CAPTCHA subsystem removed.** The zero-dependency SVG CAPTCHA has been
+  dropped to keep the package focused on WAF/threat protection. Deleted:
+  `CaptchaService`, `ValidCaptcha` rule, `CaptchaApiController`, the
+  `/api/security/captcha` endpoints, the `security.captcha` config block, and
+  the `CAPTCHA_*` environment variables. Login brute-force protection is still
+  provided by the multi-tier stepped login lockout.
 ## [1.1.3] - 2026-10-03
 
 ### Added

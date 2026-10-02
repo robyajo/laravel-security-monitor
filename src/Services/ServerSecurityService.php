@@ -145,7 +145,6 @@ class ServerSecurityService
     /** Berkas bawaan yang selalu dikecualikan dari pemindaian berkas mencurigakan / webshell. */
     protected const DEFAULT_SUSPICIOUS_EXCLUDES = [
         'config/security.php',
-        'config/captcha.php',
         'app/Services/ServerSecurityService.php',
         'app/Services/SecurityMonitorService.php',
         'app/Http/Middleware/DetectSecurityThreats.php',
@@ -416,23 +415,6 @@ class ServerSecurityService
                 : null,
         );
 
-        $captchaEnabled =
-            (bool) config('captcha.enabled', true) &&
-            (bool) config('captcha.for.login', true);
-        $checks[] = $this->check(
-            'captcha_login',
-            'Aplikasi',
-            'app',
-            'Captcha pada form login',
-            $captchaEnabled ? 'ok' : 'warning',
-            $captchaEnabled ? 'aktif' : 'nonaktif',
-            $captchaEnabled
-                ? 'Percobaan login otomatis (credential stuffing) tertahan sebelum memverifikasi password.'
-                : 'Tanpa captcha, bot dapat mencoba ribuan kombinasi password tanpa hambatan tambahan.',
-            $captchaEnabled
-                ? null
-                : 'Setel CAPTCHA_ENABLED=true dan CAPTCHA_ON_LOGIN=true.',
-        );
 
         // Dibaca sama seperti CheckPublicApiHeader agar hasil pemeriksaan konsisten.
         $apiKey = (string) config('security.server_scan.public_api_key', '');
@@ -1759,7 +1741,6 @@ class ServerSecurityService
             'routes/api.php',
             'routes/console.php',
             'config/security.php',
-            'config/captcha.php',
             'app/Providers/AppServiceProvider.php',
         ];
 

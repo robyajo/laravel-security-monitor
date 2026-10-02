@@ -1,9 +1,9 @@
 ---
 name: laravel-security-monitor
-description: "Comprehensive development, maintenance, and integration guide for the robyajo/laravel-security-monitor package. Activate this skill whenever writing, modifying, or testing WAF detection signatures, instant blocking rules, device-level quarantine, stepped login throttle, zero-dependency SVG captcha, server security & webshell scanning, access log streaming, headless REST API controllers, Eloquent models, or Pest test cases. Covers package architecture, ReDoS prevention, Orchestra Testbench harnesses, and host app integration rules."
+description: "Comprehensive development, maintenance, and integration guide for the robyajo/laravel-security-monitor package. Activate this skill whenever writing, modifying, or testing WAF detection signatures, instant blocking rules, device-level quarantine, stepped login throttle, server security & webshell scanning, access log streaming, headless REST API controllers, Eloquent models, or Pest test cases. Covers package architecture, ReDoS prevention, Orchestra Testbench harnesses, and host app integration rules."
 license: MIT
 metadata:
-  author: robyajo
+    author: robyajo
 ---
 
 # Laravel Security Monitor Development & Integration Guide
@@ -17,37 +17,36 @@ metadata:
 ## 1. Core Architecture Principles
 
 1. **Zero NPM / Standar Spatie (100% Pure PHP)**:
-   - The package has **NO NPM, NO Node.js, and NO frontend build step dependencies**.
-   - Like standard Spatie packages (`spatie/laravel-permission`), once installed via `composer require`, it hooks directly into Laravel Core and can be used anywhere across any frontend stack (Blade, Livewire, Filament, Inertia, or headless API).
-   - Core hooks utilized:
-     - **Package Auto-Discovery**: `SecurityMonitorServiceProvider` + `SecurityMonitor` Facade.
-     - **Core Eloquent Model Trait**: `HasSecurityRelations` on host `User` model (similar to Spatie's `HasRoles`).
-     - **Core Auth Events**: Automatically listens to `\Illuminate\Auth\Events\Failed` and `Login`.
-     - **Core HTTP Middleware**: Aliased as `'security.block'`, `'security.detect'`, `'security.admin'`, `'security.activity'`.
-     - **Core Gate**: `Gate::define('manage-security-monitor')`.
-     - **Core Artisan Commands**: 6 commands under `php artisan security:*`.
-     - **Core Scheduler**: Auto-registered prune & heartbeat tasks.
-     - **Validation Rules**: `SafeImageFile`, `SafeAssetPath`, `ValidCaptcha`.
-     - **Zero-Dep SVG Captcha**: Generated via pure PHP vector math (no GD, no Imagick, no client JS).
+    - The package has **NO NPM, NO Node.js, and NO frontend build step dependencies**.
+    - Like standard Spatie packages (`spatie/laravel-permission`), once installed via `composer require`, it hooks directly into Laravel Core and can be used anywhere across any frontend stack (Blade, Livewire, Filament, Inertia, or headless API).
+    - Core hooks utilized:
+        - **Package Auto-Discovery**: `SecurityMonitorServiceProvider` + `SecurityMonitor` Facade.
+        - **Core Eloquent Model Trait**: `HasSecurityRelations` on host `User` model (similar to Spatie's `HasRoles`).
+        - **Core Auth Events**: Automatically listens to `\Illuminate\Auth\Events\Failed` and `Login`.
+        - **Core HTTP Middleware**: Aliased as `'security.block'`, `'security.detect'`, `'security.admin'`, `'security.activity'`.
+        - **Core Gate**: `Gate::define('manage-security-monitor')`.
+        - **Core Artisan Commands**: 6 commands under `php artisan security:*`.
+        - **Core Scheduler**: Auto-registered prune & heartbeat tasks.
+        - **Validation Rules**: `SafeImageFile`, `SafeAssetPath`.
 
 2. **Headless Only (Pure REST API)**:
-   - The package never renders or assumes a frontend stack (no Inertia, React, Blade, or Livewire coupling).
-   - All management features are exposed as structured JSON REST API endpoints under `/api/security/*`.
-   - Host applications can build custom dashboards in Blade, React, Vue, Livewire, or mobile apps.
+    - The package never renders or assumes a frontend stack (no Inertia, React, Blade, or Livewire coupling).
+    - All management features are exposed as structured JSON REST API endpoints under `/api/security/*`.
+    - Host applications can build custom dashboards in Blade, React, Vue, Livewire, or mobile apps.
 
 3. **Loose Coupling & Decoupled Models**:
-   - Never hardcode `App\Models\User` or standard table names.
-   - User model resolution is always retrieved via `config('security.user_model', 'App\Models\User')`.
-   - All database tables are dynamically configured via `config('security.table_names.*')`.
-   - The `HasSecurityRelations` trait (`Internal\SecurityMonitor\Concerns\HasSecurityRelations`) is added to the host application's User model to provide Eloquent relations (`logins()`, `trustedIps()`, `securityLogs()`, `blockedIps()`, `resolvedTickets()`).
+    - Never hardcode `App\Models\User` or standard table names.
+    - User model resolution is always retrieved via `config('security.user_model', 'App\Models\User')`.
+    - All database tables are dynamically configured via `config('security.table_names.*')`.
+    - The `HasSecurityRelations` trait (`Internal\SecurityMonitor\Concerns\HasSecurityRelations`) is added to the host application's User model to provide Eloquent relations (`logins()`, `trustedIps()`, `securityLogs()`, `blockedIps()`, `resolvedTickets()`).
 
 4. **ReDoS Immunity**:
-   - Detection signatures must never use unbounded nested quantifiers (e.g., `(a+)+` or `(.*[a-z])+`).
-   - Every regex pattern must pass `DetectorTuningTest` and execute in sub-millisecond time even against adversarial 100KB+ payloads.
+    - Detection signatures must never use unbounded nested quantifiers (e.g., `(a+)+` or `(.*[a-z])+`).
+    - Every regex pattern must pass `DetectorTuningTest` and execute in sub-millisecond time even against adversarial 100KB+ payloads.
 
 5. **Multi-Tenant / Shared Router Awareness**:
-   - Public IPs often belong to corporate routers or shared Wi-Fi.
-   - The quarantine engine supports `block_scope = 'device'` using client `device_id` (WebRTC fingerprint) and `local_ip` to isolate rogue devices without affecting innocent users on the same router.
+    - Public IPs often belong to corporate routers or shared Wi-Fi.
+    - The quarantine engine supports `block_scope = 'device'` using client `device_id` (WebRTC fingerprint) and `local_ip` to isolate rogue devices without affecting innocent users on the same router.
 
 ---
 
@@ -56,27 +55,25 @@ metadata:
 ### Instant Block vs. Progressive Threshold
 
 - **Zero-Tolerance Signatures** (`config('security.instant_block.signatures')`):
-  - Null-byte upload: `\.php%00\.jpg`, `\.php\0\.png`.
-  - Double extensions: `\.php\.(?:jpe?g|png|gif|webp|svg)`.
-  - Path traversal: `(?:\.\.[\/\\])+`, `\.\.%2f`, `\.\.%5c`.
-  - Probes for sensitive files: `\.htaccess`, `\.env`, `\.git/config`.
-  - SSTI canary probes: `\{\{7\*7\}\}`, `\$\{7\*7\}`.
-  - _Action_: Triggered on the **very first attempt** without waiting for threshold, immediately writing to `blocked_ips` (default: 720 hours / 30 days) and returning HTTP 403.
+    - Null-byte upload: `\.php%00\.jpg`, `\.php\0\.png`.
+    - Double extensions: `\.php\.(?:jpe?g|png|gif|webp|svg)`.
+    - Path traversal: `(?:\.\.[\/\\])+`, `\.\.%2f`, `\.\.%5c`.
+    - Probes for sensitive files: `\.htaccess`, `\.env`, `\.git/config`.
+    - SSTI canary probes: `\{\{7\*7\}\}`, `\$\{7\*7\}`.
+    - _Action_: Triggered on the **very first attempt** without waiting for threshold, immediately writing to `blocked_ips` (default: 720 hours / 30 days) and returning HTTP 403.
 - **Progressive Threat Threshold** (`config('security.auto_block.*')`):
-  - Suspicious queries (SQLi patterns, XSS probes, scanner UAs) increment threat scores in a sliding window (default: 3 occurrences in 10 minutes).
-  - Reaching threshold escalates to automatic quarantine with configurable duration (default: 24 hours).
+    - Suspicious queries (SQLi patterns, XSS probes, scanner UAs) increment threat scores in a sliding window (default: 3 occurrences in 10 minutes).
+    - Reaching threshold escalates to automatic quarantine with configurable duration (default: 24 hours).
 
 ### Validation Rules
 
 - `SafeImageFile`:
-  - Inspects file binary headers and contents.
-  - Rejects polyglot JPEGs/PNGs containing embedded `<?php` or `<?=`.
-  - Rejects SVG files containing `<script>`, `javascript:`, or event handlers (`onload`, `onerror`).
+    - Inspects file binary headers and contents.
+    - Rejects polyglot JPEGs/PNGs containing embedded `<?php` or `<?=`.
+    - Rejects SVG files containing `<script>`, `javascript:`, or event handlers (`onload`, `onerror`).
 - `SafeAssetPath`:
-  - Enforces safe asset and icon paths.
-  - Rejects relative path traversals (`../../../`), backslashes (`..\..\`), and shell extensions.
-- `ValidCaptcha`:
-  - Validates zero-dependency SVG captcha token and challenge phrase.
+    - Enforces safe asset and icon paths.
+    - Rejects relative path traversals (`../../../`), backslashes (`..\..\`), and shell extensions.
 
 ---
 
@@ -93,10 +90,10 @@ metadata:
 - Scans `public/` and `storage/app/public/` for executable extensions (`.php`, `.phtml`, `.php5`, `.phar`).
 - Matches known webshell signatures (e.g., `b374k`, `c99`, `r57`, `wso`, `eval(base64_decode(`).
 - `deleteSuspiciousFile($relativePath, $userId)`:
-  - Enforces path containment within `base_path()`.
-  - Prohibits path traversal (`..`).
-  - Protects vital system files (`public/index.php`, `.env`, `composer.json`, `bootstrap/app.php`).
-  - Logs deletion audit records to `security_logs`.
+    - Enforces path containment within `base_path()`.
+    - Prohibits path traversal (`..`).
+    - Protects vital system files (`public/index.php`, `.env`, `composer.json`, `bootstrap/app.php`).
+    - Logs deletion audit records to `security_logs`.
 
 ---
 
@@ -106,8 +103,6 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 
 ### Public
 
-- `GET /api/security/captcha`: SVG captcha challenge.
-- `POST /api/security/captcha/verify`: Stateless captcha verification.
 - `POST /api/security/unblock-tickets/submit`: Appeal ticket submission (30m cooldown).
 - `GET /api/security/unblock-tickets/check/{ticketNumber}`: Appeal status lookup.
 
@@ -153,17 +148,17 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 - **Harness**: `Internal\SecurityMonitor\Tests\TestCase` extends `Orchestra\Testbench\TestCase`.
 - **In-Memory SQLite**: Runs migrations automatically in `:memory:` via `defineDatabaseMigrations()`.
 - **Simulating Attackers**:
-  ```php
-  $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.77'])->get('/?q=%7B%7B7*7%7D%7D')->assertForbidden();
-  ```
+    ```php
+    $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.77'])->get('/?q=%7B%7B7*7%7D%7D')->assertForbidden();
+    ```
 - **Simulating Devices**:
-  ```php
-  $this->withHeaders([
-      'X-Device-Id' => 'dev-uuid-001',
-      'X-Local-Ip' => '192.168.1.15',
-  ])->get('/');
-  ```
+    ```php
+    $this->withHeaders([
+        'X-Device-Id' => 'dev-uuid-001',
+        'X-Local-Ip' => '192.168.1.15',
+    ])->get('/');
+    ```
 - **Assertions**:
-  - Always use `assertSuccessful()`, `assertForbidden()`, `assertNotFound()`.
-  - Verify database state using `expect(BlockedIp::query()->...)->not->toBeNull()`.
+    - Always use `assertSuccessful()`, `assertForbidden()`, `assertNotFound()`.
+    - Verify database state using `expect(BlockedIp::query()->...)->not->toBeNull()`.
 - **Target Invariant**: All 64+ tests and 274+ assertions must pass with zero failures.

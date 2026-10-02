@@ -27,7 +27,6 @@ use Internal\SecurityMonitor\Listeners\LogFailedLoginAttempt;
 use Internal\SecurityMonitor\Listeners\RecordUserLogin;
 use Internal\SecurityMonitor\Listeners\ResetLoginAttempts;
 use Internal\SecurityMonitor\Services\AccessLogScannerService;
-use Internal\SecurityMonitor\Services\CaptchaService;
 use Internal\SecurityMonitor\Services\LoginThrottleService;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Internal\SecurityMonitor\Services\ServerSecurityService;
@@ -51,10 +50,6 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             return new LoginThrottleService(
                 $app->make(SecurityMonitorService::class),
             );
-        });
-
-        $this->app->singleton(CaptchaService::class, function ($app) {
-            return new CaptchaService;
         });
 
         $this->app->singleton(UserLoginService::class, function ($app) {

@@ -635,7 +635,6 @@ return [
         */
         'suspicious_files_exclude' => [
             'config/security.php',
-            'config/captcha.php',
             'app/Services/ServerSecurityService.php',
             'app/Services/SecurityMonitorService.php',
             'app/Http/Middleware/DetectSecurityThreats.php',
@@ -736,21 +735,6 @@ return [
         'prune_at' => env('SECURITY_PRUNE_SCHEDULE', '02:30'),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Captcha Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Konfigurasi captcha mandiri (SVG matrix dots, zero-dependency).
-    |
-    */
-    'captcha' => [
-        'enabled' => (bool) env('CAPTCHA_ENABLED', true),
-        'on_login' => (bool) env('CAPTCHA_ON_LOGIN', true),
-        'length' => (int) env('CAPTCHA_LENGTH', 5),
-        'difficulty' => env('CAPTCHA_DIFFICULTY', 'medium'),
-        'ttl_seconds' => (int) env('CAPTCHA_TTL_SECONDS', 300),
-    ],
 
     /*
     |--------------------------------------------------------------------------

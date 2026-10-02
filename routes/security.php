@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Internal\SecurityMonitor\Http\Controllers\Api\BlockedIpApiController;
-use Internal\SecurityMonitor\Http\Controllers\Api\CaptchaApiController;
 use Internal\SecurityMonitor\Http\Controllers\Api\IpUnblockRequestApiController;
 use Internal\SecurityMonitor\Http\Controllers\Api\SecurityLogApiController;
 use Internal\SecurityMonitor\Http\Controllers\Api\ServerSecurityApiController;
@@ -23,9 +22,6 @@ $adminMiddleware = (array) config('security.routes.admin_middleware', [
 
 Route::prefix($prefix)->middleware($middleware)->name('security.')->group(function () use ($authMiddleware, $adminMiddleware) {
     // Public Endpoints
-    Route::get('captcha', [CaptchaApiController::class, 'image'])->name('captcha.image');
-    Route::post('captcha/verify', [CaptchaApiController::class, 'verify'])->name('captcha.verify');
-
     Route::post('unblock-tickets/submit', [IpUnblockRequestApiController::class, 'submit'])->name('unblock-tickets.submit');
     Route::get('unblock-tickets/check/{ticketNumber}', [IpUnblockRequestApiController::class, 'checkStatus'])->name('unblock-tickets.check');
 
