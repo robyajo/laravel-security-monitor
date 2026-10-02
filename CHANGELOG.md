@@ -2,6 +2,16 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [2.0.0] - 2026-10-03
+
+### Changed
+
+- **BREAKING — version corrected to a major.** Removing the CAPTCHA subsystem
+  deletes public API (`CaptchaService`, `ValidCaptcha`, `CaptchaApiController`),
+  routes, config keys, and `CAPTCHA_*` environment variables, so it is a
+  breaking change. The same removal was briefly tagged `1.1.4`; `2.0.0` is the
+  canonical release. See the `1.1.4` entry below for the full list of removals.
+
 ## [1.1.4] - 2026-10-03
 
 ### Removed

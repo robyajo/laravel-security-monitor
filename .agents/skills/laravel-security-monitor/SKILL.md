@@ -60,6 +60,7 @@ metadata:
     - Path traversal: `(?:\.\.[\/\\])+`, `\.\.%2f`, `\.\.%5c`.
     - Probes for sensitive files: `\.htaccess`, `\.env`, `\.git/config`.
     - SSTI canary probes: `\{\{7\*7\}\}`, `\$\{7\*7\}`.
+    - Log4Shell / JNDI injection (`log4shell_jndi`): `\$\{jndi:`, including obfuscations (`\$\{\$\{lower:j\}ndi:`) and URL-encoded forms (`%24%7Bjndi%3A`), scanned across User-Agent, query, body, and headers.
     - _Action_: Triggered on the **very first attempt** without waiting for threshold, immediately writing to `blocked_ips` (default: 720 hours / 30 days) and returning HTTP 403.
 - **Progressive Threat Threshold** (`config('security.auto_block.*')`):
     - Suspicious queries (SQLi patterns, XSS probes, scanner UAs) increment threat scores in a sliding window (default: 3 occurrences in 10 minutes).
@@ -74,6 +75,8 @@ metadata:
 - `SafeAssetPath`:
     - Enforces safe asset and icon paths.
     - Rejects relative path traversals (`../../../`), backslashes (`..\..\`), and shell extensions.
+
+> **No CAPTCHA subsystem**: the package intentionally ships no CAPTCHA (removed in v2.0.0). Authentication brute-force protection is handled by the multi-tier stepped login lockout plus IP/device quarantine.
 
 ---
 
@@ -135,7 +138,7 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 | :--------------------------------------- | :-------------------------------------------------------------------------------------------------- |
 | `security:install`                       | Publish all package assets: config, migrations, and hardened `nginx.conf` with interactive options. |
 | `security:scan-logs`                     | Stream & parse Apache/Nginx access logs for zero-tolerance attacks; auto-block offending IPs.       |
-| `security:baseline`                      | Audit, create (`--create`), or destroy (`--prune`) SHA-256 integrity baseline.                      |
+| `security:baseline`                      | Audit, create (`--create`), or destroy (`--destroy`) SHA-256 integrity baseline.                    |
 | `security:unblock-ip {ip}`               | Lift block on IP or device immediately (emergency escape hatch).                                    |
 | `security:prune-logs {--days=}`          | Remove logs older than retention period (default: 90 days).                                         |
 | `security:purge-injected-data {--force}` | Scan & clean residual pentest payloads from application database tables.                            |
@@ -161,4 +164,4 @@ All endpoints use prefix `/api/security` (configurable in `config/security.php`)
 - **Assertions**:
     - Always use `assertSuccessful()`, `assertForbidden()`, `assertNotFound()`.
     - Verify database state using `expect(BlockedIp::query()->...)->not->toBeNull()`.
-- **Target Invariant**: All 64+ tests and 274+ assertions must pass with zero failures.
+- **Target Invariant**: All tests and assertions must pass with zero failures (currently 91 tests / 386 assertions).
