@@ -84,19 +84,20 @@ php artisan security:install
    > _Catatan Keamanan_: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
 5. 🚫 **`resources/views/errors/blocked.blade.php`**: Halaman 403 default yang menampilkan alasan blokir, kode referensi, dan **formulir banding** yang terhubung langsung ke endpoint publik tiket banding. Dapat disesuaikan sesuai branding aplikasi Anda.
 6. ⚙️ **Penyematan Variabel ke `.env` & `.env.example`**: Installer secara otomatis menambahkan blok konfigurasi lengkap disertai **penjelasan fungsi berbahasa Indonesia** untuk setiap variabel (`SECURITY_*` dan `CAPTCHA_*`) langsung ke berkas `.env` dan `.env.example` aplikasi Anda.
-7. 📊 **(Opsional) `resources/views/pages/security/`**: Dashboard monitoring Livewire Starter Kit (wajib login). Hanya dipublikasikan bila Anda menambahkan opsi `--with-dashboard`.
+7. 📊 **(Opsional) Dashboard monitoring Starter Kit**: Tampilan monitoring Livewire (`resources/views/pages/security/`) atau React (`resources/js/pages/security/`), wajib login. Dipublikasikan bila Anda menambahkan opsi `--with-dashboard` atau `--with-react-dashboard`.
 
 #### Opsi Perintah `security:install`:
 
-| Opsi                 | Keterangan                                                                                         |
-| :------------------- | :------------------------------------------------------------------------------------------------- |
-| `--force`            | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, `public/.htaccess`, dan halaman blokir. |
-| `--without-nginx`    | Melewatkan pembuatan berkas `nginx.conf`.                                                          |
-| `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess`.                                                    |
-| `--without-views`    | Melewatkan publikasi halaman blokir `errors/blocked.blade.php`.                                    |
-| `--with-dashboard`   | Mempublikasikan tampilan dashboard monitoring Livewire (wajib login).                              |
-| `--with-htaccess`    | Memaksa pembaruan berkas `public/.htaccess`.                                                       |
-| `--without-env`      | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`.                    |
+| Opsi                     | Keterangan                                                                                         |
+| :----------------------- | :------------------------------------------------------------------------------------------------- |
+| `--force`                | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, `public/.htaccess`, dan halaman blokir. |
+| `--without-nginx`        | Melewatkan pembuatan berkas `nginx.conf`.                                                          |
+| `--without-htaccess`     | Melewatkan pembaruan berkas `public/.htaccess`.                                                    |
+| `--without-views`        | Melewatkan publikasi halaman blokir `errors/blocked.blade.php`.                                    |
+| `--with-dashboard`       | Mempublikasikan tampilan dashboard monitoring Livewire (wajib login).                              |
+| `--with-react-dashboard` | Mempublikasikan tampilan dashboard monitoring React/Inertia (wajib login).                         |
+| `--with-htaccess`        | Memaksa pembaruan berkas `public/.htaccess`.                                                       |
+| `--without-env`          | Melewatkan penyematan variabel konfigurasi ke berkas `.env` dan `.env.example`.                    |
 
 #### Publikasi Aset Secara Parsial (Manual):
 
@@ -119,7 +120,10 @@ php artisan vendor:publish --tag=security-views --force
 # 6. Dashboard monitoring Livewire + konfigurasi
 php artisan vendor:publish --tag=starterkit-livewire --force
 
-# 7. Seluruh aset sekaligus
+# 7. Dashboard monitoring React/Inertia + konfigurasi
+php artisan vendor:publish --tag=starterkit-react --force
+
+# 8. Seluruh aset sekaligus
 php artisan vendor:publish --tag=security-all --force
 ```
 
@@ -129,23 +133,37 @@ Jalankan migrasi database:
 php artisan migrate
 ```
 
-### 3. Dashboard Monitoring Livewire Starter Kit (Opsional)
+### 3. Dashboard Monitoring Starter Kit (Opsional)
 
-Paket ini tetap **100% headless** secara default, namun menyediakan panel monitoring siap pakai berbasis **Laravel Livewire Starter Kit (Flux UI)** yang dapat dipublikasikan ke dalam aplikasi host:
+Paket ini tetap **100% headless** secara default, namun menyediakan panel monitoring siap pakai untuk **starter kit resmi Laravel** yang dapat dipublikasikan ke dalam aplikasi host. Pilih salah satu sesuai stack frontend aplikasi Anda.
+
+#### a. Livewire Starter Kit (Flux UI)
 
 ```bash
 php artisan vendor:publish --tag=starterkit-livewire
 ```
 
+Perintah tersebut menyalin **`resources/views/pages/security/*.blade.php`** (enam halaman Livewire single-file component) beserta blok konfigurasi `dashboard` pada `config/security.php`.
+
+#### b. React Starter Kit (Inertia + React + shadcn/ui)
+
+```bash
+php artisan vendor:publish --tag=starterkit-react
+```
+
 Perintah tersebut menyalin:
 
-1. **`resources/views/pages/security/*.blade.php`** — enam halaman Livewire (single-file component): _Overview_, _Security Logs_, _Blocked IPs_, _Server Audit_, _User Sessions_, dan _Unblock Appeals_.
-2. **`config/security.php`** — menyertakan blok konfigurasi `dashboard`.
+1. **`resources/js/pages/security/*.tsx`** — enam halaman Inertia/React: _Overview_, _Security Logs_, _Blocked IPs_, _Server Audit_, _User Sessions_, dan _Unblock Appeals_.
+2. **`resources/js/components/security/*.tsx`** — komponen pendukung (navigasi & paginasi).
+3. **`config/security.php`** — menyertakan blok konfigurasi `dashboard`.
 
-Aktifkan dashboard melalui berkas `.env`:
+> ℹ️ Halaman React dikirim melalui controller Inertia bawaan paket (data di-render server-side), sehingga **tidak** bergantung pada REST API `/api/*`. Setelah publikasi, jalankan `npm run build` (atau `npm run dev`).
+
+#### Mengaktifkan Dashboard
 
 ```dotenv
 SECURITY_DASHBOARD_ENABLED=true
+SECURITY_DASHBOARD_DRIVER=livewire   # atau "react"
 SECURITY_DASHBOARD_PREFIX=security
 ```
 
@@ -153,7 +171,7 @@ Setelah diaktifkan, panel dapat diakses pada **`/security`**.
 
 > 🔒 **Wajib Login**: Seluruh halaman dashboard dilindungi middleware `web` + `auth`. Secara bawaan, akses juga dibatasi oleh middleware `security.admin` (Gate `manage-security-monitor`) sehingga hanya administrator yang diizinkan. Keduanya dapat dikustomisasi melalui kunci `security.dashboard.middleware` dan `security.dashboard.admin_middleware` di `config/security.php`.
 
-Saat menjalankan `security:install`, tambahkan opsi `--with-dashboard` untuk mempublikasikan dashboard sekaligus.
+Saat menjalankan `security:install`, tambahkan opsi `--with-dashboard` (Livewire) atau `--with-react-dashboard` (React) untuk mempublikasikan dashboard sekaligus.
 
 ---
 

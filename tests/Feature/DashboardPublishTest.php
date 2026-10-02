@@ -4,9 +4,16 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 
 afterEach(function () {
-    $directory = resource_path('views/pages/security');
-    if (File::isDirectory($directory)) {
-        File::deleteDirectory($directory);
+    $directories = [
+        resource_path('views/pages/security'),
+        resource_path('js/pages/security'),
+        resource_path('js/components/security'),
+    ];
+
+    foreach ($directories as $directory) {
+        if (File::isDirectory($directory)) {
+            File::deleteDirectory($directory);
+        }
     }
 });
 
@@ -15,6 +22,8 @@ test(
     function () {
         expect(config('security.dashboard.enabled'))
             ->toBeFalse()
+            ->and(config('security.dashboard.driver'))
+            ->toBe('livewire')
             ->and(config('security.dashboard.prefix'))
             ->toBe('security')
             ->and(config('security.dashboard.middleware'))
@@ -72,6 +81,96 @@ test(
         ])->assertSuccessful();
 
         expect(File::exists($directory.'/overview.blade.php'))->toBeTrue();
+    },
+);
+
+test(
+    'starterkit react tag publishes the react pages, components, and configuration',
+    function () {
+        $pages = resource_path('js/pages/security');
+        $components = resource_path('js/components/security');
+
+        foreach ([$pages, $components] as $directory) {
+            if (File::isDirectory($directory)) {
+                File::deleteDirectory($directory);
+            }
+        }
+
+        $this->artisan('vendor:publish', [
+            '--tag' => 'starterkit-react',
+            '--force' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($pages.'/overview.tsx'))
+            ->toBeTrue()
+            ->and(File::exists($pages.'/logs.tsx'))
+            ->toBeTrue()
+            ->and(File::exists($pages.'/blocked-ips.tsx'))
+            ->toBeTrue()
+            ->and(File::exists($pages.'/server.tsx'))
+            ->toBeTrue()
+            ->and(File::exists($pages.'/sessions.tsx'))
+            ->toBeTrue()
+            ->and(File::exists($pages.'/tickets.tsx'))
+            ->toBeTrue()
+            ->and(File::exists($components.'/security-nav.tsx'))
+            ->toBeTrue();
+
+        expect(File::get($pages.'/overview.tsx'))->toContain(
+            'Security Overview',
+        );
+    },
+);
+
+test(
+    'typo-compatible staterkit react alias publishes the react pages',
+    function () {
+        $pages = resource_path('js/pages/security');
+
+        if (File::isDirectory($pages)) {
+            File::deleteDirectory($pages);
+        }
+
+        $this->artisan('vendor:publish', [
+            '--tag' => 'staterkit-react',
+            '--force' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($pages.'/overview.tsx'))->toBeTrue();
+    },
+);
+
+test('react dashboard routes are gated behind authentication', function () {
+    $routes = File::get(__DIR__.'/../../routes/security-dashboard-react.php');
+
+    expect($routes)
+        ->toContain("config('security.dashboard.middleware', ['web', 'auth'])")
+        ->and($routes)
+        ->toContain('OverviewController::class')
+        ->and($routes)
+        ->toContain("->name('security.dashboard.')");
+
+    expect(Route::has('security.dashboard.overview'))->toBeFalse();
+});
+
+test(
+    'security install command can publish the react dashboard with the with-react-dashboard flag',
+    function () {
+        $pages = resource_path('js/pages/security');
+
+        if (File::isDirectory($pages)) {
+            File::deleteDirectory($pages);
+        }
+
+        $this->artisan('security:install', [
+            '--force' => true,
+            '--with-react-dashboard' => true,
+            '--without-nginx' => true,
+            '--without-htaccess' => true,
+            '--without-env' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($pages.'/overview.tsx'))->toBeTrue();
     },
 );
 

@@ -195,3 +195,63 @@ export const AppealTicketModal: React.FC<{ data: BlockedData; onClose: () => voi
     );
 };
 ```
+
+---
+
+## 4. Dashboard Monitoring React Starter Kit Siap Pakai
+
+Jika aplikasi host Anda dibangun di atas **Laravel React Starter Kit** (Inertia + React + shadcn/ui), Anda tidak perlu membangun panel monitoring dari nol. Paket menyediakan enam halaman Inertia/React siap pakai yang dapat dipublikasikan dengan satu perintah:
+
+```bash
+php artisan vendor:publish --tag=starterkit-react
+```
+
+Perintah tersebut menyalin berkas berikut ke aplikasi Anda:
+
+| Berkas yang Dipublikasikan | Deskripsi |
+| :--- | :--- |
+| `resources/js/pages/security/overview.tsx` | Statistik, tren serangan, dan top attacker. |
+| `resources/js/pages/security/logs.tsx` | Tabel log keamanan dengan filter dan aksi bersihkan/hapus. |
+| `resources/js/pages/security/blocked-ips.tsx` | Manajemen karantina IP (blokir manual, toggle, unblock). |
+| `resources/js/pages/security/server.tsx` | Audit integritas, pemindai webshell, baseline, dan lockout. |
+| `resources/js/pages/security/sessions.tsx` | Sesi pengguna aktif, riwayat login, dan IP terpercaya. |
+| `resources/js/pages/security/tickets.tsx` | Review tiket banding (approve/reject + auto-unblock). |
+| `resources/js/components/security/security-nav.tsx` | Navigasi antar modul keamanan. |
+| `resources/js/components/security/pagination.tsx` | Komponen paginasi tabel. |
+
+Aktifkan melalui `.env`, lalu bangun ulang aset:
+
+```dotenv
+SECURITY_DASHBOARD_ENABLED=true
+SECURITY_DASHBOARD_DRIVER=react
+SECURITY_DASHBOARD_PREFIX=security
+```
+
+```bash
+npm run build
+```
+
+Panel dapat diakses pada `/security`.
+
+> ℹ️ Halaman di-render **server-side** oleh controller Inertia bawaan paket (`Internal\SecurityMonitor\Http\Controllers\Dashboard\*`). Mutasi (blokir IP, hapus log, approve tiket) dikirim sebagai permintaan Inertia biasa, sehingga **tidak** memerlukan token API terpisah dan tidak bergantung pada REST API `/api/security/*`.
+
+> 🔒 **Wajib Login**: Rute dashboard memakai middleware `web` + `auth`, dan secara bawaan juga `security.admin` (Gate `manage-security-monitor`). Untuk mengizinkan semua pengguna yang sudah login (tanpa syarat admin), kosongkan `security.dashboard.admin_middleware` pada `config/security.php`.
+
+### Menambahkan Tautan di Sidebar Starter Kit
+
+Untuk memunculkan tautan ke panel, tambahkan item berikut ke `mainNavItems` pada `resources/js/components/app-sidebar.tsx`:
+
+```tsx
+import { ShieldCheck } from 'lucide-react';
+
+{
+    title: 'Security Monitor',
+    href: '/security',
+    icon: ShieldCheck,
+},
+```
+
+### Catatan
+
+- Jalankan `npm run build` (atau `npm run dev`) setiap kali halaman dashboard baru dipublikasikan agar tercatat pada manifest Vite.
+- Komponen `@/components/ui/*` yang dipakai (button, badge, card, input, label) sudah tersedia bawaan pada React Starter Kit resmi.

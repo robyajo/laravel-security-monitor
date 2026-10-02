@@ -144,6 +144,7 @@ src/
 ├── Facades/               # Static facade accessors (SecurityMonitor)
 ├── Http/
 │   ├── Controllers/Api/   # Headless JSON REST API controllers
+│   ├── Controllers/Dashboard/ # Inertia + React dashboard controllers
 │   └── Middleware/        # WAF & session tracking middleware
 ├── Listeners/             # Auth event listeners (LogFailedLoginAttempt, RecordUserLogin, ResetLoginAttempts)
 ├── Models/                # Eloquent models with dynamic table names
@@ -158,14 +159,16 @@ database/migrations/       # Consolidated package migrations
 
 routes/
 ├── security.php           # Headless REST API routes
-└── security-dashboard.php # Optional Livewire Starter Kit dashboard routes (auth + security.admin)
+├── security-dashboard.php # Optional Livewire Starter Kit dashboard routes (auth + security.admin)
+└── security-dashboard-react.php # Optional Inertia + React dashboard routes (auth + security.admin)
 
 stubs/
 ├── nginx.conf.stub        # Hardened Nginx WAF configuration template
 ├── htaccess.stub          # Hardened Apache .htaccess template
 ├── blocked.blade.php      # Default 403 "blocked" page
 ├── env.stub               # Documented SECURITY_* / CAPTCHA_* environment block
-└── livewire/pages/security/ # Livewire Starter Kit monitoring dashboard (publish tag: starterkit-livewire)
+├── livewire/pages/security/ # Livewire Starter Kit monitoring dashboard (tag: starterkit-livewire)
+└── react/                 # React Starter Kit monitoring dashboard (tag: starterkit-react)
 ```
 
 ---

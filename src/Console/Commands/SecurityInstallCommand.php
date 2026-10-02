@@ -14,6 +14,7 @@ class SecurityInstallCommand extends Command
                             {--without-views : Jangan publikasikan halaman blokir errors/blocked.blade.php}
                             {--without-env : Jangan tambahkan variabel konfigurasi ke berkas .env}
                             {--with-dashboard : Publikasikan tampilan dashboard monitoring Livewire Starter Kit}
+                            {--with-react-dashboard : Publikasikan tampilan dashboard monitoring React Starter Kit}
                             {--with-htaccess : Paksa perbarui berkas public/.htaccess dengan aturan hardening}';
 
     protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, dan .env)';
@@ -29,6 +30,7 @@ class SecurityInstallCommand extends Command
         $withoutViews = (bool) $this->option('without-views');
         $withoutEnv = (bool) $this->option('without-env');
         $withDashboard = (bool) $this->option('with-dashboard');
+        $withReactDashboard = (bool) $this->option('with-react-dashboard');
 
         // 1. Publish Config
         $this->comment('Mempublikasikan berkas konfigurasi...');
@@ -85,7 +87,18 @@ class SecurityInstallCommand extends Command
             ]);
         }
 
-        // 7. Append Environment Variables with rich comments to .env & .env.example
+        // 7. Publish the optional React Starter Kit monitoring dashboard
+        if ($withReactDashboard) {
+            $this->comment(
+                'Mempublikasikan dashboard monitoring React (resources/js/pages/security)...',
+            );
+            $this->call('vendor:publish', [
+                '--tag' => 'starterkit-react',
+                '--force' => $force,
+            ]);
+        }
+
+        // 8. Append Environment Variables with rich comments to .env & .env.example
         if (! $withoutEnv) {
             $this->comment(
                 'Menyematkan variabel konfigurasi dan panduan ke berkas .env...',
@@ -143,14 +156,21 @@ class SecurityInstallCommand extends Command
         }
         if ($withDashboard) {
             $this->line(
-                '  8. Dashboard Livewire: Aktifkan <fg=yellow>SECURITY_DASHBOARD_ENABLED=true</> di berkas .env,',
+                '  8. Dashboard Livewire: Aktifkan <fg=yellow>SECURITY_DASHBOARD_ENABLED=true</> dan <fg=yellow>SECURITY_DASHBOARD_DRIVER=livewire</> di berkas .env,',
             );
             $this->line(
                 '     lalu akses <fg=yellow>/security</> (wajib login sebagai administrator).',
             );
+        } elseif ($withReactDashboard) {
+            $this->line(
+                '  8. Dashboard React: Aktifkan <fg=yellow>SECURITY_DASHBOARD_ENABLED=true</> dan <fg=yellow>SECURITY_DASHBOARD_DRIVER=react</> di berkas .env,',
+            );
+            $this->line(
+                '     lalu jalankan <fg=yellow>npm run build</> dan akses <fg=yellow>/security</> (wajib login sebagai administrator).',
+            );
         } else {
             $this->line(
-                '  8. Dashboard Livewire (opsional): Publikasikan dengan <fg=yellow>php artisan vendor:publish --tag=starterkit-livewire</>.',
+                '  8. Dashboard monitoring (opsional): Publikasikan dengan <fg=yellow>php artisan vendor:publish --tag=starterkit-livewire</> atau <fg=yellow>--tag=starterkit-react</>.',
             );
         }
 

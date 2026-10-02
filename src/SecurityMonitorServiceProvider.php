@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 use Internal\SecurityMonitor\Console\Commands\PruneSecurityLogs;
 use Internal\SecurityMonitor\Console\Commands\PurgeInjectedData;
 use Internal\SecurityMonitor\Console\Commands\SecurityBaselineCommand;
@@ -193,6 +194,41 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             'security-dashboard-views',
         );
 
+        // React Starter Kit Monitoring Dashboard (views + configuration).
+        //
+        // Publishes the Inertia + React pages and shared components that make
+        // up the monitoring dashboard, tailored for the official Laravel React
+        // Starter Kit (Inertia + shadcn/ui), together with the package config.
+        $reactDashboardAssets = [
+            __DIR__.'/../stubs/react/pages/security' => resource_path(
+                'js/pages/security',
+            ),
+            __DIR__.'/../stubs/react/components/security' => resource_path(
+                'js/components/security',
+            ),
+            __DIR__.'/../config/security.php' => config_path('security.php'),
+        ];
+
+        $this->publishes($reactDashboardAssets, 'starterkit-react');
+        $this->publishes($reactDashboardAssets, 'security-dashboard-react');
+
+        // Backwards/typo-compatible alias so that both spellings work.
+        $this->publishes($reactDashboardAssets, 'staterkit-react');
+
+        // React monitoring views only (no configuration overwrite).
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/react/pages/security' => resource_path(
+                    'js/pages/security',
+                ),
+                __DIR__.
+                '/../stubs/react/components/security' => resource_path(
+                    'js/components/security',
+                ),
+            ],
+            'security-dashboard-react-views',
+        );
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 
@@ -227,13 +263,14 @@ class SecurityMonitorServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the optional Livewire Starter Kit monitoring dashboard.
+     * Register the optional Starter Kit monitoring dashboard.
      *
      * The dashboard is only wired up when it has been explicitly enabled via
-     * "security.dashboard.enabled" and the Livewire package is installed in the
-     * host application. Its views are published separately using:
+     * "security.dashboard.enabled" and the matching frontend package is present
+     * in the host application. Its views are published separately using:
      *
      *     php artisan vendor:publish --tag=starterkit-livewire
+     *     php artisan vendor:publish --tag=starterkit-react
      */
     protected function registerDashboardRoutes(): void
     {
@@ -241,11 +278,37 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             return;
         }
 
+        match (config('security.dashboard.driver', 'livewire')) {
+            'react' => $this->registerReactDashboardRoutes(),
+            'livewire' => $this->registerLivewireDashboardRoutes(),
+            default => null,
+        };
+    }
+
+    /**
+     * Register the Livewire (Flux UI) dashboard routes.
+     */
+    protected function registerLivewireDashboardRoutes(): void
+    {
         if (! class_exists(Livewire::class)) {
             return;
         }
 
         $this->loadRoutesFrom(__DIR__.'/../routes/security-dashboard.php');
+    }
+
+    /**
+     * Register the Inertia + React dashboard routes.
+     */
+    protected function registerReactDashboardRoutes(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        $this->loadRoutesFrom(
+            __DIR__.'/../routes/security-dashboard-react.php',
+        );
     }
 
     protected function registerSchedule(): void

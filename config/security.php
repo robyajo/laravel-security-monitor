@@ -676,18 +676,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Livewire Starter Kit Dashboard
+    | Starter Kit Monitoring Dashboard
     |--------------------------------------------------------------------------
     |
-    | Panel monitoring berbasis Livewire yang dapat dipublikasikan ke dalam
+    | Panel monitoring opsional yang dapat dipublikasikan ke dalam
     | aplikasi host melalui perintah:
     |
+    |     # Livewire Starter Kit (Flux UI)
     |     php artisan vendor:publish --tag=starterkit-livewire
+    |
+    |     # React Starter Kit (Inertia + React)
+    |     php artisan vendor:publish --tag=starterkit-react
     |
     | Publikasi tersebut menyalin berkas Blade (single-file Livewire component)
     | ke resources/views/pages/security beserta konfigurasi ini. Seluruh halaman
     | WAJIB melalui autentikasi (middleware "auth") dan secara default juga
     | dibatasi oleh Gate "manage-security-monitor" (middleware "security.admin").
+    |
+    | "driver" menentukan stack tampilan yang diaktifkan: "livewire" atau "react".
     |
     | Dashboard dinonaktifkan secara default agar paket tetap 100% headless
     | sampai pengguna secara sengaja mengaktifkannya.
@@ -695,6 +701,7 @@ return [
     */
     'dashboard' => [
         'enabled' => (bool) env('SECURITY_DASHBOARD_ENABLED', false),
+        'driver' => env('SECURITY_DASHBOARD_DRIVER', 'livewire'),
         'prefix' => env('SECURITY_DASHBOARD_PREFIX', 'security'),
         'middleware' => ['web', 'auth'],
         'admin_middleware' => ['Internal\\SecurityMonitor\\Http\\Middleware\\EnsureSecurityAdmin'],

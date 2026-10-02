@@ -125,13 +125,17 @@ Berkas akan ditempatkan di: `public/.htaccess`.
 php artisan vendor:publish --tag=security-all --force
 ```
 
-### 6. Publikasikan Dashboard Monitoring Livewire Starter Kit
+### 6. Publikasikan Dashboard Monitoring Starter Kit
 
 ```bash
+# Livewire Starter Kit (Flux UI)
 php artisan vendor:publish --tag=starterkit-livewire
+
+# React Starter Kit (Inertia + React + shadcn/ui)
+php artisan vendor:publish --tag=starterkit-react
 ```
 
-Perintah ini menyalin enam halaman Livewire (single-file component) ke `resources/views/pages/security/` beserta blok konfigurasi `dashboard` pada `config/security.php`. Dashboard bersifat opsional dan **wajib login** (lihat bagian [Dashboard Monitoring Livewire](#8-dashboard-monitoring-livewire-starter-kit-opsional)).
+Perintah Livewire menyalin enam halaman Livewire (single-file component) ke `resources/views/pages/security/`. Perintah React menyalin enam halaman Inertia/React ke `resources/js/pages/security/` beserta komponen pendukung di `resources/js/components/security/`. Keduanya juga menyertakan blok konfigurasi `dashboard` pada `config/security.php`. Dashboard bersifat opsional dan **wajib login** (lihat bagian [Dashboard Monitoring Starter Kit](#8-dashboard-monitoring-starter-kit-opsional)).
 
 ---
 
@@ -238,19 +242,36 @@ protected $middleware = [
 
 ---
 
-## 8. Dashboard Monitoring Livewire Starter Kit (Opsional)
+## 8. Dashboard Monitoring Starter Kit (Opsional)
 
-Paket tetap 100% headless secara default. Bila aplikasi host menggunakan **Laravel Livewire Starter Kit** (Livewire + Flux UI), Anda dapat mengaktifkan panel monitoring siap pakai:
+Paket tetap 100% headless secara default. Bila aplikasi host menggunakan **starter kit resmi Laravel**, Anda dapat mengaktifkan panel monitoring siap pakai. Pilih salah satu stack.
+
+### A. Livewire Starter Kit (Flux UI)
 
 ```bash
-# 1. Publikasikan tampilan + konfigurasi
 php artisan vendor:publish --tag=starterkit-livewire
+```
 
-# 2. Aktifkan di .env
+### B. React Starter Kit (Inertia + React + shadcn/ui)
+
+```bash
+php artisan vendor:publish --tag=starterkit-react
+
+# Setelah publikasi tampilan React, bangun ulang aset frontend
+npm run build
+```
+
+> ℹ️ Halaman React di-render server-side melalui controller Inertia bawaan paket (tidak melalui REST API `/api/*`), sehingga cookie sesi Laravel langsung bekerja.
+
+### Mengaktifkan
+
+```bash
+# Aktifkan di .env
 #    SECURITY_DASHBOARD_ENABLED=true
+#    SECURITY_DASHBOARD_DRIVER=livewire   # atau "react"
 #    SECURITY_DASHBOARD_PREFIX=security
 
-# 3. Bersihkan cache
+# Bersihkan cache
 php artisan optimize:clear
 ```
 
@@ -258,12 +279,13 @@ Panel tersedia di `/security` dan berisi enam modul: **Overview**, **Security Lo
 
 ### Keamanan & Kontrol Akses
 
-- Rute hanya didaftarkan ketika `security.dashboard.enabled=true` **dan** Livewire terpasang.
+- Rute hanya didaftarkan ketika `security.dashboard.enabled=true` **dan** stack frontend yang sesuai (`driver`) terpasang (Livewire atau Inertia).
 - Seluruh rute memakai middleware `web` + `auth` (wajib login) dan, secara bawaan, `security.admin` (Gate `manage-security-monitor`).
 - Kustomisasi melalui `config/security.php`:
   ```php
   'dashboard' => [
       'enabled' => (bool) env('SECURITY_DASHBOARD_ENABLED', false),
+      'driver' => env('SECURITY_DASHBOARD_DRIVER', 'livewire'),
       'prefix' => env('SECURITY_DASHBOARD_PREFIX', 'security'),
       'middleware' => ['web', 'auth'],
       'admin_middleware' => ['Internal\\SecurityMonitor\\Http\\Middleware\\EnsureSecurityAdmin'],
