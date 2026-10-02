@@ -31,6 +31,7 @@ use Internal\SecurityMonitor\Services\LoginThrottleService;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Internal\SecurityMonitor\Services\ServerSecurityService;
 use Internal\SecurityMonitor\Services\UserLoginService;
+use Livewire\Livewire;
 
 class SecurityMonitorServiceProvider extends ServiceProvider
 {
@@ -240,7 +241,7 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             return;
         }
 
-        if (! class_exists(\Livewire\Livewire::class)) {
+        if (! class_exists(Livewire::class)) {
             return;
         }
 

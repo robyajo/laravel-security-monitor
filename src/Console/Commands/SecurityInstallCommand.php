@@ -16,103 +16,103 @@ class SecurityInstallCommand extends Command
                             {--with-dashboard : Publikasikan tampilan dashboard monitoring Livewire Starter Kit}
                             {--with-htaccess : Paksa perbarui berkas public/.htaccess dengan aturan hardening}';
 
-    protected $description = "Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, dan .env)";
+    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, dan .env)';
 
     public function handle(): int
     {
-        $this->info("Memulai instalasi Laravel Security Monitor (Bulwark)...");
+        $this->info('Memulai instalasi Laravel Security Monitor (Bulwark)...');
         $this->newLine();
 
-        $force = (bool) $this->option("force");
-        $withoutNginx = (bool) $this->option("without-nginx");
-        $withoutHtaccess = (bool) $this->option("without-htaccess");
-        $withoutViews = (bool) $this->option("without-views");
-        $withoutEnv = (bool) $this->option("without-env");
-        $withDashboard = (bool) $this->option("with-dashboard");
+        $force = (bool) $this->option('force');
+        $withoutNginx = (bool) $this->option('without-nginx');
+        $withoutHtaccess = (bool) $this->option('without-htaccess');
+        $withoutViews = (bool) $this->option('without-views');
+        $withoutEnv = (bool) $this->option('without-env');
+        $withDashboard = (bool) $this->option('with-dashboard');
 
         // 1. Publish Config
-        $this->comment("Mempublikasikan berkas konfigurasi...");
-        $this->call("vendor:publish", [
-            "--tag" => "security-config",
-            "--force" => $force,
+        $this->comment('Mempublikasikan berkas konfigurasi...');
+        $this->call('vendor:publish', [
+            '--tag' => 'security-config',
+            '--force' => $force,
         ]);
 
         // 2. Publish Migrations
-        $this->comment("Mempublikasikan berkas migrasi database...");
-        $this->call("vendor:publish", [
-            "--tag" => "security-migrations",
-            "--force" => $force,
+        $this->comment('Mempublikasikan berkas migrasi database...');
+        $this->call('vendor:publish', [
+            '--tag' => 'security-migrations',
+            '--force' => $force,
         ]);
 
         // 3. Publish Nginx Configuration
-        if (!$withoutNginx) {
+        if (! $withoutNginx) {
             $this->comment(
-                "Mempublikasikan konfigurasi server Nginx (nginx.conf)...",
+                'Mempublikasikan konfigurasi server Nginx (nginx.conf)...',
             );
-            $this->call("vendor:publish", [
-                "--tag" => "security-nginx",
-                "--force" => $force,
+            $this->call('vendor:publish', [
+                '--tag' => 'security-nginx',
+                '--force' => $force,
             ]);
         }
 
         // 4. Publish / Hardening Apache .htaccess
-        if (!$withoutHtaccess) {
+        if (! $withoutHtaccess) {
             $this->comment(
-                "Mempublikasikan dan menerapkan aturan hardening Apache (public/.htaccess)...",
+                'Mempublikasikan dan menerapkan aturan hardening Apache (public/.htaccess)...',
             );
             $this->applyHtaccessHardening($force);
         }
 
         // 5. Publish Default Blocked (403) Page
-        if (!$withoutViews) {
+        if (! $withoutViews) {
             $this->comment(
-                "Mempublikasikan halaman blokir default (resources/views/errors/blocked.blade.php)...",
+                'Mempublikasikan halaman blokir default (resources/views/errors/blocked.blade.php)...',
             );
-            $this->call("vendor:publish", [
-                "--tag" => "security-views",
-                "--force" => $force,
+            $this->call('vendor:publish', [
+                '--tag' => 'security-views',
+                '--force' => $force,
             ]);
         }
 
         // 6. Publish the optional Livewire Starter Kit monitoring dashboard
         if ($withDashboard) {
             $this->comment(
-                "Mempublikasikan dashboard monitoring Livewire (resources/views/pages/security)...",
+                'Mempublikasikan dashboard monitoring Livewire (resources/views/pages/security)...',
             );
-            $this->call("vendor:publish", [
-                "--tag" => "starterkit-livewire",
-                "--force" => $force,
+            $this->call('vendor:publish', [
+                '--tag' => 'starterkit-livewire',
+                '--force' => $force,
             ]);
         }
 
         // 7. Append Environment Variables with rich comments to .env & .env.example
-        if (!$withoutEnv) {
+        if (! $withoutEnv) {
             $this->comment(
-                "Menyematkan variabel konfigurasi dan panduan ke berkas .env...",
+                'Menyematkan variabel konfigurasi dan panduan ke berkas .env...',
             );
             $this->appendEnvironmentVariables();
         }
 
         $this->newLine();
-        $this->info("Instalasi aset berhasil diselesaikan!");
+        $this->info('Instalasi aset berhasil diselesaikan!');
         $this->newLine();
 
         $this->line(
-            "<fg=cyan>Langkah selanjutnya untuk mengaktifkan proteksi:</>",
+            '<fg=cyan>Langkah selanjutnya untuk mengaktifkan proteksi:</>',
         );
-        $this->line("  1. Jalankan migrasi database:");
-        $this->line("     <fg=yellow>php artisan migrate</>");
+        $this->line('  1. Jalankan migrasi database:');
+        $this->line('     <fg=yellow>php artisan migrate</>');
         $this->line(
-            "  2. Tambahkan trait <fg=yellow>HasSecurityRelations</> ke model User:",
+            '  2. Tambahkan trait <fg=yellow>HasSecurityRelations</> ke model User:',
         );
         $this->line(
             "     <fg=gray>use Internal\SecurityMonitor\Concerns\HasSecurityRelations;</>",
         );
         $this->line(
-            "  3. Daftarkan middleware proteksi WAF di <fg=yellow>bootstrap/app.php</> (Laravel 11+)",
+            '  3. Daftarkan middleware proteksi WAF di <fg=yellow>bootstrap/app.php</> (Laravel 11+)',
         );
         $this->line(
-            "     atau <fg=yellow>app/Http/Kernel.php</> (Laravel 10):",
+            '     atau <fg=yellow>app/Http/Kernel.php</> (Laravel 10):',
         );
         $this->line(
             "     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\BlockIpAddress::class</>",
@@ -121,36 +121,36 @@ class SecurityInstallCommand extends Command
             "     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats::class</>",
         );
         $this->line(
-            "  4. Sesuaikan nilai variabel <fg=yellow>SECURITY_*</> dan <fg=yellow>CAPTCHA_*</> di berkas <fg=yellow>.env</>",
+            '  4. Sesuaikan nilai variabel <fg=yellow>SECURITY_*</> dan <fg=yellow>CAPTCHA_*</> di berkas <fg=yellow>.env</>',
         );
-        if (!$withoutNginx) {
+        if (! $withoutNginx) {
             $this->line(
-                "  5. Web Server Nginx: Periksa dan sesuaikan <fg=yellow>nginx.conf</> di root proyek.",
+                '  5. Web Server Nginx: Periksa dan sesuaikan <fg=yellow>nginx.conf</> di root proyek.',
             );
         }
-        if (!$withoutHtaccess) {
+        if (! $withoutHtaccess) {
             $this->line(
-                "  6. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat",
+                '  6. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat',
             );
             $this->line(
-                "     terhadap upload webshell, double extension, pembacaan dotfile, dan file backup.",
+                '     terhadap upload webshell, double extension, pembacaan dotfile, dan file backup.',
             );
         }
-        if (!$withoutViews) {
+        if (! $withoutViews) {
             $this->line(
-                "  7. Halaman blokir: Sesuaikan <fg=yellow>resources/views/errors/blocked.blade.php</> sesuai branding aplikasi Anda.",
+                '  7. Halaman blokir: Sesuaikan <fg=yellow>resources/views/errors/blocked.blade.php</> sesuai branding aplikasi Anda.',
             );
         }
         if ($withDashboard) {
             $this->line(
-                "  8. Dashboard Livewire: Aktifkan <fg=yellow>SECURITY_DASHBOARD_ENABLED=true</> di berkas .env,",
+                '  8. Dashboard Livewire: Aktifkan <fg=yellow>SECURITY_DASHBOARD_ENABLED=true</> di berkas .env,',
             );
             $this->line(
-                "     lalu akses <fg=yellow>/security</> (wajib login sebagai administrator).",
+                '     lalu akses <fg=yellow>/security</> (wajib login sebagai administrator).',
             );
         } else {
             $this->line(
-                "  8. Dashboard Livewire (opsional): Publikasikan dengan <fg=yellow>php artisan vendor:publish --tag=starterkit-livewire</>.",
+                '  8. Dashboard Livewire (opsional): Publikasikan dengan <fg=yellow>php artisan vendor:publish --tag=starterkit-livewire</>.',
             );
         }
 
@@ -162,14 +162,14 @@ class SecurityInstallCommand extends Command
      */
     protected function applyHtaccessHardening(bool $force): void
     {
-        $stubPath = __DIR__ . "/../../../stubs/htaccess.stub";
-        if (!File::exists($stubPath)) {
-            $stubPath = dirname(__DIR__, 2) . "/stubs/htaccess.stub";
+        $stubPath = __DIR__.'/../../../stubs/htaccess.stub';
+        if (! File::exists($stubPath)) {
+            $stubPath = dirname(__DIR__, 2).'/stubs/htaccess.stub';
         }
 
-        if (!File::exists($stubPath)) {
+        if (! File::exists($stubPath)) {
             $this->warn(
-                "Berkas stub htaccess tidak ditemukan pada path: " . $stubPath,
+                'Berkas stub htaccess tidak ditemukan pada path: '.$stubPath,
             );
 
             return;
@@ -177,17 +177,17 @@ class SecurityInstallCommand extends Command
 
         $stubContent = File::get($stubPath);
         $publicDir = public_path();
-        if (!File::isDirectory($publicDir)) {
+        if (! File::isDirectory($publicDir)) {
             File::makeDirectory($publicDir, 0755, true, true);
         }
 
-        $htaccessPath = public_path(".htaccess");
+        $htaccessPath = public_path('.htaccess');
 
-        if (!File::exists($htaccessPath) || $force) {
+        if (! File::exists($htaccessPath) || $force) {
             // Buat atau timpa dengan stub lengkap
             File::put($htaccessPath, $stubContent);
             $this->info(
-                "  ✓ Berkas public/.htaccess berhasil diperbarui dengan aturan hardening lengkap.",
+                '  ✓ Berkas public/.htaccess berhasil diperbarui dengan aturan hardening lengkap.',
             );
 
             return;
@@ -197,40 +197,40 @@ class SecurityInstallCommand extends Command
 
         // Cek apakah hardening rules sudah terpasang
         if (
-            str_contains($currentContent, "Hardening keamanan") ||
-            str_contains($currentContent, "Hardening Keamanan") ||
+            str_contains($currentContent, 'Hardening keamanan') ||
+            str_contains($currentContent, 'Hardening Keamanan') ||
             str_contains($currentContent, 'FilesMatch "^\."') ||
-            str_contains($currentContent, "phtml|pht|phar")
+            str_contains($currentContent, 'phtml|pht|phar')
         ) {
             $this->line(
-                "  ✓ Berkas public/.htaccess sudah memiliki aturan hardening keamanan.",
+                '  ✓ Berkas public/.htaccess sudah memiliki aturan hardening keamanan.',
             );
 
             return;
         }
 
         // Backup htaccess lama
-        $backupPath = public_path(".htaccess.backup-" . date("Ymd_His"));
+        $backupPath = public_path('.htaccess.backup-'.date('Ymd_His'));
         File::copy($htaccessPath, $backupPath);
         $this->line("  ℹ Cadangan dibuat di: <fg=gray>{$backupPath}</>");
 
         // Ambil bagian hardening dari stub
         $pos = strpos(
             $stubContent,
-            "# ---------------------------------------------------------------------------",
+            '# ---------------------------------------------------------------------------',
         );
         $hardeningSection =
             $pos !== false
                 ? '
 
-' . substr($stubContent, $pos)
+'.substr($stubContent, $pos)
                 : '
 
-' . $stubContent;
+'.$stubContent;
         File::append($htaccessPath, $hardeningSection);
 
         $this->info(
-            "  ✓ Aturan hardening keamanan berhasil ditambahkan ke berkas public/.htaccess.",
+            '  ✓ Aturan hardening keamanan berhasil ditambahkan ke berkas public/.htaccess.',
         );
     }
 
@@ -239,32 +239,32 @@ class SecurityInstallCommand extends Command
      */
     protected function appendEnvironmentVariables(): void
     {
-        $stubPath = __DIR__ . "/../../../stubs/env.stub";
-        if (!File::exists($stubPath)) {
-            $stubPath = dirname(__DIR__, 2) . "/stubs/env.stub";
+        $stubPath = __DIR__.'/../../../stubs/env.stub';
+        if (! File::exists($stubPath)) {
+            $stubPath = dirname(__DIR__, 2).'/stubs/env.stub';
         }
 
-        if (!File::exists($stubPath)) {
+        if (! File::exists($stubPath)) {
             return;
         }
 
         $stubContent =
             '
 
-' .
-            trim(File::get($stubPath)) .
+'.
+            trim(File::get($stubPath)).
             '
 ';
-        $envTargets = [".env", ".env.example"];
+        $envTargets = ['.env', '.env.example'];
 
         foreach ($envTargets as $envFile) {
             $targetPath = base_path($envFile);
-            if (!File::exists($targetPath)) {
+            if (! File::exists($targetPath)) {
                 continue;
             }
 
             $currentContent = File::get($targetPath);
-            if (str_contains($currentContent, "SECURITY_MONITOR_ENABLED")) {
+            if (str_contains($currentContent, 'SECURITY_MONITOR_ENABLED')) {
                 $this->line(
                     "  ✓ Berkas {$envFile} sudah memiliki variabel konfigurasi keamanan.",
                 );
