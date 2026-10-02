@@ -16,39 +16,39 @@
 ## 🌟 Fitur Utama
 
 1. **Self-Hosted WAF & Zero-Tolerance Threat Detection**:
-   - Deteksi instan tanpa batas ambang (_zero-tolerance_) untuk null-byte upload (`.php%00.jpg`), ekstensi ganda (`.php.jpg`), path traversal (`../../../public/`), probe file sensitif (`.htaccess`, `.env`, `.git`), dan SSTI canary (`{{7*7}}`).
-   - Deteksi komprehensif untuk SQL Injection, Cross-Site Scripting (XSS), Local File Inclusion (LFI), Command Injection, dan Scanner User-Agents.
-   - Pola regex yang diperketat dan kebal terhadap serangan ReDoS (_Regular Expression Denial of Service_).
+    - Deteksi instan tanpa batas ambang (_zero-tolerance_) untuk null-byte upload (`.php%00.jpg`), ekstensi ganda (`.php.jpg`), path traversal (`../../../public/`), probe file sensitif (`.htaccess`, `.env`, `.git`), dan SSTI canary (`{{7*7}}`).
+    - Deteksi komprehensif untuk SQL Injection, Cross-Site Scripting (XSS), Local File Inclusion (LFI), Command Injection, dan Scanner User-Agents.
+    - Pola regex yang diperketat dan kebal terhadap serangan ReDoS (_Regular Expression Denial of Service_).
 
 2. **Isolasi Perangkat Granular (Device-Level Quarantine)**:
-   - Dukungan isolasi di tingkat perangkat menggunakan `device_id` (WebRTC/fingerprint) dan `local_ip`.
-   - Memastikan perangkat penyerang terblokir tanpa mengganggu pengguna sah lain yang berbagi alamat IP publik yang sama (seperti kantor atau router Wi-Fi publik).
+    - Dukungan isolasi di tingkat perangkat menggunakan `device_id` (WebRTC/fingerprint) dan `local_ip`.
+    - Memastikan perangkat penyerang terblokir tanpa mengganggu pengguna sah lain yang berbagi alamat IP publik yang sama (seperti kantor atau router Wi-Fi publik).
 
 3. **Tiket Banding & Permohonan Buka Blokir (Appeal Tickets)**:
-   - Endpoint publik REST API bagi pengguna yang terblokir untuk mengajukan tiket permohonan buka blokir beserta status pelacakannya.
-   - Antarmuka persetujuan admin yang secara otomatis mencabut karantina IP/perangkat dan memasukkannya ke whitelist.
+    - Endpoint publik REST API bagi pengguna yang terblokir untuk mengajukan tiket permohonan buka blokir beserta status pelacakannya.
+    - Antarmuka persetujuan admin yang secara otomatis mencabut karantina IP/perangkat dan memasukkannya ke whitelist.
 
 4. **Multi-Tier Stepped Login Lockout**:
-   - Sistem pencegahan _credential stuffing_ & _brute force_ berjenjang (1 menit, 5 menit, 15 menit, 1 jam, hingga 24 jam).
-   - Pencatatan otomatis riwayat kegagalan otentikasi ke log audit keamanan.
+    - Sistem pencegahan _credential stuffing_ & _brute force_ berjenjang (1 menit, 5 menit, 15 menit, 1 jam, hingga 24 jam).
+    - Pencatatan otomatis riwayat kegagalan otentikasi ke log audit keamanan.
 
 5. **Pure SVG CAPTCHA (Zero Dependency)**:
-   - Generator CAPTCHA berbasis matriks vektor SVG murni tanpa memerlukan ekstensi PHP GD atau Imagick.
-   - Token tantangan sekali pakai (_stateless one-time challenge_) yang aman secara kriptografis.
+    - Generator CAPTCHA berbasis matriks vektor SVG murni tanpa memerlukan ekstensi PHP GD atau Imagick.
+    - Token tantangan sekali pakai (_stateless one-time challenge_) yang aman secara kriptografis.
 
 6. **Server Integrity & Webshell Scanner**:
-   - Pembuatan dan verifikasi baseline hash SHA-256 untuk berkas-berkas aplikasi inti.
-   - Pemindaian berkas mencurigakan / webshell (ekstensi ganda, skrip di direktori publik/upload, polyglot media).
-   - Fitur penghapusan berkas berbahaya yang aman dengan proteksi path traversal dan berkas sistem vital.
-   - Audit konfigurasi keamanan server (`APP_DEBUG`, secure session cookie, Fortify 2FA).
+    - Pembuatan dan verifikasi baseline hash SHA-256 untuk berkas-berkas aplikasi inti.
+    - Pemindaian berkas mencurigakan / webshell (ekstensi ganda, skrip di direktori publik/upload, polyglot media).
+    - Fitur penghapusan berkas berbahaya yang aman dengan proteksi path traversal dan berkas sistem vital.
+    - Audit konfigurasi keamanan server (`APP_DEBUG`, secure session cookie, Fortify 2FA).
 
 7. **Streaming Access Log Scanner**:
-   - Pemindai berkas log mentah Apache / Nginx secara _streaming_ berdaya hemat memori untuk menangkap penyerang yang ditolak oleh web server sebelum request mencapai proses PHP Laravel.
+    - Pemindai berkas log mentah Apache / Nginx secara _streaming_ berdaya hemat memori untuk menangkap penyerang yang ditolak oleh web server sebelum request mencapai proses PHP Laravel.
 
 8. **Headless & Arsitektur Terkopel Longgar**:
-   - 100% REST API JSON murni.
-   - Model `User` dan nama tabel database sepenuhnya dapat dikonfigurasi melalui `config/security.php`.
-   - Trait `HasSecurityRelations` untuk kemudahan integrasi relasi Eloquent.
+    - 100% REST API JSON murni.
+    - Model `User` dan nama tabel database sepenuhnya dapat dikonfigurasi melalui `config/security.php`.
+    - Trait `HasSecurityRelations` untuk kemudahan integrasi relasi Eloquent.
 
 ---
 
@@ -64,8 +64,15 @@
 ### 1. Pasang Paket via Composer
 
 ```bash
-composer require robyajo/laravel-security-monitor
+composer require robyajo/laravel-security-monitor:^1.1
 ```
+
+> **Penting — jangan pakai `@dev` di produksi.** Menulis
+> `composer require robyajo/laravel-security-monitor:@dev` memaksa Composer
+> mengambil branch default `dev-main` (kode yang belum dirilis), bukan tag rilis
+> stabil. Selalu pakai constraint rilis (mis. `^1.1`) atau tanpa constraint sama
+> sekali. Flag `@dev` hanya diperlukan saat mengembangkan paket ini lewat
+> _path repository_ lokal.
 
 ### 2. Publikasikan Aset Otomatis (`security:install`)
 
@@ -81,7 +88,7 @@ php artisan security:install
 2. 🗄️ **`database/migrations/` (6 tabel)**: Menyiapkan tabel `blocked_ips`, `security_logs`, `login_attempts`, `ip_unblock_requests`, `user_logins`, dan `trusted_ips`.
 3. 🌐 **`nginx.conf`**: Konfigurasi produksi Nginx Hardened WAF (Dual-zone rate limit, single-PHP execution `/index.php`, storage sandboxing).
 4. 🛡️ **`public/.htaccess`**: Hardening web server Apache & LiteSpeed (Blokir dotfiles, double extension `.php.jpg`, file backup dump `.sql`, dan matikan directory listing).
-   > _Catatan Keamanan_: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
+    > _Catatan Keamanan_: Jika `public/.htaccess` lama sudah ada, installer otomatis membuat cadangan `public/.htaccess.backup-YYYYMMDD_HHMMSS` dan menyisipkan aturan keamanan di bawah tanpa merusak rewrite rules aplikasi Anda.
 5. 🚫 **`resources/views/errors/blocked.blade.php`**: Halaman 403 default yang menampilkan alasan blokir, kode referensi, dan **formulir banding** yang terhubung langsung ke endpoint publik tiket banding. Dapat disesuaikan sesuai branding aplikasi Anda.
 6. ⚙️ **Penyematan Variabel ke `.env` & `.env.example`**: Installer secara otomatis menambahkan blok konfigurasi lengkap disertai **penjelasan fungsi berbahasa Indonesia** untuk setiap variabel (`SECURITY_*` dan `CAPTCHA_*`) langsung ke berkas `.env` dan `.env.example` aplikasi Anda.
 7. 📊 **(Opsional) Dashboard monitoring Starter Kit**: Tampilan monitoring Livewire (`resources/views/pages/security/`) atau React (`resources/js/pages/security/`), wajib login. Dipublikasikan bila Anda menambahkan opsi `--with-dashboard` atau `--with-react-dashboard`.
@@ -459,18 +466,18 @@ Paket ini menyertakan template konfigurasi hardened siap pakai untuk web server 
 Diterbitkan via `php artisan vendor:publish --tag=security-nginx`:
 
 1. **Dua Zona Rate Limiting Terpisah**:
-   - `auth_limit`: 5 request/menit (burst 5) untuk endpoint sensitif (`/login`, `/register`, `/forgot-password`, `/reset-password`, dll.).
-   - `general_limit`: 30 request/detik (burst 50) untuk rute umum aplikasi.
+    - `auth_limit`: 5 request/menit (burst 5) untuk endpoint sensitif (`/login`, `/register`, `/forgot-password`, `/reset-password`, dll.).
+    - `general_limit`: 30 request/detik (burst 50) untuk rute umum aplikasi.
 2. **Proteksi Aset Statis Vite / Frontend**:
-   - Direktori `/build/` dibebaskan dari rate-limiting agar chunk parallel JS tidak memicu HTTP 429 atau `NS_ERROR_CORRUPTED_CONTENT`.
+    - Direktori `/build/` dibebaskan dari rate-limiting agar chunk parallel JS tidak memicu HTTP 429 atau `NS_ERROR_CORRUPTED_CONTENT`.
 3. **Strict Single-PHP Execution**:
-   - **Hanya `/index.php`** yang boleh dieksekusi oleh PHP-FPM. Berkas skrip lain yang berada di direktori publik langsung ditolak dengan **HTTP 403**.
+    - **Hanya `/index.php`** yang boleh dieksekusi oleh PHP-FPM. Berkas skrip lain yang berada di direktori publik langsung ditolak dengan **HTTP 403**.
 4. **Pencegahan Double Extension & Ekstensi Berbahaya**:
-   - Menolak ekstensi ganda (`.php.jpg`, `.phtml.zip`, dll.).
+    - Menolak ekstensi ganda (`.php.jpg`, `.phtml.zip`, dll.).
 5. **Sandboxing Direktori Storage / Upload**:
-   - Folder `/storage/` dimatikan dari eksekusi PHP dengan header `X-Content-Type-Options: nosniff` dan CSP sandbox.
+    - Folder `/storage/` dimatikan dari eksekusi PHP dengan header `X-Content-Type-Options: nosniff` dan CSP sandbox.
 6. **Blokir Dotfiles & Berkas Backup**:
-   - Menolak akses berkas `.env`, `.git`, `.htaccess`, `.sql`, `.bak`, dan `.log`.
+    - Menolak akses berkas `.env`, `.git`, `.htaccess`, `.sql`, `.bak`, dan `.log`.
 
 ### 2. Apache & LiteSpeed Hardened (`public/.htaccess`)
 
@@ -478,18 +485,18 @@ Diterapkan otomatis via `php artisan security:install` atau `php artisan vendor:
 
 1. **Front Controller & Authorization Header**: Routing Laravel standar, pemeliharaan header `Authorization` dan `X-XSRF-Token`.
 2. **Blokir Akses ke Dotfile (`<FilesMatch "^\.">`)**:
-   - Menutup akses ke `.htaccess`, `.env`, `.git`, `.htpasswd` (kompatibel Apache 2.4+ `Require all denied` dan Apache 2.2 `Deny from all`).
+    - Menutup akses ke `.htaccess`, `.env`, `.git`, `.htpasswd` (kompatibel Apache 2.4+ `Require all denied` dan Apache 2.2 `Deny from all`).
 3. **Blokir Serangan Ekstensi Ganda (Double Extension Webshell)**:
-   - Menolak berkas berbahaya seperti `shell.php.jpg` atau trik null-byte `wne.php%00.jpg`:
-   ```apache
-   <FilesMatch "\.(php[0-9]?|phtml|pht|phar|phps|asp|aspx|ashx|asmx|jsp|jspx|cgi|pl|py|rb|sh|bash|exe|dll|bat|cmd|scr)\.[a-z0-9]+$">
-       Require all denied
-   </FilesMatch>
-   ```
+    - Menolak berkas berbahaya seperti `shell.php.jpg` atau trik null-byte `wne.php%00.jpg`:
+    ```apache
+    <FilesMatch "\.(php[0-9]?|phtml|pht|phar|phps|asp|aspx|ashx|asmx|jsp|jspx|cgi|pl|py|rb|sh|bash|exe|dll|bat|cmd|scr)\.[a-z0-9]+$">
+        Require all denied
+    </FilesMatch>
+    ```
 4. **Blokir Berkas Backup, Dump Database, dan Log Sensitif**:
-   - Menutup berkas `.sql`, `.bak`, `.old`, `.orig`, `.save`, `.swp`, `.log`, `.ini`, `.conf`, `.yml`, `.yaml`.
+    - Menutup berkas `.sql`, `.bak`, `.old`, `.orig`, `.save`, `.swp`, `.log`, `.ini`, `.conf`, `.yml`, `.yaml`.
 5. **Matikan Directory Listing**:
-   - `Options -Indexes` mencegah browser menampilkan daftar berkas di dalam folder publik/storage.
+    - `Options -Indexes` mencegah browser menampilkan daftar berkas di dalam folder publik/storage.
 
 ## 🧪 Menjalankan Pengujian (Testing)
 
