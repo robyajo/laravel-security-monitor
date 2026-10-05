@@ -120,13 +120,16 @@ php artisan vendor:publish --tag=security-htaccess --force
 # 5. Halaman blokir default saja
 php artisan vendor:publish --tag=security-views --force
 
-# 6. Dashboard monitoring Livewire + konfigurasi
-php artisan vendor:publish --tag=starterkit-livewire --force
+# 6. Dashboard monitoring Blade (Livewire Starter Kit)
+php artisan vendor:publish --tag=starterkit-blade --force
 
-# 7. Dashboard monitoring React/Inertia + konfigurasi
-php artisan vendor:publish --tag=starterkit-react --force
+# 7. Dashboard monitoring TSX (React Starter Kit)
+php artisan vendor:publish --tag=starterkit-tsx --force
 
-# 8. Seluruh aset sekaligus
+# 8. Keduanya (Blade & TSX)
+php artisan vendor:publish --tag=starterkit-all --force
+
+# 9. Seluruh aset sekaligus
 php artisan vendor:publish --tag=security-all --force
 ```
 
@@ -136,45 +139,52 @@ Jalankan migrasi database:
 php artisan migrate
 ```
 
-### 3. Dashboard Monitoring Starter Kit (Opsional)
+### 3. Dashboard Monitoring Starter Kit (Blade & TSX)
 
-Paket ini tetap **100% headless** secara default, namun menyediakan panel monitoring siap pakai untuk **starter kit resmi Laravel** yang dapat dipublikasikan ke dalam aplikasi host. Pilih salah satu sesuai stack frontend aplikasi Anda.
+Paket ini menyediakan panel monitoring siap pakai untuk **starter kit resmi Laravel (Blade & React/TSX)** yang dapat dipublikasikan langsung ke dalam aplikasi host di prefix **`/security`**.
 
-#### a. Livewire Starter Kit (Flux UI)
+Tersedia opsi instalasi fleksibel lewat `php artisan security:install`:
+- **Blade / Livewire**: `php artisan security:install --with-blade` (atau `--tag=starterkit-blade`)
+- **React / TSX**: `php artisan security:install --with-tsx` (atau `--tag=starterkit-tsx`)
+- **Keduanya**: `php artisan security:install --with-both` (atau `--tag=starterkit-all`)
+
+#### a. Blade Starter Kit (Livewire + Flux UI)
 
 ```bash
-php artisan vendor:publish --tag=starterkit-livewire
+php artisan vendor:publish --tag=starterkit-blade
 ```
 
-Perintah tersebut menyalin **`resources/views/pages/security/*.blade.php`** (enam halaman Livewire single-file component) beserta blok konfigurasi `dashboard` pada `config/security.php`.
+Perintah tersebut menyalin **`resources/views/pages/security/*.blade.php`** (enam halaman Livewire single-file component) beserta konfigurasi `dashboard` pada `config/security.php`.
 
-#### b. React Starter Kit (Inertia + React + shadcn/ui)
+#### b. React / TSX Starter Kit (Inertia + React + shadcn/ui)
 
 ```bash
-php artisan vendor:publish --tag=starterkit-react
+php artisan vendor:publish --tag=starterkit-tsx
 ```
 
 Perintah tersebut menyalin:
 
 1. **`resources/js/pages/security/*.tsx`** — enam halaman Inertia/React: _Overview_, _Security Logs_, _Blocked IPs_, _Server Audit_, _User Sessions_, dan _Unblock Appeals_.
 2. **`resources/js/components/security/*.tsx`** — komponen pendukung (navigasi & paginasi).
-3. **`config/security.php`** — menyertakan blok konfigurasi `dashboard`.
+3. **`config/security.php`** — menyertakan konfigurasi `dashboard`.
 
-> ℹ️ Halaman React dikirim melalui controller Inertia bawaan paket (data di-render server-side), sehingga **tidak** bergantung pada REST API `/api/*`. Setelah publikasi, jalankan `npm run build` (atau `npm run dev`).
+> ℹ️ Halaman React/TSX di-render server-side oleh controller Inertia bawaan paket. Setelah publikasi, jalankan `npm run build` (atau `npm run dev`).
 
-#### Mengaktifkan Dashboard
+#### Mengaktifkan Dashboard & Wajib Login
+
+Konfigurasi di `.env`:
 
 ```dotenv
 SECURITY_DASHBOARD_ENABLED=true
-SECURITY_DASHBOARD_DRIVER=livewire   # atau "react"
+SECURITY_DASHBOARD_DRIVER=blade      # atau "react" / "both"
 SECURITY_DASHBOARD_PREFIX=security
+# Batasi hanya role admin (default: false, cukup login pengguna)
+SECURITY_DASHBOARD_ADMIN_ONLY=false
 ```
 
 Setelah diaktifkan, panel dapat diakses pada **`/security`**.
 
-> 🔒 **Wajib Login**: Seluruh halaman dashboard dilindungi middleware `web` + `auth`. Secara bawaan, akses juga dibatasi oleh middleware `security.admin` (Gate `manage-security-monitor`) sehingga hanya administrator yang diizinkan. Keduanya dapat dikustomisasi melalui kunci `security.dashboard.middleware` dan `security.dashboard.admin_middleware` di `config/security.php`.
-
-Saat menjalankan `security:install`, tambahkan opsi `--with-dashboard` (Livewire) atau `--with-react-dashboard` (React) untuk mempublikasikan dashboard sekaligus.
+> 🔒 **Wajib Login**: Seluruh halaman dashboard di prefix `/security` dilindungi oleh middleware `web` + `auth`. Pengguna yang belum login otomatis diarahkan ke halaman login. Jika Anda ingin membatasi dashboard khusus untuk administrator, set `SECURITY_DASHBOARD_ADMIN_ONLY=true` di berkas `.env`.
 
 ---
 

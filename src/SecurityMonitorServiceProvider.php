@@ -174,10 +174,13 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         ];
 
         $this->publishes($dashboardAssets, 'starterkit-livewire');
+        $this->publishes($dashboardAssets, 'starterkit-blade');
         $this->publishes($dashboardAssets, 'security-dashboard');
+        $this->publishes($dashboardAssets, 'security-dashboard-blade');
 
         // Backwards/typo-compatible alias so that both spellings work.
         $this->publishes($dashboardAssets, 'staterkit-livewire');
+        $this->publishes($dashboardAssets, 'staterkit-blade');
 
         // Monitoring views only (no configuration overwrite).
         $this->publishes(
@@ -187,6 +190,14 @@ class SecurityMonitorServiceProvider extends ServiceProvider
                 ),
             ],
             'security-dashboard-views',
+        );
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/livewire/pages/security' => resource_path(
+                    'views/pages/security',
+                ),
+            ],
+            'security-dashboard-blade-views',
         );
 
         // React Starter Kit Monitoring Dashboard (views + configuration).
@@ -205,10 +216,13 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         ];
 
         $this->publishes($reactDashboardAssets, 'starterkit-react');
+        $this->publishes($reactDashboardAssets, 'starterkit-tsx');
         $this->publishes($reactDashboardAssets, 'security-dashboard-react');
+        $this->publishes($reactDashboardAssets, 'security-dashboard-tsx');
 
         // Backwards/typo-compatible alias so that both spellings work.
         $this->publishes($reactDashboardAssets, 'staterkit-react');
+        $this->publishes($reactDashboardAssets, 'staterkit-tsx');
 
         // React monitoring views only (no configuration overwrite).
         $this->publishes(
@@ -223,6 +237,23 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             ],
             'security-dashboard-react-views',
         );
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/react/pages/security' => resource_path(
+                    'js/pages/security',
+                ),
+                __DIR__.
+                '/../stubs/react/components/security' => resource_path(
+                    'js/components/security',
+                ),
+            ],
+            'security-dashboard-tsx-views',
+        );
+
+        // Combined publication of both Blade and TSX dashboard assets.
+        $bothDashboardAssets = array_merge($dashboardAssets, $reactDashboardAssets);
+        $this->publishes($bothDashboardAssets, 'starterkit-all');
+        $this->publishes($bothDashboardAssets, 'security-dashboard-all');
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
@@ -273,11 +304,15 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             return;
         }
 
-        match (config('security.dashboard.driver', 'livewire')) {
-            'react' => $this->registerReactDashboardRoutes(),
-            'livewire' => $this->registerLivewireDashboardRoutes(),
-            default => null,
-        };
+        $driver = (string) config('security.dashboard.driver', 'livewire');
+
+        if (in_array(strtolower($driver), ['livewire', 'blade', 'all', 'both'], true)) {
+            $this->registerLivewireDashboardRoutes();
+        }
+
+        if (in_array(strtolower($driver), ['react', 'tsx', 'all', 'both'], true)) {
+            $this->registerReactDashboardRoutes();
+        }
     }
 
     /**
@@ -375,7 +410,15 @@ class SecurityMonitorServiceProvider extends ServiceProvider
                     return true;
                 }
 
-                return (bool) ($user->is_admin ?? false);
+                if (isset($user->is_admin)) {
+                    return (bool) $user->is_admin;
+                }
+
+                if (isset($user->role)) {
+                    return in_array($user->role, ['admin', 'superadmin'], true);
+                }
+
+                return ! (bool) config('security.dashboard.admin_only', false);
             });
         }
     }

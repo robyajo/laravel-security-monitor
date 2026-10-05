@@ -76,6 +76,10 @@ Perintah ini akan secara otomatis:
 | Opsi                 | Fungsi                                                                                                                    |
 | :------------------- | :------------------------------------------------------------------------------------------------------------------------ |
 | `--force`            | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess` dengan template bawaan paket.           |
+| `--with-blade`       | Mempublikasikan tampilan dashboard monitoring Blade (Livewire / Flux UI Starter Kit).                                    |
+| `--with-tsx`         | Mempublikasikan tampilan dashboard monitoring TSX (Inertia + React / shadcn Starter Kit).                                 |
+| `--with-both`        | Mempublikasikan kedua tampilan dashboard monitoring sekaligus (Blade & TSX).                                              |
+| `--stack=...`        | Menentukan stack dashboard yang ingin dipublikasikan (`blade`, `tsx`, `both`, `none`).                                    |
 | `--without-nginx`    | Melewatkan publikasi berkas `nginx.conf` jika server Anda tidak menggunakan web server Nginx.                             |
 | `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess` jika Anda menggunakan Nginx murni dan tidak memerlukan Apache `.htaccess`. |
 | `--with-htaccess`    | Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan paket.                                       |
@@ -128,14 +132,17 @@ php artisan vendor:publish --tag=security-all --force
 ### 6. Publikasikan Dashboard Monitoring Starter Kit
 
 ```bash
-# Livewire Starter Kit (Flux UI)
-php artisan vendor:publish --tag=starterkit-livewire
+# Blade Starter Kit (Livewire + Flux UI)
+php artisan vendor:publish --tag=starterkit-blade
 
-# React Starter Kit (Inertia + React + shadcn/ui)
-php artisan vendor:publish --tag=starterkit-react
+# React / TSX Starter Kit (Inertia + React + shadcn/ui)
+php artisan vendor:publish --tag=starterkit-tsx
+
+# Keduanya (Blade & TSX)
+php artisan vendor:publish --tag=starterkit-all
 ```
 
-Perintah Livewire menyalin enam halaman Livewire (single-file component) ke `resources/views/pages/security/`. Perintah React menyalin enam halaman Inertia/React ke `resources/js/pages/security/` beserta komponen pendukung di `resources/js/components/security/`. Keduanya juga menyertakan blok konfigurasi `dashboard` pada `config/security.php`. Dashboard bersifat opsional dan **wajib login** (lihat bagian [Dashboard Monitoring Starter Kit](#8-dashboard-monitoring-starter-kit-opsional)).
+Perintah Blade menyalin enam halaman Livewire (single-file component) ke `resources/views/pages/security/`. Perintah TSX menyalin enam halaman Inertia/React ke `resources/js/pages/security/` beserta komponen pendukung di `resources/js/components/security/`. Keduanya juga menyertakan konfigurasi `dashboard` pada `config/security.php`. Dashboard diakses di prefix `/security` dan **wajib login** (lihat bagian [Dashboard Monitoring Starter Kit](#8-dashboard-monitoring-starter-kit-opsional)).
 
 ---
 

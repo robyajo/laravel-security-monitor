@@ -13,11 +13,15 @@ class SecurityInstallCommand extends Command
                             {--without-htaccess : Jangan perbarui berkas public/.htaccess}
                             {--without-views : Jangan publikasikan halaman blokir errors/blocked.blade.php}
                             {--without-env : Jangan tambahkan variabel konfigurasi ke berkas .env}
-                            {--with-dashboard : Publikasikan tampilan dashboard monitoring Livewire Starter Kit}
-                            {--with-react-dashboard : Publikasikan tampilan dashboard monitoring React Starter Kit}
+                            {--with-dashboard : Publikasikan tampilan dashboard monitoring Livewire / Blade Starter Kit}
+                            {--with-blade : Publikasikan tampilan dashboard monitoring Livewire / Blade Starter Kit (alias)}
+                            {--with-react-dashboard : Publikasikan tampilan dashboard monitoring React / TSX Starter Kit}
+                            {--with-tsx : Publikasikan tampilan dashboard monitoring React / TSX Starter Kit (alias)}
+                            {--with-both : Publikasikan kedua tampilan dashboard monitoring (Blade & TSX)}
+                            {--stack= : Tentukan stack tampilan dashboard (blade, tsx, both, none)}
                             {--with-htaccess : Paksa perbarui berkas public/.htaccess dengan aturan hardening}';
 
-    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, dan .env)';
+    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, tampilan Blade/TSX, dan .env)';
 
     public function handle(): int
     {
@@ -29,8 +33,48 @@ class SecurityInstallCommand extends Command
         $withoutHtaccess = (bool) $this->option('without-htaccess');
         $withoutViews = (bool) $this->option('without-views');
         $withoutEnv = (bool) $this->option('without-env');
-        $withDashboard = (bool) $this->option('with-dashboard');
-        $withReactDashboard = (bool) $this->option('with-react-dashboard');
+        $withDashboard = (bool) ($this->option('with-dashboard') || $this->option('with-blade'));
+        $withReactDashboard = (bool) ($this->option('with-react-dashboard') || $this->option('with-tsx'));
+        $withBoth = (bool) $this->option('with-both');
+        $stack = $this->option('stack');
+
+        if ($stack) {
+            match (strtolower((string) $stack)) {
+                'blade', 'livewire' => $withDashboard = true,
+                'react', 'tsx' => $withReactDashboard = true,
+                'both', 'all' => $withBoth = true,
+                'none' => [$withDashboard, $withReactDashboard, $withBoth] = [false, false, false],
+                default => null,
+            };
+        }
+
+        if ($withBoth) {
+            $withDashboard = true;
+            $withReactDashboard = true;
+        }
+
+        // Jika dijalankan interaktif di terminal (bukan test suite) dan opsi dashboard belum dipilih
+        if (! app()->runningUnitTests() && ! $withDashboard && ! $withReactDashboard && ! $withoutViews && $this->input->isInteractive()) {
+            $choice = $this->choice(
+                'Sediakan tampilan dashboard monitoring di prefix /security (wajib login)?',
+                [
+                    'blade' => 'Blade (Livewire / Flux UI Starter Kit)',
+                    'tsx' => 'TSX (Inertia + React / shadcn Starter Kit)',
+                    'both' => 'Keduanya (Blade & TSX)',
+                    'none' => 'Lewati (Headless REST API saja)',
+                ],
+                'blade'
+            );
+
+            if ($choice === 'blade') {
+                $withDashboard = true;
+            } elseif ($choice === 'tsx') {
+                $withReactDashboard = true;
+            } elseif ($choice === 'both') {
+                $withDashboard = true;
+                $withReactDashboard = true;
+            }
+        }
 
         // 1. Publish Config
         $this->comment('Mempublikasikan berkas konfigurasi...');
@@ -76,34 +120,34 @@ class SecurityInstallCommand extends Command
             ]);
         }
 
-        // 6. Publish the optional Livewire Starter Kit monitoring dashboard
+        // 6. Publish Blade / Livewire Starter Kit monitoring dashboard
         if ($withDashboard) {
             $this->comment(
-                'Mempublikasikan dashboard monitoring Livewire (resources/views/pages/security)...',
+                'Mempublikasikan dashboard monitoring Blade (resources/views/pages/security)...',
             );
             $this->call('vendor:publish', [
-                '--tag' => 'starterkit-livewire',
+                '--tag' => 'starterkit-blade',
                 '--force' => $force,
             ]);
         }
 
-        // 7. Publish the optional React Starter Kit monitoring dashboard
+        // 7. Publish React / TSX Starter Kit monitoring dashboard
         if ($withReactDashboard) {
             $this->comment(
-                'Mempublikasikan dashboard monitoring React (resources/js/pages/security)...',
+                'Mempublikasikan dashboard monitoring TSX (resources/js/pages/security & components)...',
             );
             $this->call('vendor:publish', [
-                '--tag' => 'starterkit-react',
+                '--tag' => 'starterkit-tsx',
                 '--force' => $force,
             ]);
         }
 
-        // 8. Append Environment Variables with rich comments to .env & .env.example
+        // 8. Append / Update Environment Variables with rich comments to .env & .env.example
         if (! $withoutEnv) {
             $this->comment(
                 'Menyematkan variabel konfigurasi dan panduan ke berkas .env...',
             );
-            $this->appendEnvironmentVariables();
+            $this->appendEnvironmentVariables($withDashboard, $withReactDashboard);
         }
 
         $this->newLine();
@@ -111,7 +155,7 @@ class SecurityInstallCommand extends Command
         $this->newLine();
 
         $this->line(
-            '<fg=cyan>Langkah selanjutnya untuk mengaktifkan proteksi:</>',
+            '<fg=cyan>Langkah selanjutnya untuk mengaktifkan proteksi & dashboard:</>',
         );
         $this->line('  1. Jalankan migrasi database:');
         $this->line('     <fg=yellow>php artisan migrate</>');
@@ -154,23 +198,27 @@ class SecurityInstallCommand extends Command
                 '  7. Halaman blokir: Sesuaikan <fg=yellow>resources/views/errors/blocked.blade.php</> sesuai branding aplikasi Anda.',
             );
         }
-        if ($withDashboard) {
+        if ($withDashboard && $withReactDashboard) {
             $this->line(
-                '  8. Dashboard Livewire: Aktifkan <fg=yellow>SECURITY_DASHBOARD_ENABLED=true</> dan <fg=yellow>SECURITY_DASHBOARD_DRIVER=livewire</> di berkas .env,',
+                '  8. Dashboard Blade & TSX: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
             );
             $this->line(
-                '     lalu akses <fg=yellow>/security</> (wajib login sebagai administrator).',
+                '     Ganti driver aktif di .env (<fg=yellow>SECURITY_DASHBOARD_DRIVER=blade</> atau <fg=yellow>react</>).',
+            );
+        } elseif ($withDashboard) {
+            $this->line(
+                '  8. Dashboard Blade: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
             );
         } elseif ($withReactDashboard) {
             $this->line(
-                '  8. Dashboard React: Aktifkan <fg=yellow>SECURITY_DASHBOARD_ENABLED=true</> dan <fg=yellow>SECURITY_DASHBOARD_DRIVER=react</> di berkas .env,',
+                '  8. Dashboard TSX: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
             );
             $this->line(
-                '     lalu jalankan <fg=yellow>npm run build</> dan akses <fg=yellow>/security</> (wajib login sebagai administrator).',
+                '     Jalankan <fg=yellow>npm run build</> untuk memproses aset TSX pada Vite.',
             );
         } else {
             $this->line(
-                '  8. Dashboard monitoring (opsional): Publikasikan dengan <fg=yellow>php artisan vendor:publish --tag=starterkit-livewire</> atau <fg=yellow>--tag=starterkit-react</>.',
+                '  8. Dashboard monitoring (opsional): Sediakan kapan saja dengan <fg=yellow>php artisan security:install --with-blade</> atau <fg=yellow>--with-tsx</>.',
             );
         }
 
@@ -257,7 +305,7 @@ class SecurityInstallCommand extends Command
     /**
      * Sematkan variabel konfigurasi lingkungan dan penjelasannya ke berkas .env & .env.example.
      */
-    protected function appendEnvironmentVariables(): void
+    protected function appendEnvironmentVariables(bool $withDashboard = false, bool $withReactDashboard = false): void
     {
         $stubPath = __DIR__.'/../../../stubs/env.stub';
         if (! File::exists($stubPath)) {
@@ -268,11 +316,22 @@ class SecurityInstallCommand extends Command
             return;
         }
 
+        $stubContent = File::get($stubPath);
+
+        if ($withDashboard || $withReactDashboard) {
+            $driver = ($withReactDashboard && ! $withDashboard) ? 'react' : 'livewire';
+            $stubContent = str_replace(
+                ['SECURITY_DASHBOARD_ENABLED=false', 'SECURITY_DASHBOARD_DRIVER=livewire'],
+                ['SECURITY_DASHBOARD_ENABLED=true', "SECURITY_DASHBOARD_DRIVER={$driver}"],
+                $stubContent
+            );
+        }
+
         $stubContent =
             '
 
 '.
-            trim(File::get($stubPath)).
+            trim($stubContent).
             '
 ';
         $envTargets = ['.env', '.env.example'];
@@ -285,6 +344,23 @@ class SecurityInstallCommand extends Command
 
             $currentContent = File::get($targetPath);
             if (str_contains($currentContent, 'SECURITY_MONITOR_ENABLED')) {
+                if ($withDashboard || $withReactDashboard) {
+                    $driver = ($withReactDashboard && ! $withDashboard) ? 'react' : 'livewire';
+                    $updated = preg_replace(
+                        '/SECURITY_DASHBOARD_ENABLED=(false|0)/',
+                        'SECURITY_DASHBOARD_ENABLED=true',
+                        $currentContent
+                    );
+                    $updated = preg_replace(
+                        '/SECURITY_DASHBOARD_DRIVER=[^\r\n]+/',
+                        "SECURITY_DASHBOARD_DRIVER={$driver}",
+                        (string) $updated
+                    );
+                    if ($updated !== null && $updated !== $currentContent) {
+                        File::put($targetPath, $updated);
+                        $this->info("  ✓ Berkas {$envFile} diperbarui: SECURITY_DASHBOARD_ENABLED=true ({$driver}).");
+                    }
+                }
                 $this->line(
                     "  ✓ Berkas {$envFile} sudah memiliki variabel konfigurasi keamanan.",
                 );

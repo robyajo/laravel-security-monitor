@@ -719,7 +719,10 @@ return [
         'driver' => env('SECURITY_DASHBOARD_DRIVER', 'livewire'),
         'prefix' => env('SECURITY_DASHBOARD_PREFIX', 'security'),
         'middleware' => ['web', 'auth'],
-        'admin_middleware' => ['Internal\\SecurityMonitor\\Http\\Middleware\\EnsureSecurityAdmin'],
+        'admin_middleware' => env('SECURITY_DASHBOARD_ADMIN_ONLY', false)
+            ? ['Internal\\SecurityMonitor\\Http\\Middleware\\EnsureSecurityAdmin']
+            : [],
+        'admin_only' => (bool) env('SECURITY_DASHBOARD_ADMIN_ONLY', false),
     ],
 
     /*

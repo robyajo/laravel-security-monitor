@@ -215,3 +215,138 @@ test(
         expect(File::exists($directory.'/overview.blade.php'))->toBeTrue();
     },
 );
+
+test(
+    'starterkit blade tag publishes the blade views',
+    function () {
+        $directory = resource_path('views/pages/security');
+
+        if (File::isDirectory($directory)) {
+            File::deleteDirectory($directory);
+        }
+
+        $this->artisan('vendor:publish', [
+            '--tag' => 'starterkit-blade',
+            '--force' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($directory.'/overview.blade.php'))->toBeTrue();
+    },
+);
+
+test(
+    'starterkit tsx tag publishes the tsx pages and components',
+    function () {
+        $pages = resource_path('js/pages/security');
+
+        if (File::isDirectory($pages)) {
+            File::deleteDirectory($pages);
+        }
+
+        $this->artisan('vendor:publish', [
+            '--tag' => 'starterkit-tsx',
+            '--force' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($pages.'/overview.tsx'))->toBeTrue();
+    },
+);
+
+test(
+    'security install command can publish with with-blade and with-tsx flags',
+    function () {
+        $bladeDir = resource_path('views/pages/security');
+        $tsxDir = resource_path('js/pages/security');
+
+        if (File::isDirectory($bladeDir)) {
+            File::deleteDirectory($bladeDir);
+        }
+        if (File::isDirectory($tsxDir)) {
+            File::deleteDirectory($tsxDir);
+        }
+
+        $this->artisan('security:install', [
+            '--force' => true,
+            '--with-blade' => true,
+            '--without-nginx' => true,
+            '--without-htaccess' => true,
+            '--without-env' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($bladeDir.'/overview.blade.php'))->toBeTrue();
+
+        $this->artisan('security:install', [
+            '--force' => true,
+            '--with-tsx' => true,
+            '--without-nginx' => true,
+            '--without-htaccess' => true,
+            '--without-env' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($tsxDir.'/overview.tsx'))->toBeTrue();
+    },
+);
+
+test(
+    'security install command can publish both blade and tsx views with with-both',
+    function () {
+        $bladeDir = resource_path('views/pages/security');
+        $tsxDir = resource_path('js/pages/security');
+
+        if (File::isDirectory($bladeDir)) {
+            File::deleteDirectory($bladeDir);
+        }
+        if (File::isDirectory($tsxDir)) {
+            File::deleteDirectory($tsxDir);
+        }
+
+        $this->artisan('security:install', [
+            '--force' => true,
+            '--with-both' => true,
+            '--without-nginx' => true,
+            '--without-htaccess' => true,
+            '--without-env' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($bladeDir.'/overview.blade.php'))
+            ->toBeTrue()
+            ->and(File::exists($tsxDir.'/overview.tsx'))
+            ->toBeTrue();
+    },
+);
+
+test(
+    'security install command supports stack option for blade and tsx',
+    function () {
+        $bladeDir = resource_path('views/pages/security');
+        $tsxDir = resource_path('js/pages/security');
+
+        if (File::isDirectory($bladeDir)) {
+            File::deleteDirectory($bladeDir);
+        }
+        if (File::isDirectory($tsxDir)) {
+            File::deleteDirectory($tsxDir);
+        }
+
+        $this->artisan('security:install', [
+            '--force' => true,
+            '--stack' => 'blade',
+            '--without-nginx' => true,
+            '--without-htaccess' => true,
+            '--without-env' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($bladeDir.'/overview.blade.php'))->toBeTrue();
+
+        $this->artisan('security:install', [
+            '--force' => true,
+            '--stack' => 'tsx',
+            '--without-nginx' => true,
+            '--without-htaccess' => true,
+            '--without-env' => true,
+        ])->assertSuccessful();
+
+        expect(File::exists($tsxDir.'/overview.tsx'))->toBeTrue();
+    },
+);
+
