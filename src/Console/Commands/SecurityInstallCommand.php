@@ -13,6 +13,8 @@ class SecurityInstallCommand extends Command
                             {--without-htaccess : Jangan perbarui berkas public/.htaccess}
                             {--without-views : Jangan publikasikan halaman blokir errors/blocked.blade.php}
                             {--without-env : Jangan tambahkan variabel konfigurasi ke berkas .env}
+                            {--without-user-trait : Jangan tambahkan trait HasSecurityRelations ke model User}
+                            {--without-middleware : Jangan daftarkan middleware WAF ke bootstrap/app.php atau Kernel.php}
                             {--with-dashboard : Publikasikan tampilan dashboard monitoring Livewire / Blade Starter Kit}
                             {--with-blade : Publikasikan tampilan dashboard monitoring Livewire / Blade Starter Kit (alias)}
                             {--with-react-dashboard : Publikasikan tampilan dashboard monitoring React / TSX Starter Kit}
@@ -21,7 +23,7 @@ class SecurityInstallCommand extends Command
                             {--stack= : Tentukan stack tampilan dashboard (blade, tsx, both, none)}
                             {--with-htaccess : Paksa perbarui berkas public/.htaccess dengan aturan hardening}';
 
-    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, tampilan Blade/TSX, dan .env)';
+    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, tampilan Blade/TSX, trait User, middleware WAF, dan .env)';
 
     public function handle(): int
     {
@@ -33,6 +35,8 @@ class SecurityInstallCommand extends Command
         $withoutHtaccess = (bool) $this->option('without-htaccess');
         $withoutViews = (bool) $this->option('without-views');
         $withoutEnv = (bool) $this->option('without-env');
+        $withoutUserTrait = (bool) $this->option('without-user-trait');
+        $withoutMiddleware = (bool) $this->option('without-middleware');
         $withDashboard = (bool) ($this->option('with-dashboard') || $this->option('with-blade'));
         $withReactDashboard = (bool) ($this->option('with-react-dashboard') || $this->option('with-tsx'));
         $withBoth = (bool) $this->option('with-both');
@@ -142,7 +146,23 @@ class SecurityInstallCommand extends Command
             ]);
         }
 
-        // 8. Append / Update Environment Variables with rich comments to .env & .env.example
+        // 8. Auto-inject trait HasSecurityRelations ke model User
+        if (! $withoutUserTrait) {
+            $this->comment(
+                'Menyematkan trait HasSecurityRelations ke model User...',
+            );
+            $this->injectUserTrait();
+        }
+
+        // 9. Auto-register WAF middlewares ke bootstrap/app.php atau app/Http/Kernel.php
+        if (! $withoutMiddleware) {
+            $this->comment(
+                'Mendaftarkan middleware proteksi WAF ke aplikasi host...',
+            );
+            $this->registerMiddlewareInApp();
+        }
+
+        // 10. Append / Update Environment Variables with rich comments to .env & .env.example
         if (! $withoutEnv) {
             $this->comment(
                 'Menyematkan variabel konfigurasi dan panduan ke berkas .env...',
@@ -159,24 +179,36 @@ class SecurityInstallCommand extends Command
         );
         $this->line('  1. Jalankan migrasi database:');
         $this->line('     <fg=yellow>php artisan migrate</>');
-        $this->line(
-            '  2. Tambahkan trait <fg=yellow>HasSecurityRelations</> ke model User:',
-        );
-        $this->line(
-            "     <fg=gray>use Internal\SecurityMonitor\Concerns\HasSecurityRelations;</>",
-        );
-        $this->line(
-            '  3. Daftarkan middleware proteksi WAF di <fg=yellow>bootstrap/app.php</> (Laravel 11+)',
-        );
-        $this->line(
-            '     atau <fg=yellow>app/Http/Kernel.php</> (Laravel 10):',
-        );
-        $this->line(
-            "     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\BlockIpAddress::class</>",
-        );
-        $this->line(
-            "     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats::class</>",
-        );
+        if (! $withoutUserTrait) {
+            $this->line(
+                '  2. Model User: Trait <fg=green>HasSecurityRelations</> berhasil disematkan secara otomatis.',
+            );
+        } else {
+            $this->line(
+                '  2. Tambahkan trait <fg=yellow>HasSecurityRelations</> ke model User:',
+            );
+            $this->line(
+                "     <fg=gray>use Internal\SecurityMonitor\Concerns\HasSecurityRelations;</>",
+            );
+        }
+        if (! $withoutMiddleware) {
+            $this->line(
+                '  3. Middleware WAF: <fg=green>BlockIpAddress</> & <fg=green>DetectSecurityThreats</> berhasil didaftarkan otomatis.',
+            );
+        } else {
+            $this->line(
+                '  3. Daftarkan middleware proteksi WAF di <fg=yellow>bootstrap/app.php</> (Laravel 11+)',
+            );
+            $this->line(
+                '     atau <fg=yellow>app/Http/Kernel.php</> (Laravel 10):',
+            );
+            $this->line(
+                "     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\BlockIpAddress::class</>",
+            );
+            $this->line(
+                "     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats::class</>",
+            );
+        }
         $this->line(
             '  4. Sesuaikan nilai variabel <fg=yellow>SECURITY_*</> di berkas <fg=yellow>.env</>',
         );
@@ -373,5 +405,161 @@ class SecurityInstallCommand extends Command
                 "  ✓ Variabel konfigurasi keamanan berhasil ditambahkan ke berkas {$envFile}.",
             );
         }
+    }
+
+    /**
+     * Sematkan trait HasSecurityRelations ke model User secara otomatis.
+     */
+    protected function injectUserTrait(): void
+    {
+        $possiblePaths = [
+            app_path('Models/User.php'),
+            app_path('User.php'),
+        ];
+
+        $userModelClass = config('security.user_model');
+        if (is_string($userModelClass) && class_exists($userModelClass)) {
+            try {
+                $reflector = new \ReflectionClass($userModelClass);
+                $filename = $reflector->getFileName();
+                if ($filename && File::exists($filename)) {
+                    array_unshift($possiblePaths, $filename);
+                }
+            } catch (\Throwable) {
+                // Abaikan jika refleksi gagal
+            }
+        }
+
+        $userPath = null;
+        foreach ($possiblePaths as $path) {
+            if ($path && File::exists($path)) {
+                $userPath = $path;
+                break;
+            }
+        }
+
+        if (! $userPath) {
+            $this->line('  ℹ Model User tidak ditemukan di lokasi standar (app/Models/User.php). Lewati injeksi trait.');
+
+            return;
+        }
+
+        $content = File::get($userPath);
+
+        if (str_contains($content, 'HasSecurityRelations')) {
+            $this->line('  ✓ Model User sudah memiliki trait HasSecurityRelations.');
+
+            return;
+        }
+
+        // 1. Tambahkan import `use Internal\SecurityMonitor\Concerns\HasSecurityRelations;`
+        $importStatement = "use Internal\\SecurityMonitor\\Concerns\\HasSecurityRelations;\n";
+        if (! str_contains($content, 'use Internal\\SecurityMonitor\\Concerns\\HasSecurityRelations;')) {
+            $lastUsePos = strrpos($content, "\nuse ");
+            if ($lastUsePos !== false) {
+                $endOfLine = strpos($content, "\n", $lastUsePos + 1);
+                if ($endOfLine !== false) {
+                    $content = substr_replace($content, $importStatement, $endOfLine + 1, 0);
+                }
+            } elseif (preg_match('/namespace\s+[^;]+;\s*/', $content, $nsMatches, PREG_OFFSET_CAPTURE)) {
+                $nsEnd = $nsMatches[0][1] + strlen($nsMatches[0][0]);
+                $content = substr_replace($content, "\n".$importStatement, $nsEnd, 0);
+            }
+        }
+
+        // 2. Tambahkan trait di dalam deklarasi kelas User
+        $classPos = strpos($content, 'class User');
+        if ($classPos !== false) {
+            $classOpenBrace = strpos($content, '{', $classPos);
+            if ($classOpenBrace !== false) {
+                $afterBrace = substr($content, $classOpenBrace + 1);
+                // Cocokkan `use Trait...;` yang berada di baris tersendiri (bukan @use pada PHPDoc)
+                if (preg_match('/(?m)^\s*use\s+([^;]+);/', $afterBrace, $useMatches, PREG_OFFSET_CAPTURE)) {
+                    $matchOffset = $classOpenBrace + 1 + $useMatches[1][1];
+                    $existingTraits = $useMatches[1][0];
+                    $replacement = 'HasSecurityRelations, '.trim($existingTraits);
+                    $content = substr_replace($content, $replacement, $matchOffset, strlen($existingTraits));
+                } else {
+                    $content = substr_replace($content, "\n    use HasSecurityRelations;", $classOpenBrace + 1, 0);
+                }
+            }
+        }
+
+        File::put($userPath, (string) $content);
+        $this->info("  ✓ Trait HasSecurityRelations berhasil disematkan ke model User ({$userPath}).");
+    }
+
+    /**
+     * Daftarkan middleware BlockIpAddress dan DetectSecurityThreats ke aplikasi host secara otomatis.
+     */
+    protected function registerMiddlewareInApp(): void
+    {
+        $bootstrapAppPath = base_path('bootstrap/app.php');
+        $kernelPath = app_path('Http/Kernel.php');
+
+        // Laravel 11 & 12 (bootstrap/app.php)
+        if (File::exists($bootstrapAppPath)) {
+            $content = File::get($bootstrapAppPath);
+
+            if (
+                str_contains($content, 'BlockIpAddress') &&
+                str_contains($content, 'DetectSecurityThreats')
+            ) {
+                $this->line('  ✓ Middleware WAF sudah terdaftar di bootstrap/app.php.');
+
+                return;
+            }
+
+            // Pola: ->withMiddleware(function (Middleware $middleware) ... {
+            if (preg_match('/->withMiddleware\s*\(\s*function\s*\(\s*(?:Middleware\s+)?\$([a-zA-Z0-9_]+)\s*\)(?:\s*:\s*void)?\s*\{/i', $content, $matches, PREG_OFFSET_CAPTURE)) {
+                $varName = $matches[1][0];
+                $snippet = "        \${$varName}->append([\n"
+                    ."            \\Internal\\SecurityMonitor\\Http\\Middleware\\BlockIpAddress::class,\n"
+                    ."            \\Internal\\SecurityMonitor\\Http\\Middleware\\DetectSecurityThreats::class,\n"
+                    ."        ]);\n";
+
+                $matchEnd = $matches[0][1] + strlen($matches[0][0]);
+
+                $remaining = substr($content, $matchEnd);
+                if (preg_match('/^\s*\/\/\s*\n/', $remaining, $commentMatch)) {
+                    $content = substr_replace($content, "\n".$snippet, $matchEnd, strlen($commentMatch[0]));
+                } else {
+                    $content = substr_replace($content, "\n".$snippet, $matchEnd, 0);
+                }
+
+                File::put($bootstrapAppPath, $content);
+                $this->info('  ✓ Middleware WAF berhasil didaftarkan di bootstrap/app.php.');
+
+                return;
+            }
+        }
+
+        // Laravel 10 (app/Http/Kernel.php)
+        if (File::exists($kernelPath)) {
+            $content = File::get($kernelPath);
+
+            if (
+                str_contains($content, 'BlockIpAddress') &&
+                str_contains($content, 'DetectSecurityThreats')
+            ) {
+                $this->line('  ✓ Middleware WAF sudah terdaftar di app/Http/Kernel.php.');
+
+                return;
+            }
+
+            $middlewareSnippet = "        \\Internal\\SecurityMonitor\\Http\\Middleware\\BlockIpAddress::class,\n"
+                ."        \\Internal\\SecurityMonitor\\Http\\Middleware\\DetectSecurityThreats::class,\n";
+
+            if (preg_match('/protected\s+\$middleware\s*=\s*\[/i', $content, $matches, PREG_OFFSET_CAPTURE)) {
+                $pos = $matches[0][1] + strlen($matches[0][0]);
+                $content = substr_replace($content, "\n".$middlewareSnippet, $pos, 0);
+                File::put($kernelPath, $content);
+                $this->info('  ✓ Middleware WAF berhasil didaftarkan di app/Http/Kernel.php.');
+
+                return;
+            }
+        }
+
+        $this->line('  ℹ Berkas bootstrap/app.php atau Kernel.php tidak dapat diperbarui secara otomatis. Silakan daftarkan middleware secara manual.');
     }
 }
