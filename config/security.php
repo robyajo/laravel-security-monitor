@@ -765,4 +765,20 @@ return [
     |
     */
     'auto_register_middleware' => (bool) env('SECURITY_AUTO_REGISTER_MIDDLEWARE', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Version Check & Upgrade Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Ketika diaktifkan, Security Monitor akan secara otomatis memeriksa
+    | versi rilis terbaru di Packagist saat Anda menjalankan "php artisan serve"
+    | atau "composer run dev" (artisan dev), dan menampilkan notifikasi
+    | serta menyarankan perintah "php artisan security:upgrade".
+    |
+    */
+    'version_check' => [
+        'enabled' => (bool) env('SECURITY_VERSION_CHECK_ENABLED', true),
+        'cache_ttl' => (int) env('SECURITY_VERSION_CHECK_CACHE_TTL', 3600),
+    ],
 ];

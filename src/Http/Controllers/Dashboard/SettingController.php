@@ -8,6 +8,7 @@ use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
+use Internal\SecurityMonitor\Services\VersionCheckService;
 
 class SettingController extends Controller
 {
@@ -18,10 +19,15 @@ class SettingController extends Controller
     /**
      * Render the settings page on Inertia + React dashboard.
      */
-    public function index(): Response
+    public function index(VersionCheckService $versionChecker): Response
     {
         return Inertia::render('security/settings', [
             'settings' => $this->securityService->getSettings(),
+            'version' => [
+                'current' => $versionChecker->getCurrentVersion(),
+                'latest' => $versionChecker->getLatestVersion(),
+                'update_available' => $versionChecker->isUpdateAvailable(),
+            ],
         ]);
     }
 

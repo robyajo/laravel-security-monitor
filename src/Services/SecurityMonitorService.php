@@ -32,6 +32,11 @@ use Throwable;
 class SecurityMonitorService
 {
     /**
+     * Versi paket Laravel Security Monitor (Bulwark).
+     */
+    public const VERSION = '2.0.8';
+
+    /**
      * Rentang waktu yang didukung grafik tren serangan.
      *
      * @var array<int, string>

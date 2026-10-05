@@ -16,9 +16,14 @@ type SettingsProps = {
         instant_block_duration: number;
         block_enforcement: boolean;
     };
+    version?: {
+        current: string;
+        latest: string | null;
+        update_available: boolean;
+    };
 };
 
-export default function SecuritySettings({ settings }: SettingsProps) {
+export default function SecuritySettings({ settings, version }: SettingsProps) {
     const [form, setForm] = useState(settings);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -52,6 +57,48 @@ export default function SecuritySettings({ settings }: SettingsProps) {
             </div>
 
             <SecurityNav />
+
+            {/* Version & Upgrade Alert */}
+            {version && (
+                <Card style={{ marginBottom: 20 }}>
+                    <CardContent style={{ paddingTop: 20 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                            <div>
+                                <h3 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 700, color: 'var(--sec-text)' }}>
+                                    📦 Versi Package & Pembaruan (Bulwark)
+                                </h3>
+                                <p style={{ margin: 0, fontSize: 13, color: 'var(--sec-text-muted)' }}>
+                                    Versi terpasang: <strong style={{ color: 'var(--sec-primary)' }}>v{version.current}</strong>
+                                    {version.latest && (
+                                        <> &bull; Versi rilis stabil terbaru: <strong style={{ color: 'var(--sec-text)' }}>v{version.latest}</strong></>
+                                    )}
+                                </p>
+                            </div>
+                            <div>
+                                {version.update_available ? (
+                                    <Badge variant="warning" style={{ fontWeight: 700, padding: '6px 12px', fontSize: 12 }}>
+                                        🚀 Update v{version.latest} Tersedia
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="success" style={{ fontWeight: 700, padding: '6px 12px', fontSize: 12 }}>
+                                        ✓ Versi Terbaru
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+
+                        {version.update_available && (
+                            <div style={{ marginTop: 14, padding: 12, borderRadius: 'var(--sec-radius)', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', fontSize: 13, color: 'var(--sec-text)' }}>
+                                <div style={{ fontWeight: 600, marginBottom: 6 }}>💡 Tersedia versi baru dengan perbaikan dan fitur keamanan terkini.</div>
+                                <div>Jalankan perintah ini di terminal server untuk memperbarui dan menyinkronkan aset otomatis:</div>
+                                <div style={{ marginTop: 8, fontFamily: 'monospace', background: 'var(--sec-bg-main)', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--sec-border)', fontWeight: 700, color: 'var(--sec-primary)' }}>
+                                    php artisan security:upgrade
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             {saved && (
                 <div className="sec-alert sec-alert-success" style={{ marginBottom: 20 }}>

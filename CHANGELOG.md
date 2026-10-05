@@ -2,6 +2,29 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [2.0.8] - 2026-10-05
+
+### Added
+
+- **Pemeriksaan Versi Otomatis & Notifikasi Upgrade di Terminal (`php artisan serve` & `composer run dev`)**:
+  - Secara otomatis memeriksa apakah terdapat versi rilis terbaru di Packagist/GitHub saat pengembang menjalankan `php artisan serve` atau `composer run dev` (`artisan dev`).
+  - Menampilkan notifikasi visual di terminal konsol yang elegan dan informatif jika versi baru telah dirilis, lengkap dengan saran perintah upgrade.
+  - Pemeriksaan dirancang sangat ringan, non-blocking (timeout 2 detik), dan di-cache selama 1 jam (`SECURITY_VERSION_CHECK_CACHE_TTL=3600`) sehingga tidak pernah memperlambat atau mengganggu startup server.
+  - Dapat diaktifkan/dinonaktifkan melalui konfigurasi `security.version_check.enabled` atau variabel `.env`: `SECURITY_VERSION_CHECK_ENABLED=true`.
+
+- **Perintah Baru `php artisan security:upgrade`**:
+  - Perintah artisan terpadu untuk memeriksa, memperbarui, dan menyinkronkan seluruh komponen package:
+    - `php artisan security:upgrade`: Memperbarui package via Composer (`composer update robyajo/laravel-security-monitor`), menerapkan migrasi database terbaru (`php artisan migrate`), menyinkronkan rute kustom (`routes/security.php` & `routes/security-api.php`), menyinkronkan tampilan dashboard monitoring (Blade/Livewire & React/TSX), serta membersihkan cache framework.
+    - Opsi `--check`: Hanya memeriksa status versi tanpa menjalankan proses pembaruan.
+    - Opsi `--force`: Memaksa pembaruan dan sinkronisasi aset meskipun sudah di versi terbaru.
+    - Opsi `--no-composer`: Melewati pembaruan Composer (hanya sinkronisasi aset lokal).
+    - Opsi `--no-migrate`: Melewati eksekusi migrasi database.
+    - Opsi `--sync-routes` & `--sync-views`: Memaksa pembaruan berkas rute dan tampilan dashboard.
+
+- **Integrasi Informasi Versi pada Dashboard Pengaturan & REST API**:
+  - Halaman Pengaturan Keamanan (`/security/settings`) pada Livewire dan React kini menampilkan status versi aktif dan banner notifikasi pembaruan secara visual.
+  - Endpoint REST API `GET /api/security/settings` menyertakan metadata `version` (`current`, `latest`, `update_available`).
+
 ## [2.0.7] - 2026-10-05
 
 ### Added

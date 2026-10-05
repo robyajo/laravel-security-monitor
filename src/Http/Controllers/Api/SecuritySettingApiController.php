@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
+use Internal\SecurityMonitor\Services\VersionCheckService;
 
 class SecuritySettingApiController extends Controller
 {
@@ -16,11 +17,16 @@ class SecuritySettingApiController extends Controller
     /**
      * Get current security monitor settings.
      */
-    public function index(): JsonResponse
+    public function index(VersionCheckService $versionChecker): JsonResponse
     {
         return response()->json([
             'success' => true,
             'settings' => $this->securityService->getSettings(),
+            'version' => [
+                'current' => $versionChecker->getCurrentVersion(),
+                'latest' => $versionChecker->getLatestVersion(),
+                'update_available' => $versionChecker->isUpdateAvailable(),
+            ],
         ]);
     }
 

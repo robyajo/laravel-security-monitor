@@ -16,6 +16,9 @@ new #[Title('Security Settings')] class extends Component {
     public bool $block_enforcement = true;
 
     public bool $saved = false;
+    public string $current_version = '';
+    public ?string $latest_version = null;
+    public bool $has_update = false;
 
     public function mount(SecurityMonitorService $security): void
     {
@@ -30,6 +33,15 @@ new #[Title('Security Settings')] class extends Component {
         $this->instant_block_enabled = (bool) ($settings['instant_block_enabled'] ?? true);
         $this->instant_block_duration = (int) ($settings['instant_block_duration'] ?? 720);
         $this->block_enforcement = (bool) ($settings['block_enforcement'] ?? true);
+
+        try {
+            $versionChecker = app(\Internal\SecurityMonitor\Services\VersionCheckService::class);
+            $this->current_version = $versionChecker->getCurrentVersion();
+            $this->latest_version = $versionChecker->getLatestVersion();
+            $this->has_update = $versionChecker->isUpdateAvailable();
+        } catch (\Throwable) {
+            $this->current_version = \Internal\SecurityMonitor\Services\SecurityMonitorService::VERSION;
+        }
     }
 
     public function save(SecurityMonitorService $security): void
@@ -130,6 +142,44 @@ new #[Title('Security Settings')] class extends Component {
                 <span>✅ {{ __('Pengaturan keamanan berhasil disimpan dan langsung diterapkan!') }}</span>
             </div>
         @endif
+
+        <!-- Version & Upgrade Banner -->
+        <div class="sec-card" style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h3 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 700; color: var(--sec-text);">
+                        📦 {{ __('Versi Package & Pembaruan (Bulwark)') }}
+                    </h3>
+                    <p style="margin: 0; font-size: 13px; color: var(--sec-text-muted);">
+                        {{ __('Versi terpasang:') }} <strong style="color: var(--sec-primary);">v{{ $current_version }}</strong>
+                        @if ($latest_version)
+                            &bull; {{ __('Versi rilis stabil terbaru:') }} <strong style="color: var(--sec-text);">v{{ $latest_version }}</strong>
+                        @endif
+                    </p>
+                </div>
+                <div>
+                    @if ($has_update)
+                        <span class="sec-badge sec-badge-warning" style="font-weight: 700; padding: 6px 12px; font-size: 12px;">
+                            🚀 {{ __('Update v') }}{{ $latest_version }} {{ __('Tersedia') }}
+                        </span>
+                    @else
+                        <span class="sec-badge sec-badge-success" style="font-weight: 700; padding: 6px 12px; font-size: 12px;">
+                            ✓ {{ __('Versi Terbaru') }}
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            @if ($has_update)
+                <div style="margin-top: 14px; padding: 12px; border-radius: var(--sec-radius); background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); font-size: 13px; color: var(--sec-text);">
+                    <div style="font-weight: 600; margin-bottom: 6px;">💡 {{ __('Tersedia versi baru dengan perbaikan dan fitur keamanan terkini.') }}</div>
+                    <div>{{ __('Jalankan perintah ini di terminal server untuk memperbarui dan menyinkronkan aset otomatis:') }}</div>
+                    <div style="margin-top: 8px; font-family: monospace; background: var(--sec-bg-main); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--sec-border); font-weight: 700; color: var(--sec-primary);">
+                        php artisan security:upgrade
+                    </div>
+                </div>
+            @endif
+        </div>
 
         <form wire:submit.prevent="save" style="display: flex; flex-direction: column; gap: 24px;">
 

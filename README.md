@@ -445,7 +445,22 @@ php artisan security:purge-injected-data
 php artisan security:purge-injected-data --force
 ```
 
----
+### 6. Pembaruan Otomatis & Sinkronisasi Komponen (`security:upgrade`)
+
+Periksa rilis terbaru dan perbarui package sekaligus sinkronkan migrasi database, rute kustom, dan tampilan dashboard monitoring:
+
+```bash
+# Periksa apakah ada versi baru yang tersedia
+php artisan security:upgrade --check
+
+# Jalankan proses upgrade dan sinkronisasi otomatis
+php artisan security:upgrade
+
+# Sinkronkan aset lokal tanpa composer update
+php artisan security:upgrade --no-composer --force
+```
+
+> **Notifikasi Otomatis**: Saat menjalankan `php artisan serve` atau `composer run dev`, sistem akan secara otomatis memeriksa versi terbaru dari Packagist/GitHub secara non-blocking dan menampilkan notifikasi di terminal konsol bila versi baru telah dirilis.
 
 ---
 

@@ -4,6 +4,7 @@ namespace Internal\SecurityMonitor;
 
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Http\Kernel as KernelContract;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -19,6 +20,7 @@ use Internal\SecurityMonitor\Console\Commands\PurgeInjectedData;
 use Internal\SecurityMonitor\Console\Commands\SecurityBaselineCommand;
 use Internal\SecurityMonitor\Console\Commands\SecurityInstallCommand;
 use Internal\SecurityMonitor\Console\Commands\SecurityScanAccessLogs;
+use Internal\SecurityMonitor\Console\Commands\SecurityUpgradeCommand;
 use Internal\SecurityMonitor\Console\Commands\UnblockIpAddress;
 use Internal\SecurityMonitor\Http\Middleware\BlockIpAddress;
 use Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats;
@@ -32,6 +34,7 @@ use Internal\SecurityMonitor\Services\LoginThrottleService;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Internal\SecurityMonitor\Services\ServerSecurityService;
 use Internal\SecurityMonitor\Services\UserLoginService;
+use Internal\SecurityMonitor\Services\VersionCheckService;
 use Livewire\Livewire;
 
 class SecurityMonitorServiceProvider extends ServiceProvider
@@ -70,7 +73,12 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->singleton(VersionCheckService::class, function () {
+            return new VersionCheckService;
+        });
+
         $this->app->alias(SecurityMonitorService::class, 'security.monitor');
+        $this->app->alias(VersionCheckService::class, 'security.version');
     }
 
     /**
@@ -86,6 +94,7 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         $this->registerSchedule();
         $this->registerGate();
         $this->registerMiddleware();
+        $this->registerVersionCheck();
     }
 
     protected function registerPublishing(): void
@@ -298,6 +307,7 @@ class SecurityMonitorServiceProvider extends ServiceProvider
 
         $this->commands([
             SecurityInstallCommand::class,
+            SecurityUpgradeCommand::class,
             PruneSecurityLogs::class,
             UnblockIpAddress::class,
             SecurityScanAccessLogs::class,
@@ -504,5 +514,33 @@ class SecurityMonitorServiceProvider extends ServiceProvider
                 }
             });
         }
+    }
+
+    /**
+     * Daftarkan pendengar event command terminal untuk memeriksa versi terbaru secara non-blocking
+     * saat menjalankan "php artisan serve" atau "composer run dev" (artisan dev).
+     */
+    protected function registerVersionCheck(): void
+    {
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        if (! (bool) config('security.version_check.enabled', true)) {
+            return;
+        }
+
+        Event::listen(CommandStarting::class, function (CommandStarting $event): void {
+            if (! in_array($event->command, ['serve', 'dev'], true)) {
+                return;
+            }
+
+            try {
+                $versionChecker = $this->app->make(VersionCheckService::class);
+                $versionChecker->notifyIfUpdateAvailable($event->output);
+            } catch (\Throwable) {
+                // Abaikan kesalahan agar tidak pernah mengganggu server dev
+            }
+        });
     }
 }
