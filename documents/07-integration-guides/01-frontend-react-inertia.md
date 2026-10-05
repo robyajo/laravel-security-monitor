@@ -204,7 +204,7 @@ export const AppealTicketModal: React.FC<{
 
 ## 3. Dashboard Monitoring React Starter Kit Siap Pakai
 
-Jika aplikasi host Anda dibangun di atas **Laravel React Starter Kit** (Inertia + React + shadcn/ui), Anda tidak perlu membangun panel monitoring dari nol. Paket menyediakan enam halaman Inertia/React siap pakai yang dapat dipublikasikan dengan satu perintah:
+Jika aplikasi host Anda dibangun di atas **Laravel React Starter Kit** (Inertia + React), Anda tidak perlu membangun panel monitoring dari nol. Paket menyediakan enam halaman Inertia/React siap pakai berbasis **Pure Vanilla CSS** yang dapat dipublikasikan dengan satu perintah:
 
 ```bash
 php artisan vendor:publish --tag=starterkit-react
@@ -222,6 +222,8 @@ Perintah tersebut menyalin berkas berikut ke aplikasi Anda:
 | `resources/js/pages/security/tickets.tsx`           | Review tiket banding (approve/reject + auto-unblock).       |
 | `resources/js/components/security/security-nav.tsx` | Navigasi antar modul keamanan.                              |
 | `resources/js/components/security/pagination.tsx`   | Komponen paginasi tabel.                                    |
+| `resources/js/components/security/ui.tsx`           | Komponen UI dasar (Card, Badge, Button, Input, Modal, dll). |
+| `resources/js/components/security/security.css`     | Desain sistem Pure Vanilla CSS responsif + dark mode.       |
 
 Aktifkan melalui `.env`, lalu bangun ulang aset:
 
@@ -241,6 +243,13 @@ Panel dapat diakses pada `/security`.
 
 > 🔒 **Wajib Login**: Rute dashboard memakai middleware `web` + `auth`, dan secara bawaan juga `security.admin` (Gate `manage-security-monitor`). Untuk mengizinkan semua pengguna yang sudah login (tanpa syarat admin), kosongkan `security.dashboard.admin_middleware` pada `config/security.php`.
 
+### Desain Sistem Pure Vanilla CSS (Zero External UI Dependencies)
+
+Stubs React dibuat mandiri sepenuhnya (**Zero external UI dependencies**):
+- **Tidak butuh Shadcn UI** (`@/components/ui/*`), `@/lib/utils`, ataupun library eksternal `sonner`.
+- Menggunakan `security.css` dengan CSS custom properties (`--sec-*`) yang rapi, responsif, dan otomatis mendukung dark mode (`.dark` / `@media (prefers-color-scheme: dark)`).
+- Anda bebas memodifikasi warna, ukuran, atau integrasi komponen di `resources/js/components/security/` kapan saja.
+
 ### Menambahkan Tautan di Sidebar Starter Kit
 
 Untuk memunculkan tautan ke panel, tambahkan item berikut ke `mainNavItems` pada `resources/js/components/app-sidebar.tsx`:
@@ -258,4 +267,3 @@ import { ShieldCheck } from 'lucide-react';
 ### Catatan
 
 - Jalankan `npm run build` (atau `npm run dev`) setiap kali halaman dashboard baru dipublikasikan agar tercatat pada manifest Vite.
-- Komponen `@/components/ui/*` yang dipakai (button, badge, card, input, label) sudah tersedia bawaan pada React Starter Kit resmi.

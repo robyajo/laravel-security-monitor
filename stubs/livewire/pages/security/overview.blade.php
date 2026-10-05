@@ -60,6 +60,26 @@ new #[Title('Security Overview')] class extends Component {
             default => 'sec-badge-low',
         };
     }
+
+    public function trendBarHeight(mixed $total, int $maxTrend): string
+    {
+        return max(4, (int) round(((int) $total / $maxTrend) * 120)).'px';
+    }
+
+    public function severityPercent(int $count, int $levelTotal): string
+    {
+        return (int) round(($count / $levelTotal) * 100).'%';
+    }
+
+    public function severityColor(string $level): string
+    {
+        return match ($level) {
+            'critical' => 'var(--sec-danger)',
+            'high' => 'var(--sec-warning)',
+            'medium' => '#d97706',
+            default => 'var(--sec-text-subtle)',
+        };
+    }
 }; ?>
 
 <div>
@@ -116,7 +136,7 @@ new #[Title('Security Overview')] class extends Component {
                     @foreach ($trend['points'] as $point)
                         <div class="sec-chart-col">
                             <div class="sec-chart-bar"
-                                 style="height: {{ max(4, (int) round(((int) $point['total'] / $maxTrend) * 120)) }}px;"
+                                 {!! 'style="height: ' . $this->trendBarHeight($point['total'], $maxTrend) . ';"' !!}
                                  title="{{ $point['tooltip'] }} · {{ $point['total'] }}"></div>
                             <span class="sec-chart-label">{{ $point['label'] }}</span>
                         </div>
@@ -139,7 +159,7 @@ new #[Title('Security Overview')] class extends Component {
                                 <span class="sec-font-mono" style="font-size: 13px; font-weight: 600;">{{ number_format($count) }}</span>
                             </div>
                             <div style="height: 6px; width: 100%; background: var(--sec-border-light); border-radius: 9999px; overflow: hidden;">
-                                <div style="height: 100%; border-radius: 9999px; width: {{ (int) round(($count / $levelTotal) * 100) }}%; background: {{ $level === 'critical' ? 'var(--sec-danger)' : ($level === 'high' ? 'var(--sec-warning)' : ($level === 'medium' ? '#d97706' : 'var(--sec-text-subtle)')) }};"></div>
+                                <div {!! 'style="height: 100%; border-radius: 9999px; width: ' . $this->severityPercent($count, $levelTotal) . '; background: ' . $this->severityColor($level) . ';"' !!}></div>
                             </div>
                         </div>
                     @endforeach

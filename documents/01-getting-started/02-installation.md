@@ -70,16 +70,24 @@ Perintah ini akan secara otomatis:
 5. **Menyematkan Variabel Lingkungan ke `.env` & `.env.example`**:
     - Menambahkan blok konfigurasi lengkap (`SECURITY_*`) disertai dokumentasi penjelasan fungsi berbahasa Indonesia langsung di bagian bawah berkas `.env` dan `.env.example`.
     - Menggunakan deteksi cerdas agar tidak terjadi duplikasi jika variabel sudah pernah ditambahkan sebelumnya.
+6. **Menyematkan Trait `HasSecurityRelations` ke Model User**:
+    - Secara otomatis mendeteksi model `User` (`app/Models/User.php`) dan menambahkan import `use Internal\SecurityMonitor\Concerns\HasSecurityRelations;` serta menyematkan trait `HasSecurityRelations`.
+    - Idempotent: tidak akan menduplikasi jika trait sudah ada.
+7. **Mendaftarkan Middleware WAF ke Aplikasi Host**:
+    - Otomatis mendaftarkan `BlockIpAddress` dan `DetectSecurityThreats` ke dalam `bootstrap/app.php` (Laravel 11 & 12) atau `app/Http/Kernel.php` (Laravel 10).
+    - Idempotent: memeriksa keberadaan middleware terlebih dahulu sebelum mendaftarkan.
 
 ### Opsi Perintah:
 
 | Opsi                 | Fungsi                                                                                                                    |
 | :------------------- | :------------------------------------------------------------------------------------------------------------------------ |
 | `--force`            | Menimpa seluruh berkas konfigurasi, migrasi, `nginx.conf`, dan `public/.htaccess` dengan template bawaan paket.           |
-| `--with-blade`       | Mempublikasikan tampilan dashboard monitoring Blade (Livewire / Flux UI Starter Kit).                                    |
-| `--with-tsx`         | Mempublikasikan tampilan dashboard monitoring TSX (Inertia + React / shadcn Starter Kit).                                 |
+| `--with-blade`       | Mempublikasikan tampilan dashboard monitoring Blade (Livewire Starter Kit — Pure Vanilla CSS).                            |
+| `--with-tsx`         | Mempublikasikan tampilan dashboard monitoring TSX (Inertia + React Starter Kit — Pure Vanilla CSS).                       |
 | `--with-both`        | Mempublikasikan kedua tampilan dashboard monitoring sekaligus (Blade & TSX).                                              |
 | `--stack=...`        | Menentukan stack dashboard yang ingin dipublikasikan (`blade`, `tsx`, `both`, `none`).                                    |
+| `--without-user-trait` | Melewatkan penyematan otomatis trait `HasSecurityRelations` ke model User.                                               |
+| `--without-middleware` | Melewatkan pendaftaran otomatis middleware WAF di `bootstrap/app.php` / `Kernel.php`.                                    |
 | `--without-nginx`    | Melewatkan publikasi berkas `nginx.conf` jika server Anda tidak menggunakan web server Nginx.                             |
 | `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess` jika Anda menggunakan Nginx murni dan tidak memerlukan Apache `.htaccess`. |
 | `--with-htaccess`    | Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan paket.                                       |

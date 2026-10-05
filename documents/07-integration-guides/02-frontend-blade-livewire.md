@@ -80,7 +80,7 @@ Jika ada, paket akan me-render view tersebut dengan meneruskan variabel:
 
 ## 2. Dashboard Monitoring Livewire Starter Kit Siap Pakai
 
-Jika aplikasi host Anda dibangun di atas **Laravel Livewire Starter Kit** (Livewire + Flux UI), Anda tidak perlu membangun panel monitoring dari nol. Paket menyediakan enam halaman Livewire siap pakai yang dapat dipublikasikan dengan satu perintah:
+Jika aplikasi host Anda dibangun di atas **Laravel Livewire Starter Kit** (Livewire v3), Anda tidak perlu membangun panel monitoring dari nol. Paket menyediakan enam halaman Livewire siap pakai berbasis **Pure Vanilla CSS** yang dapat dipublikasikan dengan satu perintah:
 
 ```bash
 php artisan vendor:publish --tag=starterkit-livewire
@@ -109,12 +109,28 @@ Panel dapat diakses pada `/security`. Halaman-halaman tersebut merupakan **singl
 
 > 🔒 **Wajib Login**: Rute dashboard memakai middleware `web` + `auth`, dan secara bawaan juga `security.admin` (Gate `manage-security-monitor`). Untuk mengizinkan semua pengguna yang sudah login (tanpa syarat admin), kosongkan `security.dashboard.admin_middleware` pada `config/security.php`.
 
+### Desain Sistem Pure Vanilla CSS (Zero External UI Dependencies)
+
+Stubs Livewire dibangun menggunakan **Pure Vanilla CSS**:
+- **Tidak mewajibkan Livewire Flux UI** ataupun UI kit eksternal lainnya.
+- Menanamkan CSS custom properties terisolasi (`--sec-*`) di dalam sub-layout (`layout.blade.php`) sehingga konsisten, ringan, dan kompatibel dengan tata letak apa pun.
+- Dilengkapi dukungan **Dark Mode** otomatis via media query `@media (prefers-color-scheme: dark)` dan kelas `.dark`.
+- Sepenuhnya **responsif** dengan tabel scroll horizontal di layar sempit/mobile serta grid fleksibel.
+
 ### Menambahkan Tautan di Sidebar Starter Kit
 
-Untuk memunculkan tautan ke panel, tambahkan item berikut pada `resources/views/layouts/app/sidebar.blade.php` di dalam `<flux:sidebar.nav>`:
+Untuk memunculkan tautan ke panel, tambahkan item berikut pada navigasi sidebar aplikasi Anda (misalnya di `resources/views/layouts/app/sidebar.blade.php`):
 
 ```blade
 <flux:sidebar.item icon="shield-check" :href="route('security.dashboard.overview')" :current="request()->routeIs('security.dashboard.*')" wire:navigate>
     {{ __('Security Monitor') }}
 </flux:sidebar.item>
+```
+
+Atau jika menggunakan link HTML standar:
+
+```blade
+<a href="{{ route('security.dashboard.overview') }}" wire:navigate class="nav-item">
+    Security Monitor
+</a>
 ```

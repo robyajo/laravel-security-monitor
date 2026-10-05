@@ -39,7 +39,7 @@ new #[Title('Server Audit')] class extends Component {
 
     public function createBaseline(): void
     {
-        app(ServerSecurityService::class)->createBaseline(auth()->id());
+        app(ServerSecurityService::class)->createBaseline(\Illuminate\Support\Facades\Auth::id());
         $this->load(force: true);
 
         session()->flash('security_message', __('Integrity baseline created.'));
@@ -55,7 +55,7 @@ new #[Title('Server Audit')] class extends Component {
 
     public function deleteFile(string $path): void
     {
-        $result = app(ServerSecurityService::class)->deleteSuspiciousFile($path, auth()->id());
+        $result = app(ServerSecurityService::class)->deleteSuspiciousFile($path, \Illuminate\Support\Facades\Auth::id());
 
         $this->load(force: true);
 

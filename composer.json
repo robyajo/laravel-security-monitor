@@ -53,7 +53,6 @@
     },
     "suggest": {
         "livewire/livewire": "Required for the optional Livewire Starter Kit monitoring dashboard (vendor:publish --tag=starterkit-livewire).",
-        "livewire/flux": "Recommended UI component library for the Livewire Starter Kit monitoring dashboard.",
         "inertiajs/inertia-laravel": "Required for the optional React Starter Kit monitoring dashboard (vendor:publish --tag=starterkit-react)."
     },
     "autoload": {

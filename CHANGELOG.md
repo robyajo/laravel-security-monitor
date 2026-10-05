@@ -2,6 +2,42 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [2.0.4] - 2026-10-05
+
+### Added
+
+- **Pure Vanilla CSS Architecture for Dashboard Views**:
+  - Migrated both Blade (Livewire) and React (TSX) dashboard stubs to pure Vanilla CSS.
+  - Eliminated external UI library dependencies (removed Livewire Flux UI, Shadcn UI, `@/lib/utils`, and `sonner`).
+  - Added standalone `security.css` stylesheet and zero-dependency `ui.tsx` helper components (`Card`, `Button`, `Badge`, `Input`, `Label`).
+  - Unified themeable CSS Custom Properties (`--sec-*`) with built-in automatic dark mode (`prefers-color-scheme: dark` and `.dark` / `[data-theme="dark"]`).
+  - 100% responsive layout across mobile, tablet, and desktop viewports with accessible modal dialogs and pure CSS trend chart bars.
+
+## [2.0.3] - 2026-10-05
+
+### Added
+
+- **Automated Host Setup in `security:install`**:
+  - Automatically detects and injects the `HasSecurityRelations` trait and import into `app/Models/User.php`.
+  - Automatically registers WAF middlewares (`BlockIpAddress` and `DetectSecurityThreats`) in `bootstrap/app.php` (Laravel 11 & 12) or `app/Http/Kernel.php` (Laravel 10).
+  - Both injections are idempotent and preserve existing code formatting and PHPDoc tags.
+  - Added `--without-user-trait` and `--without-middleware` flags to bypass automatic registration if needed.
+
+## [2.0.2] - 2026-10-04
+
+### Added
+
+- **Blade & TSX Starter Kit Tags**:
+  - Added `--with-blade`, `--with-tsx`, and `--with-all` flags to `php artisan security:install` alongside interactive stack selection.
+  - Added `starterkit-blade`, `starterkit-tsx`, `starterkit-all`, `security-dashboard-blade`, `security-dashboard-tsx`, and `security-dashboard-all` publication tags.
+  - Enforced authentication and login requirement across all `/security` monitoring routes.
+
+## [2.0.1] - 2026-10-03
+
+### Changed
+
+- Refinements to post-2.0.0 headless architecture and route bindings.
+
 ## [2.0.0] - 2026-10-03
 
 ### Changed
