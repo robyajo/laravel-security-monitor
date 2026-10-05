@@ -607,8 +607,10 @@ class SecurityInstallCommand extends Command
             }
         }
 
+        clearstatcache(true, $apiRoutePath);
+
         // Jika berkas routes/api.php masih belum ada, buat secara mandiri
-        if (! File::exists($apiRoutePath)) {
+        if (! file_exists($apiRoutePath)) {
             $routesDir = base_path('routes');
             if (! File::isDirectory($routesDir)) {
                 File::makeDirectory($routesDir, 0755, true, true);

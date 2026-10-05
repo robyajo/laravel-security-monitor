@@ -2,7 +2,6 @@
 
 namespace Internal\SecurityMonitor\Services;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Internal\SecurityMonitor\Models\LoginAttempt;
@@ -246,8 +245,8 @@ class LoginThrottleService
     protected function recordLockout(LoginAttempt $record, ?string $email, ?string $ip): void
     {
         $request = request();
-        $deviceId = $request instanceof Request ? $this->security->resolveDeviceId($request) : null;
-        $localIp = $request instanceof Request ? $this->security->resolveLocalIp($request) : null;
+        $deviceId = $request ? $this->security->resolveDeviceId($request) : null;
+        $localIp = $request ? $this->security->resolveLocalIp($request) : null;
 
         $this->security->log([
             'ip_address' => (string) ($ip ?? 'unknown'),

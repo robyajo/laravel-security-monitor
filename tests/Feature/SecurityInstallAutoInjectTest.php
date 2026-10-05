@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\File;
+use Internal\SecurityMonitor\Console\Commands\SecurityInstallCommand;
 
 $tempDir = '';
 
@@ -57,12 +58,12 @@ PHP
     expect($bootstrapContent)->not->toContain('BlockIpAddress');
 
     // Test install options are registered in command
-    $this->artisan('security:install', ['--help' => true])
-        ->expectsOutputToContain('--without-user-trait')
-        ->expectsOutputToContain('--without-middleware')
-        ->expectsOutputToContain('--without-routes')
-        ->expectsOutputToContain('--without-api')
-        ->assertSuccessful();
+    $command = $this->app->make(SecurityInstallCommand::class);
+    $definition = $command->getDefinition();
+    expect($definition->hasOption('without-user-trait'))->toBeTrue()
+        ->and($definition->hasOption('without-middleware'))->toBeTrue()
+        ->and($definition->hasOption('without-routes'))->toBeTrue()
+        ->and($definition->hasOption('without-api'))->toBeTrue();
 });
 
 test('security routes tag publishes security.php and security-api.php', function () {
