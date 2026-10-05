@@ -58,6 +58,9 @@ return [
         'window_minutes' => (int) env('SECURITY_AUTO_BLOCK_WINDOW', 10),
         'duration_hours' => (int) env('SECURITY_AUTO_BLOCK_DURATION', 24),
         'levels' => ['high', 'critical'],
+        // Scope pemblokiran otomatis: 'device' (hanya isolasi perangkat penyerang, aman untuk IP publik/WiFi NAT bersama)
+        // atau 'ip' (seluruh IP router publik).
+        'scope' => env('SECURITY_AUTO_BLOCK_SCOPE', 'device'),
     ],
 
     /*
@@ -75,11 +78,15 @@ return [
     | signature is looked for: path, query, body, input (query + body),
     | user_agent or any.
     |
+    | "scope" determines whether only the offending device is quarantined
+    | ('device') or the entire public router IP is blocked ('ip'). Default: 'device'.
+    |
     */
 
     'instant_block' => [
         'enabled' => (bool) env('SECURITY_INSTANT_BLOCK_ENABLED', true),
         'duration_hours' => (int) env('SECURITY_INSTANT_BLOCK_DURATION', 720),
+        'scope' => env('SECURITY_INSTANT_BLOCK_SCOPE', 'device'),
         'skip_whitelisted' => true,
         'signatures' => [
             [

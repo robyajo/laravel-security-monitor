@@ -108,21 +108,69 @@ class SecurityMonitorService
     }
 
     /**
-     * Resolve the unique device identifier sent from the client.
+     * Resolve the unique device identifier sent from the client or derive from fingerprint.
      */
-    public function resolveDeviceId(Request $request): ?string
+    public function resolveDeviceId(?Request $request = null, bool $allowFingerprint = true): ?string
     {
-        $id = $request->header('X-Device-Id') ?? $request->cookie('app_device_id') ?? $request->input('device_id');
+        $request = $request ?? request();
 
-        return is_string($id) && $id !== '' ? trim($id) : null;
+        if (! $request instanceof Request) {
+            return null;
+        }
+
+        $id = $request->header('X-Device-Id')
+            ?? $request->header('X-Client-Id')
+            ?? $request->header('X-Client-Device-Id')
+            ?? $request->cookie('app_device_id')
+            ?? $request->cookie('sec_device_id')
+            ?? $request->input('device_id');
+
+        if (is_string($id) && trim($id) !== '') {
+            return trim($id);
+        }
+
+        if ($allowFingerprint) {
+            return $this->generateDeviceFingerprint($request);
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate a deterministic device fingerprint based on client request signatures.
+     */
+    public function generateDeviceFingerprint(Request $request): string
+    {
+        $ua = (string) $request->userAgent();
+        $lang = (string) $request->header('Accept-Language');
+        $platform = (string) ($request->header('Sec-Ch-Ua-Platform') ?? $request->header('Sec-Ch-Ua') ?? '');
+        $encoding = (string) $request->header('Accept-Encoding');
+        $accept = (string) $request->header('Accept');
+
+        $raw = $ua.'|'.$lang.'|'.$platform.'|'.$encoding.'|'.$accept;
+
+        if (trim($raw, '|') === '') {
+            $raw = 'raw_client_'.($request->server('HTTP_ACCEPT') ?? '').'_'.($request->server('REMOTE_PORT') ?? '0');
+        }
+
+        return 'dev_'.substr(hash('sha256', $raw), 0, 16);
     }
 
     /**
      * Resolve the local/private LAN IP discovered on the client side via WebRTC.
      */
-    public function resolveLocalIp(Request $request): ?string
+    public function resolveLocalIp(?Request $request = null): ?string
     {
-        $ip = $request->header('X-Local-Ip') ?? $request->cookie('app_local_ip') ?? $request->input('local_ip');
+        $request = $request ?? request();
+
+        if (! $request instanceof Request) {
+            return null;
+        }
+
+        $ip = $request->header('X-Local-Ip')
+            ?? $request->header('X-Client-Local-Ip')
+            ?? $request->cookie('app_local_ip')
+            ?? $request->input('local_ip');
 
         return is_string($ip) && $ip !== '' ? trim($ip) : null;
     }
@@ -636,8 +684,18 @@ class SecurityMonitorService
             return null;
         }
 
+        $config = config('security.instant_block', []);
+        $scope = (string) ($config['scope'] ?? 'device');
+
+        if ($scope === 'device' && empty($deviceId)) {
+            $deviceId = $this->resolveDeviceId();
+        }
+
+        if (empty($localIp)) {
+            $localIp = $this->resolveLocalIp();
+        }
+
         $reason = $this->instantBlockReason($threats) ?? 'Pola serangan terdeteksi';
-        $scope = $deviceId ? 'device' : 'ip';
 
         return $this->block($ip, [
             'device_id' => $deviceId,
@@ -646,7 +704,7 @@ class SecurityMonitorService
             'reason' => 'Diblokir instan: '.$reason,
             'notes' => 'Terdeteksi otomatis oleh Security Monitor (zero tolerance signature).'.($deviceId ? " (Perangkat: {$deviceId})" : ''),
             'source' => 'automatic',
-            'duration_hours' => (int) config('security.instant_block.duration_hours', 720),
+            'duration_hours' => (int) ($config['duration_hours'] ?? 720),
         ]);
     }
 
@@ -1238,6 +1296,16 @@ class SecurityMonitorService
             return null;
         }
 
+        $scope = (string) ($config['scope'] ?? 'device');
+
+        if ($scope === 'device' && empty($deviceId)) {
+            $deviceId = $this->resolveDeviceId();
+        }
+
+        if (empty($localIp)) {
+            $localIp = $this->resolveLocalIp();
+        }
+
         $existing = $this->activeBlock($ip, $deviceId, $localIp);
 
         if ($existing !== null) {
@@ -1253,9 +1321,12 @@ class SecurityMonitorService
                 ->whereIn('threat_level', $levels)
                 ->where('created_at', '>=', now()->subMinutes($window));
 
-            if ($deviceId) {
-                $query->where(function (Builder $q) use ($ip, $deviceId) {
-                    $q->where('device_id', $deviceId)->orWhere('ip_address', $ip);
+            if ($scope === 'device' && $deviceId) {
+                $query->where(function (Builder $q) use ($deviceId, $localIp) {
+                    $q->where('device_id', $deviceId);
+                    if ($localIp) {
+                        $q->orWhere('local_ip', $localIp);
+                    }
                 });
             } else {
                 $query->where('ip_address', $ip);
@@ -1270,14 +1341,12 @@ class SecurityMonitorService
             return null;
         }
 
-        $scope = $deviceId ? 'device' : 'ip';
-
         return $this->block($ip, [
             'device_id' => $deviceId,
             'local_ip' => $localIp,
             'block_scope' => $scope,
             'reason' => sprintf(
-                'Diblokir otomatis: %d aktivitas berisiko terdeteksi dalam %d menit terakhir.',
+                'Diblokir otomatis: %d aktivitas berisiko terdeteksi dalam %d menit terakhir.'.($scope === 'device' ? ' (Hanya isolasi perangkat penyerang)' : ''),
                 $count,
                 $window
             ),

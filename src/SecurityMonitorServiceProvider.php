@@ -11,6 +11,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use Internal\SecurityMonitor\Console\Commands\PruneSecurityLogs;
@@ -319,7 +320,7 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         }
 
         // Jika rute sudah didaftarkan (misalnya oleh routes/api.php di host), hindari duplikasi
-        if (\Illuminate\Support\Facades\Route::has('security.logs.index')) {
+        if (Route::has('security.logs.index')) {
             return;
         }
 
@@ -351,7 +352,7 @@ class SecurityMonitorServiceProvider extends ServiceProvider
         }
 
         // Jika rute dashboard sudah didaftarkan (misalnya oleh routes/web.php di host), hindari duplikasi
-        if (\Illuminate\Support\Facades\Route::has('security.dashboard.overview')) {
+        if (Route::has('security.dashboard.overview')) {
             return;
         }
 

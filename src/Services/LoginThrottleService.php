@@ -2,6 +2,7 @@
 
 namespace Internal\SecurityMonitor\Services;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Internal\SecurityMonitor\Models\LoginAttempt;
@@ -244,8 +245,14 @@ class LoginThrottleService
 
     protected function recordLockout(LoginAttempt $record, ?string $email, ?string $ip): void
     {
+        $request = request();
+        $deviceId = $request instanceof Request ? $this->security->resolveDeviceId($request) : null;
+        $localIp = $request instanceof Request ? $this->security->resolveLocalIp($request) : null;
+
         $this->security->log([
             'ip_address' => (string) ($ip ?? 'unknown'),
+            'device_id' => $deviceId,
+            'local_ip' => $localIp,
             'event_type' => 'login_lockout',
             'threat_level' => match (true) {
                 $record->lockout_level >= 5 => 'critical',
@@ -272,7 +279,7 @@ class LoginThrottleService
 
         if ($record->lockout_level >= 3 && is_string($ip) && $ip !== '') {
             try {
-                $this->security->autoBlockIfNeeded($ip);
+                $this->security->autoBlockIfNeeded($ip, $deviceId, $localIp);
             } catch (Throwable) {
                 // Biarkan: blokir IP bersifat tambahan, bukan syarat utama.
             }

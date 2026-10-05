@@ -165,3 +165,74 @@ test('security monitor resolves real client IP behind reverse proxy headers', fu
 
     expect($service->resolveClientIp($requestNginx))->toBe('198.51.100.88');
 });
+
+test('instant block automatically isolates only the attacker device without blocking other users on the same WiFi router', function () {
+    config()->set('security.enabled', true);
+    config()->set('security.block_enforcement', true);
+    config()->set('security.instant_block.enabled', true);
+    config()->set('security.instant_block.scope', 'device');
+
+    $sharedRouterIp = '103.247.10.55';
+    $attackerUa = 'SqlMapAttacker/1.0';
+    $innocentUa = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X)';
+
+    // Penyerang mencoba path traversal fatal dari IP router WiFi
+    $attackerResponse = $this->withServerVariables(['REMOTE_ADDR' => $sharedRouterIp])
+        ->withHeaders(['User-Agent' => $attackerUa])
+        ->get('/?page=../../../../etc/passwd');
+
+    $attackerResponse->assertForbidden();
+
+    $block = BlockedIp::query()->where('ip_address', $sharedRouterIp)->first();
+    expect($block)->not->toBeNull();
+    expect($block->block_scope)->toBe('device');
+    expect($block->device_id)->not->toBeNull();
+
+    // Penyerang mencoba akses kembali -> tetap 403 Forbidden
+    $attackerNextResponse = $this->withServerVariables(['REMOTE_ADDR' => $sharedRouterIp])
+        ->withHeaders(['User-Agent' => $attackerUa])
+        ->get('/');
+    $attackerNextResponse->assertForbidden();
+
+    // Pengguna lain di WiFi/router yang sama mengakses website secara normal -> TIDAK terblokir (200 OK)
+    $innocentResponse = $this->withServerVariables(['REMOTE_ADDR' => $sharedRouterIp])
+        ->withHeaders(['User-Agent' => $innocentUa])
+        ->get('/');
+    expect($innocentResponse->status())->not->toBe(403);
+});
+
+test('auto block automatically isolates only the attacker device without blocking innocent devices on the same WiFi router', function () {
+    config()->set('security.enabled', true);
+    config()->set('security.block_enforcement', true);
+    config()->set('security.auto_block.enabled', true);
+    config()->set('security.auto_block.threshold', 3);
+    config()->set('security.auto_block.scope', 'device');
+
+    $sharedRouterIp = '103.247.10.77';
+    $attackerDeviceId = 'rogue-laptop-office-wifi';
+    $innocentDeviceId = 'innocent-colleague-phone-wifi';
+
+    // Penyerang melakukan 3 serangan berulang dari WiFi kantor
+    for ($i = 1; $i <= 3; $i++) {
+        $this->withServerVariables(['REMOTE_ADDR' => $sharedRouterIp])
+            ->withHeaders(['X-Device-Id' => $attackerDeviceId])
+            ->get('/?search='.urlencode("<script>alert({$i})</script>"));
+    }
+
+    $block = BlockedIp::query()->where('ip_address', $sharedRouterIp)->first();
+    expect($block)->not->toBeNull();
+    expect($block->block_scope)->toBe('device');
+    expect($block->device_id)->toBe($attackerDeviceId);
+
+    // Penyerang terblokir (403 Forbidden)
+    $attackerResponse = $this->withServerVariables(['REMOTE_ADDR' => $sharedRouterIp])
+        ->withHeaders(['X-Device-Id' => $attackerDeviceId])
+        ->get('/');
+    $attackerResponse->assertForbidden();
+
+    // Rekan kerja di WiFi kantor yang sama TIDAK terblokir
+    $innocentResponse = $this->withServerVariables(['REMOTE_ADDR' => $sharedRouterIp])
+        ->withHeaders(['X-Device-Id' => $innocentDeviceId])
+        ->get('/');
+    expect($innocentResponse->status())->not->toBe(403);
+});

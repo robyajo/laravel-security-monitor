@@ -25,7 +25,7 @@ class BlockIpAddress
             ! $service->enforcementEnabled() ||
             $service->isWhitelisted($ip, $deviceId, $localIp)
         ) {
-            return $next($request);
+            return $this->attachDeviceCookieIfNeeded($request, $next($request), $deviceId);
         }
 
         // Requests from authenticated administrators are never blocked.
@@ -33,18 +33,18 @@ class BlockIpAddress
         if ($service->isAdminRequest($request)) {
             $service->unblockIp($ip, $deviceId);
 
-            return $next($request);
+            return $this->attachDeviceCookieIfNeeded($request, $next($request), $deviceId);
         }
 
         // Allow access to auth routes so administrators can log in even if their IP was blocked.
         if ($this->isAuthRoute($request)) {
-            return $next($request);
+            return $this->attachDeviceCookieIfNeeded($request, $next($request), $deviceId);
         }
 
         $block = $service->activeBlock($ip, $deviceId, $localIp);
 
         if ($block === null) {
-            return $next($request);
+            return $this->attachDeviceCookieIfNeeded($request, $next($request), $deviceId);
         }
 
         $service->logBlockedAttempt($block, $request);
@@ -110,7 +110,7 @@ class BlockIpAddress
             'Hubungi administrator apabila Anda merasa ini sebuah kesalahan.';
 
         if ($request->expectsJson() || $request->is('api/*')) {
-            return response()->json(
+            $response = response()->json(
                 [
                     'success' => false,
                     'message' => $message,
@@ -125,10 +125,8 @@ class BlockIpAddress
                 ],
                 403,
             );
-        }
-
-        if (view()->exists('errors.blocked')) {
-            return response()->view(
+        } elseif (view()->exists('errors.blocked')) {
+            $response = response()->view(
                 'errors.blocked',
                 [
                     'ip' => $ip,
@@ -148,13 +146,37 @@ class BlockIpAddress
                 ],
                 403,
             );
+        } else {
+            $response = response(
+                "<h1>403 - Akses Ditolak</h1><p>{$message}</p><p>Ref: {$referenceId}</p>",
+                403,
+                ['Content-Type' => 'text/html; charset=utf-8'],
+            );
         }
 
-        return response(
-            "<h1>403 - Akses Ditolak</h1><p>{$message}</p><p>Ref: {$referenceId}</p>",
-            403,
-            ['Content-Type' => 'text/html; charset=utf-8'],
-        );
+        if ($deviceId !== null && ! $request->hasCookie('app_device_id') && method_exists($response, 'withCookie')) {
+            try {
+                $response->withCookie(cookie('app_device_id', $deviceId, 525600, '/', null, null, false));
+            } catch (\Throwable) {
+            }
+        }
+
+        return $response;
+    }
+
+    /**
+     * Attach a persistent device cookie to responses so legitimate devices keep a distinct identity.
+     */
+    protected function attachDeviceCookieIfNeeded(Request $request, Response $response, ?string $deviceId): Response
+    {
+        if ($deviceId !== null && ! $request->hasCookie('app_device_id') && method_exists($response, 'withCookie')) {
+            try {
+                $response->withCookie(cookie('app_device_id', $deviceId, 525600, '/', null, null, false));
+            } catch (\Throwable) {
+            }
+        }
+
+        return $response;
     }
 
     /**

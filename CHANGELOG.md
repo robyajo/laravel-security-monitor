@@ -2,6 +2,21 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [2.0.6] - 2026-10-05
+
+### Added
+
+- **Device-Scoped Automatic & Instant Blocking (WiFi & NAT Router Isolation)**:
+  - Enforced device-level isolation for both threshold-based automatic blocking (`autoBlockIfNeeded`) and zero-tolerance instant blocking (`blockImmediately`), ensuring that only the specific attacking device is quarantined rather than blocking the entire public router IP or office/cafe WiFi network.
+  - Innocent users and colleagues sharing the same NAT public IP address can continue accessing the application without being affected or receiving HTTP 403 Forbidden.
+  - Added configurable blocking scopes in `config/security.php` and `stubs/env.stub`:
+    - `SECURITY_AUTO_BLOCK_SCOPE=device` (options: `device` or `ip`, default: `device`).
+    - `SECURITY_INSTANT_BLOCK_SCOPE=device` (options: `device` or `ip`, default: `device`).
+  - Deterministic client device fingerprinting (`generateDeviceFingerprint()`): automatically synthesizes client identifiers (`dev_*`) from User-Agent, language, and client platform hints when custom headers (`X-Device-Id`, `X-Client-Id`) are not explicitly sent.
+  - Persistent device cookie attachment: `BlockIpAddress` middleware attaches an `app_device_id` cookie to responses (including 403 Forbidden response pages) to guarantee seamless device tracking across subsequent visits.
+  - Updated `LogFailedLoginAttempt` and `LoginThrottleService` to track and pass device IDs and private LAN IPs discovered via WebRTC to brute-force lockout evaluations.
+  - Added end-to-end feature tests in `tests/Feature/DeviceLevelBlockingTest.php` verifying that two clients on the identical public router IP (`REMOTE_ADDR`) are isolated so that the attacker receives 403 Forbidden while the innocent device receives 200 OK.
+
 ## [2.0.5] - 2026-10-05
 
 ### Added

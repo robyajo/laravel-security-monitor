@@ -42,12 +42,17 @@ class LogFailedLoginAttempt
             // Proteksi akun tidak boleh menggagalkan respons login.
         }
 
-        if (! $this->service->enabled() || $this->service->isWhitelisted($ip)) {
+        $deviceId = $this->service->resolveDeviceId($this->request);
+        $localIp = $this->service->resolveLocalIp($this->request);
+
+        if (! $this->service->enabled() || $this->service->isWhitelisted($ip, $deviceId, $localIp)) {
             return;
         }
 
         $this->service->log([
             'ip_address' => (string) ($ip ?? 'unknown'),
+            'device_id' => $deviceId,
+            'local_ip' => $localIp,
             'user_id' => $event->user?->getAuthIdentifier(),
             'event_type' => 'login_failed',
             'threat_level' => 'medium',
@@ -71,7 +76,7 @@ class LogFailedLoginAttempt
         ]);
 
         try {
-            $this->service->autoBlockIfNeeded((string) $ip);
+            $this->service->autoBlockIfNeeded((string) $ip, $deviceId, $localIp);
         } catch (Throwable) {
             // Brute force protection must never break the login response.
         }
