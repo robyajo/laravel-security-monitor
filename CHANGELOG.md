@@ -2,6 +2,19 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [2.0.5] - 2026-10-05
+
+### Added
+
+- **Automated API Setup & Customizable Route Files (`routes/security.php` & `routes/security-api.php`)**:
+  - Automatically checks and executes `php artisan install:api` during `security:install` if API routes are not yet initialized in Laravel 11/12/13 host applications.
+  - Generates `routes/security-api.php` for headless REST API endpoints and wires it into `routes/api.php` (`require __DIR__.'/security-api.php';`).
+  - Generates `routes/security.php` for web dashboard routes and wires it into `routes/web.php` (`require __DIR__.'/security.php';`).
+  - Web routes in `routes/security.php` render directly to views (`pages::security.*` / `resources/views/pages/security/*` for Livewire/Blade or Inertia controllers for React) so developers have full control to customize URL prefixes, middleware, layout wrappers, and custom pages.
+  - Added `security-routes`, `security-routes-web`, and `security-routes-api` publication tags to `php artisan vendor:publish`.
+  - Added `--without-routes` and `--without-api` flags to `php artisan security:install`.
+  - Smart route loading in `SecurityMonitorServiceProvider`: prioritized host route files if customized and prevents route duplication with host `routes/web.php` and `routes/api.php`.
+
 ## [2.0.4] - 2026-10-05
 
 ### Added

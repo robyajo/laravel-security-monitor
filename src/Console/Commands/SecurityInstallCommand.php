@@ -15,6 +15,8 @@ class SecurityInstallCommand extends Command
                             {--without-env : Jangan tambahkan variabel konfigurasi ke berkas .env}
                             {--without-user-trait : Jangan tambahkan trait HasSecurityRelations ke model User}
                             {--without-middleware : Jangan daftarkan middleware WAF ke bootstrap/app.php atau Kernel.php}
+                            {--without-routes : Jangan publikasikan berkas routes/security.php dan routes/security-api.php}
+                            {--without-api : Jangan periksa atau pasang rute API (install:api)}
                             {--with-dashboard : Publikasikan tampilan dashboard monitoring Livewire / Blade Starter Kit}
                             {--with-blade : Publikasikan tampilan dashboard monitoring Livewire / Blade Starter Kit (alias)}
                             {--with-react-dashboard : Publikasikan tampilan dashboard monitoring React / TSX Starter Kit}
@@ -23,7 +25,7 @@ class SecurityInstallCommand extends Command
                             {--stack= : Tentukan stack tampilan dashboard (blade, tsx, both, none)}
                             {--with-htaccess : Paksa perbarui berkas public/.htaccess dengan aturan hardening}';
 
-    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, tampilan Blade/TSX, trait User, middleware WAF, dan .env)';
+    protected $description = 'Instalasi dan publikasi aset Laravel Security Monitor (konfigurasi, migrasi, Nginx, Apache .htaccess, halaman blokir, tampilan Blade/TSX, trait User, middleware WAF, rute web & API kustom, dan .env)';
 
     public function handle(): int
     {
@@ -37,6 +39,8 @@ class SecurityInstallCommand extends Command
         $withoutEnv = (bool) $this->option('without-env');
         $withoutUserTrait = (bool) $this->option('without-user-trait');
         $withoutMiddleware = (bool) $this->option('without-middleware');
+        $withoutRoutes = (bool) $this->option('without-routes');
+        $withoutApi = (bool) $this->option('without-api');
         $withDashboard = (bool) ($this->option('with-dashboard') || $this->option('with-blade'));
         $withReactDashboard = (bool) ($this->option('with-react-dashboard') || $this->option('with-tsx'));
         $withBoth = (bool) $this->option('with-both');
@@ -162,7 +166,15 @@ class SecurityInstallCommand extends Command
             $this->registerMiddlewareInApp();
         }
 
-        // 10. Append / Update Environment Variables with rich comments to .env & .env.example
+        // 10. Ensure API support & publish customizable route files (routes/security.php & routes/security-api.php)
+        if (! $withoutRoutes) {
+            $this->comment(
+                'Menyiapkan rute mandiri (routes/security.php & routes/security-api.php)...',
+            );
+            $this->publishSecurityRoutes($force, $withoutApi);
+        }
+
+        // 11. Append / Update Environment Variables with rich comments to .env & .env.example
         if (! $withoutEnv) {
             $this->comment(
                 'Menyematkan variabel konfigurasi dan panduan ke berkas .env...',
@@ -209,17 +221,22 @@ class SecurityInstallCommand extends Command
                 "     <fg=gray>\Internal\SecurityMonitor\Http\Middleware\DetectSecurityThreats::class</>",
             );
         }
+        if (! $withoutRoutes) {
+            $this->line(
+                '  4. Rute Kustom: Berkas <fg=green>routes/security.php</> (web) dan <fg=green>routes/security-api.php</> (API) siap dikustomisasi.',
+            );
+        }
         $this->line(
-            '  4. Sesuaikan nilai variabel <fg=yellow>SECURITY_*</> di berkas <fg=yellow>.env</>',
+            '  5. Sesuaikan nilai variabel <fg=yellow>SECURITY_*</> di berkas <fg=yellow>.env</>',
         );
         if (! $withoutNginx) {
             $this->line(
-                '  5. Web Server Nginx: Periksa dan sesuaikan <fg=yellow>nginx.conf</> di root proyek.',
+                '  6. Web Server Nginx: Periksa dan sesuaikan <fg=yellow>nginx.conf</> di root proyek.',
             );
         }
         if (! $withoutHtaccess) {
             $this->line(
-                '  6. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat',
+                '  7. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat',
             );
             $this->line(
                 '     terhadap upload webshell, double extension, pembacaan dotfile, dan file backup.',
@@ -227,30 +244,30 @@ class SecurityInstallCommand extends Command
         }
         if (! $withoutViews) {
             $this->line(
-                '  7. Halaman blokir: Sesuaikan <fg=yellow>resources/views/errors/blocked.blade.php</> sesuai branding aplikasi Anda.',
+                '  8. Halaman blokir: Sesuaikan <fg=yellow>resources/views/errors/blocked.blade.php</> sesuai branding aplikasi Anda.',
             );
         }
         if ($withDashboard && $withReactDashboard) {
             $this->line(
-                '  8. Dashboard Blade & TSX: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
+                '  9. Dashboard Blade & TSX: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
             );
             $this->line(
                 '     Ganti driver aktif di .env (<fg=yellow>SECURITY_DASHBOARD_DRIVER=blade</> atau <fg=yellow>react</>).',
             );
         } elseif ($withDashboard) {
             $this->line(
-                '  8. Dashboard Blade: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
+                '  9. Dashboard Blade: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
             );
         } elseif ($withReactDashboard) {
             $this->line(
-                '  8. Dashboard TSX: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
+                '  9. Dashboard TSX: Siap diakses pada prefix <fg=yellow>/security</> (wajib login pengguna).',
             );
             $this->line(
                 '     Jalankan <fg=yellow>npm run build</> untuk memproses aset TSX pada Vite.',
             );
         } else {
             $this->line(
-                '  8. Dashboard monitoring (opsional): Sediakan kapan saja dengan <fg=yellow>php artisan security:install --with-blade</> atau <fg=yellow>--with-tsx</>.',
+                '  9. Dashboard monitoring (opsional): Sediakan kapan saja dengan <fg=yellow>php artisan security:install --with-blade</> atau <fg=yellow>--with-tsx</>.',
             );
         }
 
@@ -561,5 +578,147 @@ class SecurityInstallCommand extends Command
         }
 
         $this->line('  ℹ Berkas bootstrap/app.php atau Kernel.php tidak dapat diperbarui secara otomatis. Silakan daftarkan middleware secara manual.');
+    }
+
+    /**
+     * Pastikan rute API tersedia di host application (menjalankan install:api jika belum ada).
+     */
+    protected function ensureApiRoutesInstalled(): void
+    {
+        $apiRoutePath = base_path('routes/api.php');
+
+        if (File::exists($apiRoutePath)) {
+            $this->line('  ✓ Berkas routes/api.php sudah tersedia.');
+
+            return;
+        }
+
+        // Di Laravel 11/12/13, rute API dipasang melalui perintah artisan install:api
+        if ($this->getApplication()?->has('install:api')) {
+            $this->comment('  Menyiapkan rute API bawaan Laravel (php artisan install:api)...');
+            try {
+                $this->call('install:api', [
+                    '--no-interaction' => true,
+                    '--without-migration-prompt' => true,
+                ]);
+                $this->info('  ✓ Dukungan rute API berhasil disiapkan via install:api.');
+            } catch (\Throwable $e) {
+                $this->warn('  ⚠ Gagal menjalankan install:api: '.$e->getMessage());
+            }
+        }
+
+        // Jika berkas routes/api.php masih belum ada, buat secara mandiri
+        if (! File::exists($apiRoutePath)) {
+            $routesDir = base_path('routes');
+            if (! File::isDirectory($routesDir)) {
+                File::makeDirectory($routesDir, 0755, true, true);
+            }
+
+            File::put($apiRoutePath, <<<'PHP'
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+PHP
+            );
+            $this->info('  ✓ Berkas routes/api.php berhasil dibuat.');
+        }
+
+        // Pastikan pada Laravel 11/12/13 bootstrap/app.php memiliki konfigurasi api: __DIR__.'/../routes/api.php'
+        $bootstrapAppPath = base_path('bootstrap/app.php');
+        if (File::exists($bootstrapAppPath)) {
+            $bootstrapContent = File::get($bootstrapAppPath);
+            if (! str_contains($bootstrapContent, 'routes/api.php') && str_contains($bootstrapContent, '->withRouting(')) {
+                if (preg_match('/web:\s*__DIR__\s*\.\s*\'\/[^\']+\'([^\n]*\n)/', $bootstrapContent, $m, PREG_OFFSET_CAPTURE)) {
+                    $insertPos = $m[0][1] + strlen($m[0][0]);
+                    $bootstrapContent = substr_replace(
+                        $bootstrapContent,
+                        "        api: __DIR__.'/../routes/api.php',\n",
+                        $insertPos,
+                        0
+                    );
+                    File::put($bootstrapAppPath, $bootstrapContent);
+                    $this->info('  ✓ Konfigurasi rute API didaftarkan ke bootstrap/app.php.');
+                }
+            }
+        }
+    }
+
+    /**
+     * Publikasikan berkas rute security.php dan security-api.php ke direktori routes/ host application.
+     */
+    protected function publishSecurityRoutes(bool $force, bool $withoutApi = false): void
+    {
+        if (! $withoutApi) {
+            $this->ensureApiRoutesInstalled();
+        }
+
+        $routesDir = base_path('routes');
+        if (! File::isDirectory($routesDir)) {
+            File::makeDirectory($routesDir, 0755, true, true);
+        }
+
+        // 1. Publikasikan routes/security-api.php
+        $apiStubPath = __DIR__.'/../../../stubs/routes/security-api.php.stub';
+        if (! File::exists($apiStubPath)) {
+            $apiStubPath = dirname(__DIR__, 2).'/stubs/routes/security-api.php.stub';
+        }
+        $targetApiPath = base_path('routes/security-api.php');
+
+        if (File::exists($apiStubPath)) {
+            if (! File::exists($targetApiPath) || $force) {
+                File::copy($apiStubPath, $targetApiPath);
+                $this->info('  ✓ Berkas routes/security-api.php berhasil dibuat.');
+            } else {
+                $this->line('  ✓ Berkas routes/security-api.php sudah ada.');
+            }
+        }
+
+        // 2. Publikasikan routes/security.php
+        $webStubPath = __DIR__.'/../../../stubs/routes/security.php.stub';
+        if (! File::exists($webStubPath)) {
+            $webStubPath = dirname(__DIR__, 2).'/stubs/routes/security.php.stub';
+        }
+        $targetWebPath = base_path('routes/security.php');
+
+        if (File::exists($webStubPath)) {
+            if (! File::exists($targetWebPath) || $force) {
+                File::copy($webStubPath, $targetWebPath);
+                $this->info('  ✓ Berkas routes/security.php berhasil dibuat (render view langsung).');
+            } else {
+                $this->line('  ✓ Berkas routes/security.php sudah ada.');
+            }
+        }
+
+        // 3. Sertakan routes/security.php di routes/web.php jika belum ada
+        $webRouteFile = base_path('routes/web.php');
+        if (File::exists($webRouteFile)) {
+            $webContent = File::get($webRouteFile);
+            if (! str_contains($webContent, 'security.php')) {
+                File::append($webRouteFile, "\nrequire __DIR__.'/security.php';\n");
+                $this->info('  ✓ Berkas routes/web.php menyertakan routes/security.php.');
+            }
+        }
+
+        // 4. Sertakan routes/security-api.php di routes/api.php jika belum ada
+        $apiRouteFile = base_path('routes/api.php');
+        if (File::exists($apiRouteFile)) {
+            $apiContent = File::get($apiRouteFile);
+            if (! str_contains($apiContent, 'security-api.php')) {
+                File::append($apiRouteFile, "\nrequire __DIR__.'/security-api.php';\n");
+                $this->info('  ✓ Berkas routes/api.php menyertakan routes/security-api.php.');
+            }
+        }
     }
 }

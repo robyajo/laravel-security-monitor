@@ -60,5 +60,19 @@ PHP
     $this->artisan('security:install', ['--help' => true])
         ->expectsOutputToContain('--without-user-trait')
         ->expectsOutputToContain('--without-middleware')
+        ->expectsOutputToContain('--without-routes')
+        ->expectsOutputToContain('--without-api')
         ->assertSuccessful();
+});
+
+test('security routes tag publishes security.php and security-api.php', function () {
+    $this->artisan('vendor:publish', ['--tag' => 'security-routes'])
+        ->assertSuccessful();
+
+    expect(File::exists(base_path('routes/security.php')))->toBeTrue();
+    expect(File::exists(base_path('routes/security-api.php')))->toBeTrue();
+
+    // Clean up
+    @unlink(base_path('routes/security.php'));
+    @unlink(base_path('routes/security-api.php'));
 });

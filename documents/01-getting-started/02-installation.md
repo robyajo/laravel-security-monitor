@@ -76,6 +76,11 @@ Perintah ini akan secara otomatis:
 7. **Mendaftarkan Middleware WAF ke Aplikasi Host**:
     - Otomatis mendaftarkan `BlockIpAddress` dan `DetectSecurityThreats` ke dalam `bootstrap/app.php` (Laravel 11 & 12) atau `app/Http/Kernel.php` (Laravel 10).
     - Idempotent: memeriksa keberadaan middleware terlebih dahulu sebelum mendaftarkan.
+8. **Menyiapkan Dukungan API & Berkas Rute Kustom (`routes/`)**:
+    - Memeriksa apakah berkas `routes/api.php` sudah tersedia. Jika belum (pada Laravel 11+), otomatis menjalankan `php artisan install:api` agar dukungan API aktif.
+    - Menghasilkan berkas `routes/security-api.php` untuk endpoint headless REST API dan menyertakannya di `routes/api.php` (`require __DIR__.'/security-api.php';`).
+    - Menghasilkan berkas `routes/security.php` untuk rute web dashboard yang langsung me-render ke view dan menyertakannya di `routes/web.php` (`require __DIR__.'/security.php';`).
+    - Memberikan kebebasan penuh kepada developer untuk mengkustomisasi prefix URL, middleware, otorisasi, dan tampilan tanpa terkunci pada rute internal paket.
 
 ### Opsi Perintah:
 
@@ -88,6 +93,8 @@ Perintah ini akan secara otomatis:
 | `--stack=...`        | Menentukan stack dashboard yang ingin dipublikasikan (`blade`, `tsx`, `both`, `none`).                                    |
 | `--without-user-trait` | Melewatkan penyematan otomatis trait `HasSecurityRelations` ke model User.                                               |
 | `--without-middleware` | Melewatkan pendaftaran otomatis middleware WAF di `bootstrap/app.php` / `Kernel.php`.                                    |
+| `--without-routes`   | Melewatkan pembuatan berkas rute `routes/security.php` dan `routes/security-api.php`.                                     |
+| `--without-api`      | Melewatkan pemeriksaan dan instalasi rute API (`install:api`).                                                            |
 | `--without-nginx`    | Melewatkan publikasi berkas `nginx.conf` jika server Anda tidak menggunakan web server Nginx.                             |
 | `--without-htaccess` | Melewatkan pembaruan berkas `public/.htaccess` jika Anda menggunakan Nginx murni dan tidak memerlukan Apache `.htaccess`. |
 | `--with-htaccess`    | Memaksa pembaruan berkas `public/.htaccess` dengan aturan hardening keamanan paket.                                       |
@@ -115,7 +122,22 @@ php artisan vendor:publish --tag=security-migrations
 
 Berkas migrasi akan disalin ke folder `database/migrations/`.
 
-### 3. Publikasikan Template Nginx WAF Hardened Saja
+### 3. Publikasikan Berkas Rute Kustom
+
+```bash
+# Publikasikan rute web dan API sekaligus:
+php artisan vendor:publish --tag=security-routes
+
+# Atau publikasikan terpisah:
+php artisan vendor:publish --tag=security-routes-web
+php artisan vendor:publish --tag=security-routes-api
+```
+
+Berkas akan ditempatkan di:
+- `routes/security.php` (rute web dashboard yang langsung me-render view).
+- `routes/security-api.php` (rute headless REST API).
+
+### 4. Publikasikan Template Nginx WAF Hardened Saja
 
 ```bash
 php artisan vendor:publish --tag=security-nginx

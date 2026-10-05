@@ -1,0 +1,65 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Security Monitor Web Dashboard Routes
+|--------------------------------------------------------------------------
+|
+| Rute web untuk antarmuka dashboard Security Monitor. Berkas ini me-render
+| tampilan view secara langsung sehingga Anda bebas menyesuaikan tampilan,
+| prefix URL, middleware, atau menambahkan custom halaman sendiri.
+|
+*/
+
+$prefix = config('security.dashboard.prefix', 'security');
+$middleware = array_filter((array) config('security.dashboard.middleware', ['web', 'auth']));
+$adminMiddleware = array_filter((array) config('security.dashboard.admin_middleware', []));
+$driver = strtolower((string) config('security.dashboard.driver', 'blade'));
+
+Route::middleware(array_merge($middleware, $adminMiddleware))
+    ->prefix($prefix)
+    ->name('security.dashboard.')
+    ->group(function () use ($driver) {
+        if (in_array($driver, ['react', 'tsx'], true) && class_exists(\Inertia\Inertia::class)) {
+            // Rute controller Inertia + React (render komponen di resources/js/pages/security)
+            Route::get('/', \Internal\SecurityMonitor\Http\Controllers\Dashboard\OverviewController::class)->name('overview');
+            Route::get('logs', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\LogController::class, 'index'])->name('logs');
+            Route::delete('logs', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\LogController::class, 'clear'])->name('logs.clear');
+            Route::delete('logs/{id}', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\LogController::class, 'destroy'])->whereNumber('id')->name('logs.destroy');
+            Route::get('blocked-ips', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\BlockedIpController::class, 'index'])->name('blocked-ips');
+            Route::post('blocked-ips', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\BlockedIpController::class, 'store'])->name('blocked-ips.store');
+            Route::patch('blocked-ips/{id}/toggle', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\BlockedIpController::class, 'toggle'])->whereNumber('id')->name('blocked-ips.toggle');
+            Route::delete('blocked-ips/{id}', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\BlockedIpController::class, 'destroy'])->whereNumber('id')->name('blocked-ips.destroy');
+            Route::get('server', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\ServerController::class, 'index'])->name('server');
+            Route::post('server/baseline', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\ServerController::class, 'createBaseline'])->name('server.baseline');
+            Route::delete('server/baseline', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\ServerController::class, 'deleteBaseline'])->name('server.baseline.destroy');
+            Route::delete('server/suspicious-files', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\ServerController::class, 'deleteSuspiciousFile'])->name('server.suspicious-files.destroy');
+            Route::delete('lockouts/{id}', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\ServerController::class, 'releaseLockout'])->whereNumber('id')->name('lockouts.destroy');
+            Route::get('sessions', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\SessionController::class, 'index'])->name('sessions');
+            Route::delete('user-sessions/{id}', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\SessionController::class, 'destroyLogin'])->whereNumber('id')->name('user-sessions.destroy');
+            Route::delete('sessions/{sessionId}', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\SessionController::class, 'destroySession'])->name('sessions.destroy');
+            Route::delete('trusted-ips/{id}', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\SessionController::class, 'destroyTrusted'])->whereNumber('id')->name('trusted-ips.destroy');
+            Route::post('trusted-ips/my-ip', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\SessionController::class, 'storeMyIp'])->name('trusted-ips.store-my-ip');
+            Route::get('tickets', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\TicketController::class, 'index'])->name('tickets');
+            Route::post('tickets/{id}/respond', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\TicketController::class, 'respond'])->whereNumber('id')->name('tickets.respond');
+            Route::delete('tickets/{id}', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\TicketController::class, 'destroy'])->whereNumber('id')->name('tickets.destroy');
+        } elseif (class_exists(\Livewire\Livewire::class)) {
+            // Rute Livewire Single-File Pages (render view di resources/views/pages/security)
+            Route::livewire('/', 'pages::security.overview')->name('overview');
+            Route::livewire('logs', 'pages::security.logs')->name('logs');
+            Route::livewire('blocked-ips', 'pages::security.blocked-ips')->name('blocked-ips');
+            Route::livewire('server', 'pages::security.server')->name('server');
+            Route::livewire('sessions', 'pages::security.sessions')->name('sessions');
+            Route::livewire('tickets', 'pages::security.tickets')->name('tickets');
+        } else {
+            // Render view Blade standar (resources/views/pages/security)
+            Route::view('/', 'pages.security.overview')->name('overview');
+            Route::view('logs', 'pages.security.logs')->name('logs');
+            Route::view('blocked-ips', 'pages.security.blocked-ips')->name('blocked-ips');
+            Route::view('server', 'pages.security.server')->name('server');
+            Route::view('sessions', 'pages.security.sessions')->name('sessions');
+            Route::view('tickets', 'pages.security.tickets')->name('tickets');
+        }
+    });

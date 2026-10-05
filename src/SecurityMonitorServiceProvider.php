@@ -161,6 +161,37 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             'security-all',
         );
 
+        // Security Route Stubs (routes/security.php & routes/security-api.php)
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/routes/security.php.stub' => base_path(
+                    'routes/security.php',
+                ),
+                __DIR__.'/../stubs/routes/security-api.php.stub' => base_path(
+                    'routes/security-api.php',
+                ),
+            ],
+            'security-routes',
+        );
+
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/routes/security.php.stub' => base_path(
+                    'routes/security.php',
+                ),
+            ],
+            'security-routes-web',
+        );
+
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/routes/security-api.php.stub' => base_path(
+                    'routes/security-api.php',
+                ),
+            ],
+            'security-routes-api',
+        );
+
         // Livewire Starter Kit Monitoring Dashboard (views + configuration).
         //
         // Publishes the Blade/single-file Livewire pages that make up the
@@ -283,9 +314,24 @@ class SecurityMonitorServiceProvider extends ServiceProvider
 
     protected function registerRoutes(): void
     {
-        if (config('security.routes.enabled', true)) {
-            $this->loadRoutesFrom(__DIR__.'/../routes/security.php');
+        if (! config('security.routes.enabled', true)) {
+            return;
         }
+
+        // Jika rute sudah didaftarkan (misalnya oleh routes/api.php di host), hindari duplikasi
+        if (\Illuminate\Support\Facades\Route::has('security.logs.index')) {
+            return;
+        }
+
+        // Jika berkas rute kustom host ada, prioritaskan pemuatannya
+        $hostRouteFile = base_path('routes/security-api.php');
+        if (file_exists($hostRouteFile)) {
+            $this->loadRoutesFrom($hostRouteFile);
+
+            return;
+        }
+
+        $this->loadRoutesFrom(__DIR__.'/../routes/security.php');
     }
 
     /**
@@ -301,6 +347,19 @@ class SecurityMonitorServiceProvider extends ServiceProvider
     protected function registerDashboardRoutes(): void
     {
         if (! config('security.dashboard.enabled', false)) {
+            return;
+        }
+
+        // Jika rute dashboard sudah didaftarkan (misalnya oleh routes/web.php di host), hindari duplikasi
+        if (\Illuminate\Support\Facades\Route::has('security.dashboard.overview')) {
+            return;
+        }
+
+        // Jika berkas rute web kustom host ada, prioritaskan pemuatannya
+        $hostDashboardFile = base_path('routes/security.php');
+        if (file_exists($hostDashboardFile)) {
+            $this->loadRoutesFrom($hostDashboardFile);
+
             return;
         }
 
