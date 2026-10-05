@@ -1,12 +1,9 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import '@/components/security/security.css';
 import { Pagination } from '@/components/security/pagination';
 import { SecurityNav } from '@/components/security/security-nav';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/security/ui';
 
 type LoginRow = {
     id: number;
@@ -78,6 +75,12 @@ export default function UserSessions({
     urls,
 }: SessionsProps) {
     const [search, setSearch] = useState(filters.search);
+    const [flashMsg, setFlashMsg] = useState<string | null>(null);
+
+    const showNotification = (msg: string) => {
+        setFlashMsg(msg);
+        setTimeout(() => setFlashMsg(null), 4000);
+    };
 
     const applyFilters = () => {
         router.get(
@@ -93,7 +96,7 @@ export default function UserSessions({
             {},
             {
                 preserveScroll: true,
-                onSuccess: () => toast.success('IP saved as trusted.'),
+                onSuccess: () => showNotification('IP saved as trusted device.'),
             },
         );
     };
@@ -101,7 +104,7 @@ export default function UserSessions({
     const destroyLogin = (id: number) => {
         router.delete(urls.loginDestroy.replace('__ID__', String(id)), {
             preserveScroll: true,
-            onSuccess: () => toast.success('Login history entry deleted.'),
+            onSuccess: () => showNotification('Login history entry deleted.'),
         });
     };
 
@@ -117,7 +120,7 @@ export default function UserSessions({
             ),
             {
                 preserveScroll: true,
-                onSuccess: () => toast.success('Session terminated.'),
+                onSuccess: () => showNotification('Session terminated.'),
             },
         );
     };
@@ -129,79 +132,71 @@ export default function UserSessions({
 
         router.delete(urls.trustedDestroy.replace('__ID__', String(id)), {
             preserveScroll: true,
-            onSuccess: () => toast.success('Trusted IP removed.'),
+            onSuccess: () => showNotification('Trusted IP removed.'),
         });
     };
 
     return (
-        <>
+        <div className="sec-root" style={{ padding: '24px 20px', minHeight: '100vh', background: 'var(--sec-bg)' }}>
             <Head title="User Sessions" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                <SecurityNav />
+            <SecurityNav />
 
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                        <h1 className="text-xl font-semibold">User Sessions</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Active sessions, login history, and trusted devices.
-                        </p>
-                    </div>
+            {flashMsg && (
+                <div className="sec-alert sec-alert-success" style={{ marginBottom: '16px' }}>
+                    <span>{flashMsg}</span>
+                </div>
+            )}
 
-                    <div className="flex items-end gap-3">
-                        <Card className="gap-0 py-3">
-                            <CardHeader>
-                                <p className="text-sm text-muted-foreground">
-                                    Online now
-                                </p>
-                                <div className="text-xl font-semibold text-green-600 dark:text-green-400">
-                                    {new Intl.NumberFormat().format(
-                                        onlineCount,
-                                    )}
-                                </div>
-                            </CardHeader>
-                        </Card>
-
-                        <Button onClick={trustThisDevice}>
-                            Trust this device
-                        </Button>
-                    </div>
+            <div className="sec-toolbar">
+                <div>
+                    <h1 className="sec-page-title">User Sessions</h1>
+                    <p className="sec-page-subtitle">
+                        Active sessions, login history, and trusted devices.
+                    </p>
                 </div>
 
-                <div className="flex items-end gap-3">
+                <div className="sec-toolbar-group">
+                    <div className="sec-stat-card" style={{ padding: '8px 14px' }}>
+                        <div className="sec-stat-label" style={{ marginBottom: '2px' }}>Online now</div>
+                        <div className="sec-stat-value" style={{ fontSize: '18px', color: 'var(--sec-success)', marginBottom: 0 }}>
+                            {new Intl.NumberFormat().format(onlineCount)}
+                        </div>
+                    </div>
+
+                    <Button variant="primary" onClick={trustThisDevice}>
+                        🛡️ Trust this device
+                    </Button>
+                </div>
+            </div>
+
+            <div className="sec-toolbar">
+                <div className="sec-toolbar-group">
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                         placeholder="Search user, IP, browser…"
-                        className="w-full sm:w-72"
+                        style={{ minWidth: '260px' }}
                     />
                     <Button variant="secondary" onClick={applyFilters}>
                         Filter
                     </Button>
                 </div>
+            </div>
 
-                <Card className="py-0">
-                    <CardContent className="overflow-x-auto px-0 py-0">
-                        <table className="w-full text-sm">
+            <Card flush>
+                <CardContent>
+                    <div className="sec-table-wrap">
+                        <table className="sec-table">
                             <thead>
-                                <tr className="border-b text-left text-muted-foreground">
-                                    <th className="px-4 py-3 font-medium">
-                                        User
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        IP
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Device
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Location
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Last activity
-                                    </th>
-                                    <th className="px-4 py-3" />
+                                <tr>
+                                    <th>User</th>
+                                    <th>IP</th>
+                                    <th>Device</th>
+                                    <th>Location</th>
+                                    <th>Last activity</th>
+                                    <th style={{ textAlign: 'right' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -209,111 +204,93 @@ export default function UserSessions({
                                     <tr>
                                         <td
                                             colSpan={6}
-                                            className="px-4 py-6 text-center text-muted-foreground"
+                                            style={{ textAlign: 'center', color: 'var(--sec-text-muted)', padding: '36px' }}
                                         >
                                             No login records found.
                                         </td>
                                     </tr>
                                 )}
                                 {logins.data.map((login) => (
-                                    <tr
-                                        key={login.id}
-                                        className="border-b last:border-0"
-                                    >
-                                        <td className="px-4 py-3 text-xs">
-                                            <div className="font-medium">
-                                                {login.user?.name ??
-                                                    'Deleted user'}
+                                    <tr key={login.id}>
+                                        <td style={{ fontSize: '12px' }}>
+                                            <div style={{ fontWeight: 600 }}>
+                                                {login.user?.name ?? 'Deleted user'}
                                             </div>
-                                            <div className="text-muted-foreground">
+                                            <div style={{ fontSize: '11px', color: 'var(--sec-text-muted)' }}>
                                                 {login.user?.email}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="font-mono text-xs">
+                                        <td>
+                                            <div className="sec-font-mono" style={{ fontSize: '12px', fontWeight: 600 }}>
                                                 {login.ip_address}
                                             </div>
                                             {isOnline(login) && (
-                                                <Badge variant="outline">
+                                                <Badge variant="success" style={{ marginTop: '4px' }}>
                                                     Online
                                                 </Badge>
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-xs">
-                                            <div>
-                                                {login.browser ?? 'Unknown'}
-                                            </div>
-                                            <div className="text-muted-foreground">
+                                        <td style={{ fontSize: '12px' }}>
+                                            <div>{login.browser ?? 'Unknown'}</div>
+                                            <div style={{ fontSize: '11px', color: 'var(--sec-text-muted)' }}>
                                                 {login.operating_system}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                                        <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)' }}>
                                             {location(login)}
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                                        <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)', whiteSpace: 'nowrap' }}>
                                             {login.last_activity_at
-                                                ? new Date(
-                                                      login.last_activity_at,
-                                                  ).toLocaleString()
+                                                ? new Date(login.last_activity_at).toLocaleString()
                                                 : '-'}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center justify-end gap-1">
-                                                {login.session_id &&
-                                                    isOnline(login) && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            onClick={() =>
-                                                                destroySession(
-                                                                    login.session_id as string,
-                                                                )
-                                                            }
-                                                        >
-                                                            Terminate
-                                                        </Button>
-                                                    )}
+                                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                            {login.session_id && isOnline(login) && (
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    onClick={() =>
-                                                        destroyLogin(login.id)
-                                                    }
+                                                    onClick={() => destroySession(login.session_id!)}
+                                                    style={{ marginRight: '6px' }}
+                                                    title="Terminate session"
                                                 >
-                                                    Delete
+                                                    🚪
                                                 </Button>
-                                            </div>
+                                            )}
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => destroyLogin(login.id)}
+                                                title="Delete record"
+                                            >
+                                                🗑️
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </CardContent>
-                </Card>
+                    </div>
+                </CardContent>
+            </Card>
 
+            <div style={{ margin: '16px 0 24px 0' }}>
                 <Pagination links={logins.links} total={logins.total} />
+            </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Trusted IPs</CardTitle>
-                    </CardHeader>
-                    <CardContent className="overflow-x-auto px-0">
-                        <table className="w-full text-sm">
+            <Card flush>
+                <CardHeader>
+                    <CardTitle>Trusted IPs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="sec-table-wrap">
+                        <table className="sec-table">
                             <thead>
-                                <tr className="border-b text-left text-muted-foreground">
-                                    <th className="px-4 py-3 font-medium">
-                                        IP
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        User
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Device
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Verified
-                                    </th>
-                                    <th className="px-4 py-3" />
+                                <tr>
+                                    <th>IP address</th>
+                                    <th>User</th>
+                                    <th>Device name</th>
+                                    <th>Verified at</th>
+                                    <th style={{ textAlign: 'right' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -321,61 +298,44 @@ export default function UserSessions({
                                     <tr>
                                         <td
                                             colSpan={5}
-                                            className="px-4 py-6 text-center text-muted-foreground"
+                                            style={{ textAlign: 'center', color: 'var(--sec-text-muted)', padding: '24px' }}
                                         >
                                             No trusted IPs yet.
                                         </td>
                                     </tr>
                                 )}
                                 {trustedIps.map((trusted) => (
-                                    <tr
-                                        key={trusted.id}
-                                        className="border-b last:border-0"
-                                    >
-                                        <td className="px-4 py-3 font-mono text-xs">
+                                    <tr key={trusted.id}>
+                                        <td className="sec-font-mono" style={{ fontSize: '12px', fontWeight: 600 }}>
                                             {trusted.ip_address}
                                         </td>
-                                        <td className="px-4 py-3 text-xs">
-                                            {trusted.user?.name ??
-                                                'Deleted user'}
+                                        <td style={{ fontSize: '12px' }}>
+                                            {trusted.user?.name ?? 'Deleted user'}
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                                            {trusted.device_name}
+                                        <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)' }}>
+                                            {trusted.device_name ?? '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                                        <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)', whiteSpace: 'nowrap' }}>
                                             {trusted.verified_at
-                                                ? new Date(
-                                                      trusted.verified_at,
-                                                  ).toLocaleString()
+                                                ? new Date(trusted.verified_at).toLocaleString()
                                                 : '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td style={{ textAlign: 'right' }}>
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                onClick={() =>
-                                                    destroyTrusted(trusted.id)
-                                                }
+                                                onClick={() => destroyTrusted(trusted.id)}
                                             >
-                                                Remove
+                                                🗑️
                                             </Button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </CardContent>
-                </Card>
-            </div>
-        </>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
-
-UserSessions.layout = {
-    breadcrumbs: [
-        {
-            title: 'User Sessions',
-            href: '/security/sessions',
-        },
-    ],
-};

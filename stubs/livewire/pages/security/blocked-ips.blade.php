@@ -1,6 +1,5 @@
 <?php
 
-use Flux\Flux;
 use Internal\SecurityMonitor\Models\BlockedIp;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Livewire\Attributes\Title;
@@ -44,6 +43,12 @@ new #[Title('Blocked IPs')] class extends Component {
         $this->durationHours = 24;
         $this->resetErrorBag();
         $this->showBlockModal = true;
+    }
+
+    public function closeBlockModal(): void
+    {
+        $this->showBlockModal = false;
+        $this->reset(['ipAddress', 'reason', 'notes']);
     }
 
     public function block(SecurityMonitorService $security): void
@@ -95,7 +100,7 @@ new #[Title('Blocked IPs')] class extends Component {
         $this->showBlockModal = false;
         $this->reset(['ipAddress', 'reason', 'notes']);
 
-        Flux::toast(variant: 'success', text: __('IP :ip has been blocked.', ['ip' => $ip]));
+        session()->flash('security_message', __('IP :ip has been blocked.', ['ip' => $ip]));
     }
 
     public function toggle(int $id): void
@@ -109,9 +114,9 @@ new #[Title('Blocked IPs')] class extends Component {
         $block->is_active = ! $block->is_active;
         $block->save();
 
-        Flux::toast(
-            variant: 'success',
-            text: $block->is_active
+        session()->flash(
+            'security_message',
+            $block->is_active
                 ? __('Block for :ip re-enabled.', ['ip' => $block->ip_address])
                 : __('Block for :ip disabled.', ['ip' => $block->ip_address]),
         );
@@ -128,7 +133,7 @@ new #[Title('Blocked IPs')] class extends Component {
         $ip = $block->ip_address;
         $block->delete();
 
-        Flux::toast(variant: 'success', text: __('IP :ip has been unblocked.', ['ip' => $ip]));
+        session()->flash('security_message', __('IP :ip has been unblocked.', ['ip' => $ip]));
     }
 
     /**
@@ -168,143 +173,212 @@ new #[Title('Blocked IPs')] class extends Component {
     }
 }; ?>
 
-<div class="flex h-full w-full flex-1 flex-col gap-6">
+<div>
     <x-pages::security.layout :heading="__('Blocked IPs')" :subheading="__('Manage quarantined IP addresses and devices')">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-4">
-            <flux:card class="space-y-1">
-                <flux:text class="text-sm text-zinc-500">{{ __('Total blocks') }}</flux:text>
-                <flux:heading size="lg">{{ number_format($stats['total']) }}</flux:heading>
-            </flux:card>
-            <flux:card class="space-y-1">
-                <flux:text class="text-sm text-zinc-500">{{ __('Active') }}</flux:text>
-                <flux:heading size="lg" class="text-red-600 dark:text-red-400">{{ number_format($stats['active']) }}</flux:heading>
-            </flux:card>
-            <flux:card class="space-y-1">
-                <flux:text class="text-sm text-zinc-500">{{ __('Permanent') }}</flux:text>
-                <flux:heading size="lg">{{ number_format($stats['permanent']) }}</flux:heading>
-            </flux:card>
-            <flux:card class="space-y-1">
-                <flux:text class="text-sm text-zinc-500">{{ __('Total hits') }}</flux:text>
-                <flux:heading size="lg">{{ number_format($stats['hits']) }}</flux:heading>
-            </flux:card>
+        <!-- Stat Grid -->
+        <div class="sec-grid-4">
+            <div class="sec-stat-card">
+                <div class="sec-stat-label">{{ __('Total blocks') }}</div>
+                <div class="sec-stat-value">{{ number_format($stats['total']) }}</div>
+            </div>
+            <div class="sec-stat-card">
+                <div class="sec-stat-label">{{ __('Active') }}</div>
+                <div class="sec-stat-value sec-text-danger">{{ number_format($stats['active']) }}</div>
+            </div>
+            <div class="sec-stat-card">
+                <div class="sec-stat-label">{{ __('Permanent') }}</div>
+                <div class="sec-stat-value">{{ number_format($stats['permanent']) }}</div>
+            </div>
+            <div class="sec-stat-card">
+                <div class="sec-stat-label">{{ __('Total hits') }}</div>
+                <div class="sec-stat-value">{{ number_format($stats['hits']) }}</div>
+            </div>
         </div>
 
-        <div class="mt-5 flex flex-wrap items-end justify-between gap-3">
-            <div class="flex flex-wrap items-end gap-3">
-                <flux:input
+        <!-- Toolbar -->
+        <div class="sec-toolbar">
+            <div class="sec-toolbar-group">
+                <input
+                    type="search"
                     wire:model.live.debounce.300ms="search"
-                    icon="magnifying-glass"
-                    :placeholder="__('Search IP, device, reason…')"
-                    class="w-full sm:w-72"
+                    placeholder="{{ __('Search IP, device, reason…') }}"
+                    class="sec-input"
+                    style="min-width: 240px;"
                 />
 
-                <flux:select wire:model.live="status" class="w-44">
-                    <flux:select.option value="">{{ __('All statuses') }}</flux:select.option>
-                    <flux:select.option value="active">{{ __('Active') }}</flux:select.option>
-                    <flux:select.option value="expired">{{ __('Expired') }}</flux:select.option>
-                    <flux:select.option value="permanent">{{ __('Permanent') }}</flux:select.option>
-                </flux:select>
+                <select wire:model.live="status" class="sec-select">
+                    <option value="">{{ __('All statuses') }}</option>
+                    <option value="active">{{ __('Active') }}</option>
+                    <option value="expired">{{ __('Expired') }}</option>
+                    <option value="permanent">{{ __('Permanent') }}</option>
+                </select>
             </div>
 
-            <flux:button variant="primary" icon="plus" wire:click="openBlockModal">
-                {{ __('Block IP') }}
-            </flux:button>
+            <button type="button" class="sec-btn sec-btn-primary" wire:click="openBlockModal">
+                <span>➕</span>
+                <span>{{ __('Block IP') }}</span>
+            </button>
         </div>
 
-        <flux:card class="mt-5 p-0!">
-            <flux:table :paginate="$blocks">
-                <flux:table.columns>
-                    <flux:table.column>{{ __('IP address') }}</flux:table.column>
-                    <flux:table.column>{{ __('Reason') }}</flux:table.column>
-                    <flux:table.column>{{ __('Status') }}</flux:table.column>
-                    <flux:table.column>{{ __('Expires') }}</flux:table.column>
-                    <flux:table.column align="end">{{ __('Hits') }}</flux:table.column>
-                    <flux:table.column></flux:table.column>
-                </flux:table.columns>
-
-                <flux:table.rows>
-                    @forelse ($blocks as $block)
-                        <flux:table.row :key="$block->id">
-                            <flux:table.cell>
-                                <div class="font-mono text-xs">{{ $block->ip_address }}</div>
-                                @if ($block->device_id)
-                                    <div class="mt-0.5 text-[10px] text-zinc-400">{{ $block->device_id }}</div>
-                                @endif
-                            </flux:table.cell>
-                            <flux:table.cell class="max-w-xs truncate text-xs" title="{{ $block->reason }}">
-                                {{ \Illuminate\Support\Str::limit((string) $block->reason, 48) }}
-                            </flux:table.cell>
-                            <flux:table.cell>
-                                @if ($block->isEnforced())
-                                    <flux:badge color="red" size="sm">{{ __('Active') }}</flux:badge>
-                                @elseif ($block->is_active)
-                                    <flux:badge color="amber" size="sm">{{ __('Expired') }}</flux:badge>
-                                @else
-                                    <flux:badge color="zinc" size="sm">{{ __('Disabled') }}</flux:badge>
-                                @endif
-                            </flux:table.cell>
-                            <flux:table.cell class="text-xs text-zinc-500">
-                                {{ $block->isPermanent() ? __('Never') : $block->remaining }}
-                            </flux:table.cell>
-                            <flux:table.cell align="end" class="tabular-nums">{{ number_format((int) $block->hit_count) }}</flux:table.cell>
-                            <flux:table.cell>
-                                <div class="flex items-center justify-end gap-1">
-                                    <flux:button
-                                        size="sm"
-                                        variant="ghost"
-                                        :icon="$block->is_active ? 'pause' : 'play'"
+        <!-- Table Card -->
+        <div class="sec-card sec-card-flush">
+            <div class="sec-table-wrap">
+                <table class="sec-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('IP address') }}</th>
+                            <th>{{ __('Reason') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th>{{ __('Expires') }}</th>
+                            <th style="text-align: right;">{{ __('Hits') }}</th>
+                            <th style="text-align: right;">{{ __('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($blocks as $block)
+                            <tr>
+                                <td>
+                                    <div class="sec-font-mono" style="font-weight: 600; font-size: 13px;">{{ $block->ip_address }}</div>
+                                    @if ($block->device_id)
+                                        <div style="font-size: 10px; color: var(--sec-text-muted); font-family: var(--sec-font-mono);">{{ $block->device_id }}</div>
+                                    @endif
+                                </td>
+                                <td style="max-width: 250px;" title="{{ $block->reason }}">
+                                    <span style="font-size: 12px;">{{ \Illuminate\Support\Str::limit((string) $block->reason, 45) }}</span>
+                                </td>
+                                <td>
+                                    @if ($block->isEnforced())
+                                        <span class="sec-badge sec-badge-critical">{{ __('Active') }}</span>
+                                    @elseif ($block->is_active)
+                                        <span class="sec-badge sec-badge-high">{{ __('Expired') }}</span>
+                                    @else
+                                        <span class="sec-badge sec-badge-low">{{ __('Disabled') }}</span>
+                                    @endif
+                                </td>
+                                <td style="font-size: 12px; color: var(--sec-text-muted); white-space: nowrap;">
+                                    {{ $block->isPermanent() ? __('Never') : $block->remaining }}
+                                </td>
+                                <td style="text-align: right;" class="sec-font-mono">
+                                    {{ number_format((int) $block->hit_count) }}
+                                </td>
+                                <td style="text-align: right; white-space: nowrap;">
+                                    <button
+                                        type="button"
+                                        class="sec-btn sec-btn-ghost sec-btn-sm"
                                         wire:click="toggle({{ $block->id }})"
-                                        :title="$block->is_active ? __('Disable block') : __('Enable block')"
-                                    />
-                                    <flux:button
-                                        size="sm"
-                                        variant="ghost"
-                                        icon="lock-open"
+                                        title="{{ $block->is_active ? __('Disable block') : __('Enable block') }}"
+                                    >
+                                        {{ $block->is_active ? '⏸️' : '▶️' }}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="sec-btn sec-btn-ghost sec-btn-sm"
                                         wire:click="unblock({{ $block->id }})"
                                         wire:confirm="{{ __('Remove this block entirely?') }}"
-                                        :title="__('Unblock')"
-                                    />
-                                </div>
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @empty
-                        <flux:table.row>
-                            <flux:table.cell colspan="6" class="text-center text-sm text-zinc-500">
-                                {{ __('No blocked IPs match the current filters.') }}
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforelse
-                </flux:table.rows>
-            </flux:table>
-        </flux:card>
-    </x-pages::security.layout>
-
-    <flux:modal name="block-ip-modal" wire:model="showBlockModal" class="max-w-lg">
-        <form wire:submit="block" class="space-y-6">
-            <div>
-                <flux:heading size="lg">{{ __('Block an IP address') }}</flux:heading>
-                <flux:subheading>{{ __('Requests from this address will receive a 403 response.') }}</flux:subheading>
+                                        title="{{ __('Unblock IP') }}"
+                                    >
+                                        🔓
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--sec-text-muted); padding: 36px;">
+                                    {{ __('No blocked IPs match the current filters.') }}
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
 
-            <flux:input wire:model="ipAddress" :label="__('IP address')" placeholder="203.0.113.50" required />
+            @if ($blocks->hasPages())
+                <div style="padding: 16px 20px; border-top: 1px solid var(--sec-border-light);">
+                    {{ $blocks->links() }}
+                </div>
+            @endif
+        </div>
 
-            <flux:input wire:model="reason" :label="__('Reason')" :placeholder="__('e.g. Repeated directory scanning')" />
+        <!-- Block IP Modal -->
+        @if ($showBlockModal)
+            <div class="sec-modal-backdrop" wire:keydown.escape="closeBlockModal">
+                <div class="sec-modal-box">
+                    <div class="sec-modal-header">
+                        <h3 class="sec-card-title">{{ __('Block an IP address') }}</h3>
+                        <p class="sec-card-subtitle">{{ __('Requests from this address will receive a 403 response.') }}</p>
+                    </div>
 
-            <flux:textarea wire:model="notes" :label="__('Internal notes')" rows="2" />
+                    <form wire:submit="block">
+                        <div class="sec-modal-body">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">{{ __('IP address') }} *</label>
+                                <input
+                                    type="text"
+                                    wire:model="ipAddress"
+                                    placeholder="203.0.113.50"
+                                    class="sec-input"
+                                    style="width: 100%;"
+                                    required
+                                />
+                                @error('ipAddress')
+                                    <div style="color: var(--sec-danger); font-size: 11px; margin-top: 4px;">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <flux:input wire:model="durationHours" type="number" min="0" :label="__('Duration (hours)')" :description="__('0 = permanent')" />
-                <div class="flex items-end">
-                    <flux:switch wire:model="permanent" :label="__('Permanent block')" />
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">{{ __('Reason') }}</label>
+                                <input
+                                    type="text"
+                                    wire:model="reason"
+                                    placeholder="{{ __('e.g. Repeated directory scanning') }}"
+                                    class="sec-input"
+                                    style="width: 100%;"
+                                />
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">{{ __('Internal notes') }}</label>
+                                <textarea
+                                    wire:model="notes"
+                                    rows="2"
+                                    class="sec-textarea"
+                                    placeholder="{{ __('Optional internal audit notes…') }}"
+                                ></textarea>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center;">
+                                <div>
+                                    <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">{{ __('Duration (hours)') }}</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        wire:model="durationHours"
+                                        class="sec-input"
+                                        style="width: 100%;"
+                                    />
+                                    <span style="font-size: 11px; color: var(--sec-text-muted);">0 = permanent</span>
+                                </div>
+
+                                <div style="padding-top: 18px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                                        <input type="checkbox" wire:model="permanent" />
+                                        <span>{{ __('Permanent block') }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sec-modal-footer">
+                            <button type="button" class="sec-btn sec-btn-secondary" wire:click="closeBlockModal">
+                                {{ __('Cancel') }}
+                            </button>
+                            <button type="submit" class="sec-btn sec-btn-danger">
+                                {{ __('Block IP') }}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-
-            <div class="flex justify-end gap-3">
-                <flux:modal.close>
-                    <flux:button variant="outline">{{ __('Cancel') }}</flux:button>
-                </flux:modal.close>
-                <flux:button variant="danger" type="submit">{{ __('Block IP') }}</flux:button>
-            </div>
-        </form>
-    </flux:modal>
+        @endif
+    </x-pages::security.layout>
 </div>

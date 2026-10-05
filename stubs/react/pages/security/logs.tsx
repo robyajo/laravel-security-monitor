@@ -1,12 +1,9 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import '@/components/security/security.css';
 import { Pagination } from '@/components/security/pagination';
 import { SecurityNav } from '@/components/security/security-nav';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Badge, Button, Card, CardContent, Input } from '@/components/security/ui';
 
 type LogEntry = {
     id: number;
@@ -42,16 +39,6 @@ const levelLabels: Record<string, string> = {
     low: 'Low',
 };
 
-const levelVariants: Record<
-    string,
-    'default' | 'destructive' | 'secondary' | 'outline'
-> = {
-    critical: 'destructive',
-    high: 'default',
-    medium: 'secondary',
-    low: 'outline',
-};
-
 export default function SecurityLogs({
     logs,
     levels,
@@ -62,6 +49,12 @@ export default function SecurityLogs({
     const [search, setSearch] = useState(filters.search);
     const [level, setLevel] = useState(filters.level);
     const [eventType, setEventType] = useState(filters.event_type);
+    const [flashMsg, setFlashMsg] = useState<string | null>(null);
+
+    const showNotification = (msg: string) => {
+        setFlashMsg(msg);
+        setTimeout(() => setFlashMsg(null), 4000);
+    };
 
     const applyFilters = () => {
         router.get(
@@ -78,7 +71,7 @@ export default function SecurityLogs({
 
         router.delete(urls.destroy.replace('__ID__', String(id)), {
             preserveScroll: true,
-            onSuccess: () => toast.success('Log entry deleted.'),
+            onSuccess: () => showNotification('Log entry deleted.'),
         });
     };
 
@@ -89,93 +82,89 @@ export default function SecurityLogs({
 
         router.delete(urls.clear, {
             preserveScroll: true,
-            onSuccess: () => toast.success('Security logs cleared.'),
+            onSuccess: () => showNotification('Security logs cleared.'),
         });
     };
 
     return (
-        <>
+        <div className="sec-root" style={{ padding: '24px 20px', minHeight: '100vh', background: 'var(--sec-bg)' }}>
             <Head title="Security Logs" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                <SecurityNav />
+            <SecurityNav />
 
-                <div>
-                    <h1 className="text-xl font-semibold">Security Logs</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Audit trail of detected threats and blocked requests.
-                    </p>
+            {flashMsg && (
+                <div className="sec-alert sec-alert-success" style={{ marginBottom: '16px' }}>
+                    <span>{flashMsg}</span>
                 </div>
+            )}
 
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <div className="flex flex-wrap items-end gap-3">
-                        <Input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onKeyDown={(e) =>
-                                e.key === 'Enter' && applyFilters()
-                            }
-                            placeholder="Search IP, path, evidence…"
-                            className="w-full sm:w-72"
-                        />
+            <div className="sec-page-header">
+                <h1 className="sec-page-title">Security Logs</h1>
+                <p className="sec-page-subtitle">
+                    Audit trail of detected threats and blocked requests.
+                </p>
+            </div>
 
-                        <select
-                            value={level}
-                            onChange={(e) => setLevel(e.target.value)}
-                            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                        >
-                            <option value="">All levels</option>
-                            {levels.map((option) => (
-                                <option key={option} value={option}>
-                                    {levelLabels[option] ?? option}
-                                </option>
-                            ))}
-                        </select>
+            <div className="sec-toolbar">
+                <div className="sec-toolbar-group">
+                    <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={(e) =>
+                            e.key === 'Enter' && applyFilters()
+                        }
+                        placeholder="Search IP, path, evidence…"
+                        style={{ minWidth: '240px' }}
+                    />
 
-                        <select
-                            value={eventType}
-                            onChange={(e) => setEventType(e.target.value)}
-                            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                        >
-                            <option value="">All events</option>
-                            {eventTypes.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
+                    <select
+                        value={level}
+                        onChange={(e) => setLevel(e.target.value)}
+                        className="sec-select"
+                    >
+                        <option value="">All levels</option>
+                        {levels.map((option) => (
+                            <option key={option} value={option}>
+                                {levelLabels[option] ?? option}
+                            </option>
+                        ))}
+                    </select>
 
-                        <Button variant="secondary" onClick={applyFilters}>
-                            Filter
-                        </Button>
-                    </div>
+                    <select
+                        value={eventType}
+                        onChange={(e) => setEventType(e.target.value)}
+                        className="sec-select"
+                    >
+                        <option value="">All events</option>
+                        {eventTypes.map((option) => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
+                        ))}
+                    </select>
 
-                    <Button variant="destructive" onClick={clearAll}>
-                        Clear logs
+                    <Button variant="secondary" onClick={applyFilters}>
+                        Filter
                     </Button>
                 </div>
 
-                <Card className="py-0">
-                    <CardContent className="overflow-x-auto px-0 py-0">
-                        <table className="w-full text-sm">
+                <Button variant="danger" onClick={clearAll}>
+                    Clear logs
+                </Button>
+            </div>
+
+            <Card flush>
+                <CardContent>
+                    <div className="sec-table-wrap">
+                        <table className="sec-table">
                             <thead>
-                                <tr className="border-b text-left text-muted-foreground">
-                                    <th className="px-4 py-3 font-medium">
-                                        Level
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Event
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        IP
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Path
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        When
-                                    </th>
-                                    <th className="px-4 py-3" />
+                                <tr>
+                                    <th>Level</th>
+                                    <th>Event</th>
+                                    <th>IP</th>
+                                    <th>Path</th>
+                                    <th>When</th>
+                                    <th style={{ textAlign: 'right' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -183,54 +172,40 @@ export default function SecurityLogs({
                                     <tr>
                                         <td
                                             colSpan={6}
-                                            className="px-4 py-6 text-center text-muted-foreground"
+                                            style={{ textAlign: 'center', color: 'var(--sec-text-muted)', padding: '36px' }}
                                         >
-                                            No security logs match the current
-                                            filters.
+                                            No security logs match the current filters.
                                         </td>
                                     </tr>
                                 )}
                                 {logs.data.map((log) => (
-                                    <tr
-                                        key={log.id}
-                                        className="border-b last:border-0"
-                                    >
-                                        <td className="px-4 py-3">
-                                            <Badge
-                                                variant={
-                                                    levelVariants[
-                                                        log.threat_level
-                                                    ] ?? 'outline'
-                                                }
-                                            >
-                                                {levelLabels[
-                                                    log.threat_level
-                                                ] ?? log.threat_level}
+                                    <tr key={log.id}>
+                                        <td>
+                                            <Badge variant={log.threat_level as any}>
+                                                {levelLabels[log.threat_level] ?? log.threat_level}
                                             </Badge>
                                         </td>
-                                        <td className="px-4 py-3 text-xs">
-                                            <div className="font-medium">
+                                        <td style={{ fontSize: '12px' }}>
+                                            <div style={{ fontWeight: 600 }}>
                                                 {log.event_type}
                                             </div>
-                                            <div className="text-muted-foreground">
+                                            <div style={{ fontSize: '11px', color: 'var(--sec-text-muted)' }}>
                                                 {log.rule_label}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-xs">
+                                        <td className="sec-font-mono" style={{ fontSize: '12px', fontWeight: 600 }}>
                                             {log.ip_address}
                                         </td>
-                                        <td className="max-w-xs truncate px-4 py-3 text-xs">
-                                            <span className="text-muted-foreground">
+                                        <td style={{ maxWidth: '280px', fontSize: '12px' }}>
+                                            <span style={{ color: 'var(--sec-text-muted)', fontWeight: 600 }}>
                                                 {log.method}
                                             </span>{' '}
-                                            {log.path}
+                                            <span>{log.path}</span>
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                                            {new Date(
-                                                log.created_at,
-                                            ).toLocaleString()}
+                                        <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)', whiteSpace: 'nowrap' }}>
+                                            {new Date(log.created_at).toLocaleString()}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
@@ -243,20 +218,13 @@ export default function SecurityLogs({
                                 ))}
                             </tbody>
                         </table>
-                    </CardContent>
-                </Card>
+                    </div>
+                </CardContent>
+            </Card>
 
+            <div style={{ marginTop: '16px' }}>
                 <Pagination links={logs.links} total={logs.total} />
             </div>
-        </>
+        </div>
     );
 }
-
-SecurityLogs.layout = {
-    breadcrumbs: [
-        {
-            title: 'Security Logs',
-            href: '/security/logs',
-        },
-    ],
-};

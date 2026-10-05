@@ -1,13 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
-import { cn } from '@/lib/utils';
 
 const items = [
-    { title: 'Overview', href: '/security' },
-    { title: 'Security Logs', href: '/security/logs' },
-    { title: 'Blocked IPs', href: '/security/blocked-ips' },
-    { title: 'Server Audit', href: '/security/server' },
-    { title: 'Sessions', href: '/security/sessions' },
-    { title: 'Appeals', href: '/security/tickets' },
+    { title: 'Overview', href: '/security', icon: '📊' },
+    { title: 'Security Logs', href: '/security/logs', icon: '📜' },
+    { title: 'Blocked IPs', href: '/security/blocked-ips', icon: '🚫' },
+    { title: 'Server Audit', href: '/security/server', icon: '🛡️' },
+    { title: 'Sessions', href: '/security/sessions', icon: '👥' },
+    { title: 'Appeals', href: '/security/tickets', icon: '📩' },
 ];
 
 export function SecurityNav() {
@@ -15,7 +14,7 @@ export function SecurityNav() {
     const current = url.split('?')[0];
 
     return (
-        <nav className="flex flex-wrap gap-1 border-b border-sidebar-border/70 pb-3 dark:border-sidebar-border">
+        <nav className="sec-nav-bar" aria-label="Security Navigation">
             {items.map((item) => {
                 const active = current === item.href;
 
@@ -24,14 +23,10 @@ export function SecurityNav() {
                         key={item.href}
                         href={item.href}
                         prefetch
-                        className={cn(
-                            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                            active
-                                ? 'bg-accent text-accent-foreground'
-                                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                        )}
+                        className={`sec-nav-link ${active ? 'active' : ''}`}
                     >
-                        {item.title}
+                        <span>{item.icon}</span>
+                        <span>{item.title}</span>
                     </Link>
                 );
             })}

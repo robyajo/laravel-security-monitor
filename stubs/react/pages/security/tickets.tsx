@@ -1,13 +1,9 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import '@/components/security/security.css';
 import { Pagination } from '@/components/security/pagination';
 import { SecurityNav } from '@/components/security/security-nav';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Badge, Button, Card, CardContent, Input, Label } from '@/components/security/ui';
 
 type Ticket = {
     id: number;
@@ -32,14 +28,12 @@ type TicketsProps = {
     urls: { index: string; respond: string; destroy: string };
 };
 
-const statusVariant: Record<
-    string,
-    'default' | 'destructive' | 'secondary' | 'outline'
-> = {
-    pending: 'secondary',
-    approved: 'default',
-    rejected: 'destructive',
-};
+function statusBadgeVariant(status: string): 'critical' | 'high' | 'success' | 'low' {
+    if (status === 'pending') return 'high';
+    if (status === 'approved') return 'success';
+    if (status === 'rejected') return 'critical';
+    return 'low';
+}
 
 export default function UnblockAppeals({
     tickets,
@@ -52,6 +46,12 @@ export default function UnblockAppeals({
     const [respondingId, setRespondingId] = useState<number | null>(null);
     const [action, setAction] = useState<'approve' | 'reject'>('approve');
     const [adminNotes, setAdminNotes] = useState('');
+    const [flashMsg, setFlashMsg] = useState<string | null>(null);
+
+    const showNotification = (msg: string) => {
+        setFlashMsg(msg);
+        setTimeout(() => setFlashMsg(null), 4000);
+    };
 
     const applyFilters = () => {
         router.get(
@@ -82,7 +82,7 @@ export default function UnblockAppeals({
                 onSuccess: () => {
                     setRespondingId(null);
                     setAdminNotes('');
-                    toast.success(
+                    showNotification(
                         action === 'approve'
                             ? 'Ticket approved and IP unblocked.'
                             : 'Ticket rejected.',
@@ -99,55 +99,58 @@ export default function UnblockAppeals({
 
         router.delete(urls.destroy.replace('__ID__', String(id)), {
             preserveScroll: true,
-            onSuccess: () => toast.success('Ticket deleted.'),
+            onSuccess: () => showNotification('Ticket deleted.'),
         });
     };
 
     return (
-        <>
+        <div className="sec-root" style={{ padding: '24px 20px', minHeight: '100vh', background: 'var(--sec-bg)' }}>
             <Head title="Unblock Appeals" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                <SecurityNav />
+            <SecurityNav />
 
-                <div>
-                    <h1 className="text-xl font-semibold">Unblock Appeals</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Review self-service unblock requests from blocked users.
-                    </p>
+            {flashMsg && (
+                <div className="sec-alert sec-alert-success" style={{ marginBottom: '16px' }}>
+                    <span>{flashMsg}</span>
                 </div>
+            )}
 
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <StatCard
-                        title="Pending"
-                        value={stats.pending}
-                        className="text-amber-600 dark:text-amber-400"
-                    />
-                    <StatCard
-                        title="Approved"
-                        value={stats.approved}
-                        className="text-green-600 dark:text-green-400"
-                    />
-                    <StatCard
-                        title="Rejected"
-                        value={stats.rejected}
-                        className="text-red-600 dark:text-red-400"
-                    />
+            <div className="sec-page-header">
+                <h1 className="sec-page-title">Unblock Appeals</h1>
+                <p className="sec-page-subtitle">
+                    Review self-service unblock requests from blocked users.
+                </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Pending</div>
+                    <div className="sec-stat-value" style={{ color: 'var(--sec-warning)' }}>{stats.pending}</div>
                 </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Approved</div>
+                    <div className="sec-stat-value" style={{ color: 'var(--sec-success)' }}>{stats.approved}</div>
+                </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Rejected</div>
+                    <div className="sec-stat-value" style={{ color: 'var(--sec-danger)' }}>{stats.rejected}</div>
+                </div>
+            </div>
 
-                <div className="flex flex-wrap items-end gap-3">
+            <div className="sec-toolbar">
+                <div className="sec-toolbar-group">
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                         placeholder="Search ticket, IP, name, email…"
-                        className="w-full sm:w-72"
+                        style={{ minWidth: '260px' }}
                     />
 
                     <select
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                        className="sec-select"
                     >
                         <option value="">All statuses</option>
                         <option value="pending">Pending</option>
@@ -159,28 +162,20 @@ export default function UnblockAppeals({
                         Filter
                     </Button>
                 </div>
+            </div>
 
-                <Card className="py-0">
-                    <CardContent className="overflow-x-auto px-0 py-0">
-                        <table className="w-full text-sm">
+            <Card flush>
+                <CardContent>
+                    <div className="sec-table-wrap">
+                        <table className="sec-table">
                             <thead>
-                                <tr className="border-b text-left text-muted-foreground">
-                                    <th className="px-4 py-3 font-medium">
-                                        Ticket
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Applicant
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        IP
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Status
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Submitted
-                                    </th>
-                                    <th className="px-4 py-3" />
+                                <tr>
+                                    <th>Ticket</th>
+                                    <th>Applicant</th>
+                                    <th>IP</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                    <th style={{ textAlign: 'right' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -188,187 +183,119 @@ export default function UnblockAppeals({
                                     <tr>
                                         <td
                                             colSpan={6}
-                                            className="px-4 py-6 text-center text-muted-foreground"
+                                            style={{ textAlign: 'center', color: 'var(--sec-text-muted)', padding: '36px' }}
                                         >
                                             No appeal tickets found.
                                         </td>
                                     </tr>
                                 )}
                                 {tickets.data.map((ticket) => (
-                                    <tr
-                                        key={ticket.id}
-                                        className="border-b last:border-0"
-                                    >
-                                        <td className="px-4 py-3 font-mono text-xs">
+                                    <tr key={ticket.id}>
+                                        <td className="sec-font-mono" style={{ fontWeight: 600, fontSize: '12px' }}>
                                             {ticket.ticket_number}
                                         </td>
-                                        <td className="px-4 py-3 text-xs">
-                                            <div className="font-medium">
+                                        <td>
+                                            <div style={{ fontWeight: 600, fontSize: '13px' }}>
                                                 {ticket.name}
                                             </div>
-                                            <div className="text-muted-foreground">
+                                            <div style={{ fontSize: '11px', color: 'var(--sec-text-muted)' }}>
                                                 {ticket.email}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-xs">
+                                        <td className="sec-font-mono" style={{ fontSize: '12px' }}>
                                             {ticket.ip_address}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <Badge
-                                                variant={
-                                                    statusVariant[
-                                                        ticket.status
-                                                    ] ?? 'outline'
-                                                }
-                                            >
+                                        <td>
+                                            <Badge variant={statusBadgeVariant(ticket.status)}>
                                                 {ticket.status}
                                             </Badge>
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                                            {new Date(
-                                                ticket.created_at,
-                                            ).toLocaleString()}
+                                        <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)', whiteSpace: 'nowrap' }}>
+                                            {new Date(ticket.created_at).toLocaleString()}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center justify-end gap-1">
-                                                {ticket.status === 'pending' ? (
-                                                    <>
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                openRespond(
-                                                                    ticket.id,
-                                                                    'approve',
-                                                                )
-                                                            }
-                                                        >
-                                                            Approve
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() =>
-                                                                openRespond(
-                                                                    ticket.id,
-                                                                    'reject',
-                                                                )
-                                                            }
-                                                        >
-                                                            Reject
-                                                        </Button>
-                                                    </>
-                                                ) : (
+                                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                            {ticket.status === 'pending' ? (
+                                                <div style={{ display: 'inline-flex', gap: '6px' }}>
                                                     <Button
                                                         size="sm"
-                                                        variant="ghost"
-                                                        onClick={() =>
-                                                            destroy(ticket.id)
-                                                        }
+                                                        variant="primary"
+                                                        onClick={() => openRespond(ticket.id, 'approve')}
                                                     >
-                                                        Delete
+                                                        Approve
                                                     </Button>
-                                                )}
-                                            </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        onClick={() => openRespond(ticket.id, 'reject')}
+                                                    >
+                                                        Reject
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => destroy(ticket.id)}
+                                                >
+                                                    🗑️
+                                                </Button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </CardContent>
-                </Card>
+                    </div>
+                </CardContent>
+            </Card>
 
+            <div style={{ marginTop: '16px' }}>
                 <Pagination links={tickets.links} total={tickets.total} />
+            </div>
 
-                {respondingId !== null && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>
-                                {action === 'approve'
-                                    ? 'Approve appeal'
-                                    : 'Reject appeal'}
-                            </CardTitle>
-                            <p className="text-sm text-muted-foreground">
+            {/* Respond Modal */}
+            {respondingId !== null && (
+                <div className="sec-modal-backdrop" onClick={() => setRespondingId(null)}>
+                    <div className="sec-modal-box" onClick={(e) => e.stopPropagation()}>
+                        <div className="sec-modal-header">
+                            <h3 className="sec-card-title">
+                                {action === 'approve' ? 'Approve Appeal' : 'Reject Appeal'}
+                            </h3>
+                            <p className="sec-card-subtitle">
                                 {action === 'approve'
                                     ? 'The blocked IP/device will be unblocked automatically.'
                                     : 'The block will remain active.'}
                             </p>
-                        </CardHeader>
-                        <CardContent>
-                            <form
-                                onSubmit={submitRespond}
-                                className="max-w-lg space-y-4"
-                            >
-                                <div className="grid gap-2">
-                                    <Label htmlFor="admin_notes">
-                                        Admin notes
-                                    </Label>
+                        </div>
+                        <form onSubmit={submitRespond}>
+                            <div className="sec-modal-body">
+                                <div>
+                                    <Label htmlFor="admin_notes">Admin notes</Label>
                                     <textarea
                                         id="admin_notes"
-                                        value={adminNotes}
-                                        onChange={(e) =>
-                                            setAdminNotes(e.target.value)
-                                        }
                                         rows={3}
-                                        className="min-h-20 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={adminNotes}
+                                        onChange={(e) => setAdminNotes(e.target.value)}
+                                        placeholder="Optional notes shown to the applicant…"
+                                        className="sec-textarea"
                                     />
                                 </div>
-
-                                <div className="flex justify-end gap-3">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setRespondingId(null)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        variant={
-                                            action === 'approve'
-                                                ? 'default'
-                                                : 'destructive'
-                                        }
-                                    >
-                                        {action === 'approve'
-                                            ? 'Approve & unblock'
-                                            : 'Reject'}
-                                    </Button>
-                                </div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                )}
-            </div>
-        </>
-    );
-}
-
-function StatCard({
-    title,
-    value,
-    className = '',
-}: {
-    title: string;
-    value: number;
-    className?: string;
-}) {
-    return (
-        <Card className="gap-1 py-5">
-            <CardHeader>
-                <p className="text-sm text-muted-foreground">{title}</p>
-                <div className={`text-2xl font-semibold ${className}`}>
-                    {new Intl.NumberFormat().format(value)}
+                            </div>
+                            <div className="sec-modal-footer">
+                                <Button variant="secondary" onClick={() => setRespondingId(null)}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    variant={action === 'approve' ? 'primary' : 'danger'}
+                                >
+                                    {action === 'approve' ? 'Approve & unblock' : 'Reject'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </CardHeader>
-        </Card>
+            )}
+        </div>
     );
 }
-
-UnblockAppeals.layout = {
-    breadcrumbs: [
-        {
-            title: 'Unblock Appeals',
-            href: '/security/tickets',
-        },
-    ],
-};

@@ -1,13 +1,9 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import '@/components/security/security.css';
 import { Pagination } from '@/components/security/pagination';
 import { SecurityNav } from '@/components/security/security-nav';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label } from '@/components/security/ui';
 
 type BlockedIp = {
     id: number;
@@ -49,6 +45,12 @@ function statusOf(block: BlockedIp): string {
     return 'Active';
 }
 
+function statusBadgeVariant(status: string): 'critical' | 'high' | 'low' {
+    if (status === 'Active') return 'critical';
+    if (status === 'Expired') return 'high';
+    return 'low';
+}
+
 export default function BlockedIps({
     blocks,
     stats,
@@ -57,6 +59,12 @@ export default function BlockedIps({
 }: BlockedIpsProps) {
     const [search, setSearch] = useState(filters.search);
     const [status, setStatus] = useState(filters.status);
+    const [flashMsg, setFlashMsg] = useState<string | null>(null);
+
+    const showNotification = (msg: string) => {
+        setFlashMsg(msg);
+        setTimeout(() => setFlashMsg(null), 4000);
+    };
 
     const form = useForm({
         ip_address: '',
@@ -81,7 +89,7 @@ export default function BlockedIps({
             preserveScroll: true,
             onSuccess: () => {
                 form.reset();
-                toast.success('IP blocked.');
+                showNotification('IP blocked successfully.');
             },
         });
     };
@@ -92,7 +100,7 @@ export default function BlockedIps({
             {},
             {
                 preserveScroll: true,
-                onSuccess: () => toast.success('Block updated.'),
+                onSuccess: () => showNotification('Block status updated.'),
             },
         );
     };
@@ -104,131 +112,149 @@ export default function BlockedIps({
 
         router.delete(urls.destroy.replace('__ID__', String(id)), {
             preserveScroll: true,
-            onSuccess: () => toast.success('IP unblocked.'),
+            onSuccess: () => showNotification('IP unblocked successfully.'),
         });
     };
 
     return (
-        <>
+        <div className="sec-root" style={{ padding: '24px 20px', minHeight: '100vh', background: 'var(--sec-bg)' }}>
             <Head title="Blocked IPs" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                <SecurityNav />
+            <SecurityNav />
 
-                <div>
-                    <h1 className="text-xl font-semibold">Blocked IPs</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Manage quarantined IP addresses and devices.
-                    </p>
+            {flashMsg && (
+                <div className="sec-alert sec-alert-success" style={{ marginBottom: '16px' }}>
+                    <span>{flashMsg}</span>
                 </div>
+            )}
 
-                <div className="grid auto-rows-min gap-4 md:grid-cols-4">
-                    <StatCard title="Total blocks" value={stats.total} />
-                    <StatCard title="Active" value={stats.active} danger />
-                    <StatCard title="Permanent" value={stats.permanent} />
-                    <StatCard title="Total hits" value={stats.hits} />
+            <div className="sec-page-header">
+                <h1 className="sec-page-title">Blocked IPs</h1>
+                <p className="sec-page-subtitle">
+                    Manage quarantined IP addresses and devices.
+                </p>
+            </div>
+
+            <div className="sec-grid-4">
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Total blocks</div>
+                    <div className="sec-stat-value">{stats.total}</div>
                 </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Active</div>
+                    <div className="sec-stat-value" style={{ color: 'var(--sec-danger)' }}>{stats.active}</div>
+                </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Permanent</div>
+                    <div className="sec-stat-value">{stats.permanent}</div>
+                </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Total hits</div>
+                    <div className="sec-stat-value">{stats.hits}</div>
+                </div>
+            </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Block an IP address</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <form
-                            onSubmit={submitBlock}
-                            className="grid gap-4 md:grid-cols-2"
-                        >
-                            <div className="grid gap-2">
-                                <Label htmlFor="ip_address">IP address</Label>
-                                <Input
-                                    id="ip_address"
-                                    value={form.data.ip_address}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Block an IP address</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form
+                        onSubmit={submitBlock}
+                        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', alignItems: 'flex-end', paddingTop: '8px' }}
+                    >
+                        <div>
+                            <Label htmlFor="ip_address">IP address *</Label>
+                            <Input
+                                id="ip_address"
+                                value={form.data.ip_address}
+                                onChange={(e) =>
+                                    form.setData('ip_address', e.target.value)
+                                }
+                                placeholder="203.0.113.50"
+                                required
+                                style={{ width: '100%' }}
+                            />
+                            {form.errors.ip_address && (
+                                <p style={{ color: 'var(--sec-danger)', fontSize: '11px', margin: '4px 0 0 0' }}>
+                                    {form.errors.ip_address}
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <Label htmlFor="reason">Reason</Label>
+                            <Input
+                                id="reason"
+                                value={form.data.reason}
+                                onChange={(e) =>
+                                    form.setData('reason', e.target.value)
+                                }
+                                placeholder="e.g. Repeated directory scanning"
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="duration_hours">
+                                Duration (hours, 0 = permanent)
+                            </Label>
+                            <Input
+                                id="duration_hours"
+                                type="number"
+                                min={0}
+                                value={form.data.duration_hours}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'duration_hours',
+                                        Number(e.target.value),
+                                    )
+                                }
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={form.data.is_permanent}
                                     onChange={(e) =>
                                         form.setData(
-                                            'ip_address',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="203.0.113.50"
-                                />
-                                {form.errors.ip_address && (
-                                    <p className="text-xs text-destructive">
-                                        {form.errors.ip_address}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="reason">Reason</Label>
-                                <Input
-                                    id="reason"
-                                    value={form.data.reason}
-                                    onChange={(e) =>
-                                        form.setData('reason', e.target.value)
-                                    }
-                                    placeholder="e.g. Repeated directory scanning"
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="duration_hours">
-                                    Duration (hours, 0 = permanent)
-                                </Label>
-                                <Input
-                                    id="duration_hours"
-                                    type="number"
-                                    min={0}
-                                    value={form.data.duration_hours}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'duration_hours',
-                                            Number(e.target.value),
+                                            'is_permanent',
+                                            e.target.checked,
                                         )
                                     }
                                 />
-                            </div>
+                                <span>Permanent block</span>
+                            </label>
 
-                            <div className="flex items-end gap-2">
-                                <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.is_permanent}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'is_permanent',
-                                                e.target.checked,
-                                            )
-                                        }
-                                    />
-                                    Permanent block
-                                </label>
+                            <Button
+                                type="submit"
+                                variant="danger"
+                                disabled={form.processing}
+                            >
+                                Block IP
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
 
-                                <Button
-                                    type="submit"
-                                    variant="destructive"
-                                    disabled={form.processing}
-                                    className="ml-auto"
-                                >
-                                    Block IP
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                <div className="flex flex-wrap items-end gap-3">
+            <div className="sec-toolbar">
+                <div className="sec-toolbar-group">
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                         placeholder="Search IP, device, reason…"
-                        className="w-full sm:w-72"
+                        style={{ minWidth: '240px' }}
                     />
 
                     <select
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                        className="sec-select"
                     >
                         <option value="">All statuses</option>
                         <option value="active">Active</option>
@@ -240,136 +266,93 @@ export default function BlockedIps({
                         Filter
                     </Button>
                 </div>
+            </div>
 
-                <Card className="py-0">
-                    <CardContent className="overflow-x-auto px-0 py-0">
-                        <table className="w-full text-sm">
+            <Card flush>
+                <CardContent>
+                    <div className="sec-table-wrap">
+                        <table className="sec-table">
                             <thead>
-                                <tr className="border-b text-left text-muted-foreground">
-                                    <th className="px-4 py-3 font-medium">
-                                        IP address
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Reason
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Status
-                                    </th>
-                                    <th className="px-4 py-3 text-right font-medium">
-                                        Hits
-                                    </th>
-                                    <th className="px-4 py-3" />
+                                <tr>
+                                    <th>IP address</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Expires</th>
+                                    <th style={{ textAlign: 'right' }}>Hits</th>
+                                    <th style={{ textAlign: 'right' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {blocks.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={5}
-                                            className="px-4 py-6 text-center text-muted-foreground"
+                                            colSpan={6}
+                                            style={{ textAlign: 'center', color: 'var(--sec-text-muted)', padding: '36px' }}
                                         >
-                                            No blocked IPs match the current
-                                            filters.
+                                            No blocked IPs match the current filters.
                                         </td>
                                     </tr>
                                 )}
-                                {blocks.data.map((block) => (
-                                    <tr
-                                        key={block.id}
-                                        className="border-b last:border-0"
-                                    >
-                                        <td className="px-4 py-3">
-                                            <div className="font-mono text-xs">
-                                                {block.ip_address}
-                                            </div>
-                                            {block.device_id && (
-                                                <div className="text-[10px] text-muted-foreground">
-                                                    {block.device_id}
+                                {blocks.data.map((block) => {
+                                    const st = statusOf(block);
+
+                                    return (
+                                        <tr key={block.id}>
+                                            <td>
+                                                <div className="sec-font-mono" style={{ fontWeight: 600, fontSize: '13px' }}>
+                                                    {block.ip_address}
                                                 </div>
-                                            )}
-                                        </td>
-                                        <td className="max-w-xs truncate px-4 py-3 text-xs text-muted-foreground">
-                                            {block.reason}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge
-                                                variant={
-                                                    statusOf(block) === 'Active'
-                                                        ? 'destructive'
-                                                        : 'outline'
-                                                }
-                                            >
-                                                {statusOf(block)}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3 text-right tabular-nums">
-                                            {block.hit_count}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center justify-end gap-1">
+                                                {block.device_id && (
+                                                    <div style={{ fontSize: '10px', color: 'var(--sec-text-muted)', fontFamily: 'var(--sec-font-mono)' }}>
+                                                        {block.device_id}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td style={{ maxWidth: '250px', fontSize: '12px' }}>
+                                                {block.reason ?? '-'}
+                                            </td>
+                                            <td>
+                                                <Badge variant={statusBadgeVariant(st)}>
+                                                    {st}
+                                                </Badge>
+                                            </td>
+                                            <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)', whiteSpace: 'nowrap' }}>
+                                                {block.expires_at
+                                                    ? new Date(block.expires_at).toLocaleString()
+                                                    : 'Never'}
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontSize: '12px' }} className="sec-font-mono">
+                                                {block.hit_count}
+                                            </td>
+                                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    onClick={() =>
-                                                        toggle(block.id)
-                                                    }
+                                                    onClick={() => toggle(block.id)}
+                                                    style={{ marginRight: '6px' }}
                                                 >
-                                                    {block.is_active
-                                                        ? 'Disable'
-                                                        : 'Enable'}
+                                                    {block.is_active ? 'Disable' : 'Enable'}
                                                 </Button>
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    onClick={() =>
-                                                        unblock(block.id)
-                                                    }
+                                                    onClick={() => unblock(block.id)}
                                                 >
                                                     Unblock
                                                 </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
-                    </CardContent>
-                </Card>
+                    </div>
+                </CardContent>
+            </Card>
 
+            <div style={{ marginTop: '16px' }}>
                 <Pagination links={blocks.links} total={blocks.total} />
             </div>
-        </>
+        </div>
     );
 }
-
-function StatCard({
-    title,
-    value,
-    danger = false,
-}: {
-    title: string;
-    value: number;
-    danger?: boolean;
-}) {
-    return (
-        <Card className="gap-1 py-5">
-            <CardHeader>
-                <p className="text-sm text-muted-foreground">{title}</p>
-                <div
-                    className={`text-2xl font-semibold ${danger ? 'text-red-600 dark:text-red-400' : ''}`}
-                >
-                    {new Intl.NumberFormat().format(value)}
-                </div>
-            </CardHeader>
-        </Card>
-    );
-}
-
-BlockedIps.layout = {
-    breadcrumbs: [
-        {
-            title: 'Blocked IPs',
-            href: '/security/blocked-ips',
-        },
-    ],
-};

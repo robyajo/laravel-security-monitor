@@ -1,6 +1,5 @@
 <?php
 
-use Flux\Flux;
 use Internal\SecurityMonitor\Models\IpUnblockRequest;
 use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Livewire\Attributes\Title;
@@ -43,6 +42,12 @@ new #[Title('Unblock Appeals')] class extends Component {
         $this->showRespondModal = true;
     }
 
+    public function closeRespondModal(): void
+    {
+        $this->showRespondModal = false;
+        $this->reset(['respondingId', 'adminNotes']);
+    }
+
     public function confirmRespond(): void
     {
         $this->validate([
@@ -74,9 +79,9 @@ new #[Title('Unblock Appeals')] class extends Component {
         $this->showRespondModal = false;
         $this->reset(['respondingId', 'adminNotes']);
 
-        Flux::toast(
-            variant: 'success',
-            text: $approve
+        session()->flash(
+            'security_message',
+            $approve
                 ? __('Ticket :ticket approved and IP unblocked.', ['ticket' => $ticket->ticket_number])
                 : __('Ticket :ticket rejected.', ['ticket' => $ticket->ticket_number]),
         );
@@ -86,16 +91,16 @@ new #[Title('Unblock Appeals')] class extends Component {
     {
         IpUnblockRequest::query()->whereKey($id)->delete();
 
-        Flux::toast(variant: 'success', text: __('Ticket deleted.'));
+        session()->flash('security_message', __('Ticket deleted.'));
     }
 
-    public function statusColor(?string $status): string
+    public function statusBadgeClass(?string $status): string
     {
         return match ($status) {
-            'pending' => 'amber',
-            'approved' => 'green',
-            'rejected' => 'red',
-            default => 'zinc',
+            'pending' => 'sec-badge-high',
+            'approved' => 'sec-badge-success',
+            'rejected' => 'sec-badge-critical',
+            default => 'sec-badge-low',
         };
     }
 
@@ -131,122 +136,169 @@ new #[Title('Unblock Appeals')] class extends Component {
     }
 }; ?>
 
-<div class="flex h-full w-full flex-1 flex-col gap-6">
+<div>
     <x-pages::security.layout :heading="__('Unblock Appeals')" :subheading="__('Review self-service unblock requests from blocked users')">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <flux:card class="space-y-1">
-                <flux:text class="text-sm text-zinc-500">{{ __('Pending') }}</flux:text>
-                <flux:heading size="lg" class="text-amber-600 dark:text-amber-400">{{ number_format($stats['pending']) }}</flux:heading>
-            </flux:card>
-            <flux:card class="space-y-1">
-                <flux:text class="text-sm text-zinc-500">{{ __('Approved') }}</flux:text>
-                <flux:heading size="lg" class="text-green-600 dark:text-green-400">{{ number_format($stats['approved']) }}</flux:heading>
-            </flux:card>
-            <flux:card class="space-y-1">
-                <flux:text class="text-sm text-zinc-500">{{ __('Rejected') }}</flux:text>
-                <flux:heading size="lg" class="text-red-600 dark:text-red-400">{{ number_format($stats['rejected']) }}</flux:heading>
-            </flux:card>
+        <!-- Stat Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <div class="sec-stat-card">
+                <div class="sec-stat-label">{{ __('Pending') }}</div>
+                <div class="sec-stat-value" style="color: var(--sec-warning);">{{ number_format($stats['pending']) }}</div>
+            </div>
+            <div class="sec-stat-card">
+                <div class="sec-stat-label">{{ __('Approved') }}</div>
+                <div class="sec-stat-value" style="color: var(--sec-success);">{{ number_format($stats['approved']) }}</div>
+            </div>
+            <div class="sec-stat-card">
+                <div class="sec-stat-label">{{ __('Rejected') }}</div>
+                <div class="sec-stat-value sec-text-danger">{{ number_format($stats['rejected']) }}</div>
+            </div>
         </div>
 
-        <div class="mt-5 flex flex-wrap items-end gap-3">
-            <flux:input
-                wire:model.live.debounce.300ms="search"
-                icon="magnifying-glass"
-                :placeholder="__('Search ticket, IP, name, email…')"
-                class="w-full sm:w-72"
-            />
+        <!-- Toolbar -->
+        <div class="sec-toolbar">
+            <div class="sec-toolbar-group">
+                <input
+                    type="search"
+                    wire:model.live.debounce.300ms="search"
+                    placeholder="{{ __('Search ticket, IP, name, email…') }}"
+                    class="sec-input"
+                    style="min-width: 260px;"
+                />
 
-            <flux:select wire:model.live="status" class="w-44">
-                <flux:select.option value="">{{ __('All statuses') }}</flux:select.option>
-                <flux:select.option value="pending">{{ __('Pending') }}</flux:select.option>
-                <flux:select.option value="approved">{{ __('Approved') }}</flux:select.option>
-                <flux:select.option value="rejected">{{ __('Rejected') }}</flux:select.option>
-            </flux:select>
+                <select wire:model.live="status" class="sec-select">
+                    <option value="">{{ __('All statuses') }}</option>
+                    <option value="pending">{{ __('Pending') }}</option>
+                    <option value="approved">{{ __('Approved') }}</option>
+                    <option value="rejected">{{ __('Rejected') }}</option>
+                </select>
+            </div>
         </div>
 
-        <flux:card class="mt-5 p-0!">
-            <flux:table :paginate="$tickets">
-                <flux:table.columns>
-                    <flux:table.column>{{ __('Ticket') }}</flux:table.column>
-                    <flux:table.column>{{ __('Applicant') }}</flux:table.column>
-                    <flux:table.column>{{ __('IP') }}</flux:table.column>
-                    <flux:table.column>{{ __('Status') }}</flux:table.column>
-                    <flux:table.column>{{ __('Submitted') }}</flux:table.column>
-                    <flux:table.column></flux:table.column>
-                </flux:table.columns>
-
-                <flux:table.rows>
-                    @forelse ($tickets as $ticket)
-                        <flux:table.row :key="$ticket->id">
-                            <flux:table.cell class="font-mono text-xs">{{ $ticket->ticket_number }}</flux:table.cell>
-                            <flux:table.cell class="text-xs">
-                                <div class="font-medium">{{ $ticket->name }}</div>
-                                <div class="text-zinc-500">{{ $ticket->email }}</div>
-                            </flux:table.cell>
-                            <flux:table.cell class="font-mono text-xs">{{ $ticket->ip_address }}</flux:table.cell>
-                            <flux:table.cell>
-                                <flux:badge :color="$this->statusColor($ticket->status)" size="sm">{{ $ticket->status }}</flux:badge>
-                            </flux:table.cell>
-                            <flux:table.cell class="text-xs text-zinc-500">{{ $ticket->created_at?->diffForHumans() }}</flux:table.cell>
-                            <flux:table.cell>
-                                <div class="flex items-center justify-end gap-1">
+        <!-- Appeals Table -->
+        <div class="sec-card sec-card-flush">
+            <div class="sec-table-wrap">
+                <table class="sec-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('Ticket') }}</th>
+                            <th>{{ __('Applicant') }}</th>
+                            <th>{{ __('IP') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th>{{ __('Submitted') }}</th>
+                            <th style="text-align: right;">{{ __('Action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($tickets as $ticket)
+                            <tr>
+                                <td class="sec-font-mono" style="font-weight: 600; font-size: 12px;">
+                                    {{ $ticket->ticket_number }}
+                                </td>
+                                <td>
+                                    <div style="font-weight: 600; font-size: 13px;">{{ $ticket->name }}</div>
+                                    <div style="font-size: 11px; color: var(--sec-text-muted);">{{ $ticket->email }}</div>
+                                </td>
+                                <td class="sec-font-mono" style="font-size: 12px;">{{ $ticket->ip_address }}</td>
+                                <td>
+                                    <span class="sec-badge {{ $this->statusBadgeClass($ticket->status) }}">
+                                        {{ $ticket->status }}
+                                    </span>
+                                </td>
+                                <td style="font-size: 12px; color: var(--sec-text-muted); white-space: nowrap;">
+                                    {{ $ticket->created_at?->diffForHumans() }}
+                                </td>
+                                <td style="text-align: right; white-space: nowrap;">
                                     @if ($ticket->isPending())
-                                        <flux:button size="sm" variant="primary" icon="check" wire:click="openRespond({{ $ticket->id }}, 'approve')">
+                                        <button
+                                            type="button"
+                                            class="sec-btn sec-btn-primary sec-btn-sm"
+                                            wire:click="openRespond({{ $ticket->id }}, 'approve')"
+                                        >
                                             {{ __('Approve') }}
-                                        </flux:button>
-                                        <flux:button size="sm" variant="outline" icon="x-mark" wire:click="openRespond({{ $ticket->id }}, 'reject')">
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="sec-btn sec-btn-secondary sec-btn-sm"
+                                            wire:click="openRespond({{ $ticket->id }}, 'reject')"
+                                        >
                                             {{ __('Reject') }}
-                                        </flux:button>
+                                        </button>
                                     @else
-                                        <flux:button
-                                            size="sm"
-                                            variant="ghost"
-                                            icon="trash"
+                                        <button
+                                            type="button"
+                                            class="sec-btn sec-btn-ghost sec-btn-sm"
                                             wire:click="destroy({{ $ticket->id }})"
                                             wire:confirm="{{ __('Delete this ticket?') }}"
-                                        />
+                                            title="{{ __('Delete ticket') }}"
+                                        >
+                                            🗑️
+                                        </button>
                                     @endif
-                                </div>
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @empty
-                        <flux:table.row>
-                            <flux:table.cell colspan="6" class="text-center text-sm text-zinc-500">
-                                {{ __('No appeal tickets found.') }}
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforelse
-                </flux:table.rows>
-            </flux:table>
-        </flux:card>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--sec-text-muted); padding: 36px;">
+                                    {{ __('No appeal tickets found.') }}
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($tickets->hasPages())
+                <div style="padding: 16px 20px; border-top: 1px solid var(--sec-border-light);">
+                    {{ $tickets->links() }}
+                </div>
+            @endif
+        </div>
+
+        <!-- Respond Modal -->
+        @if ($showRespondModal)
+            <div class="sec-modal-backdrop" wire:keydown.escape="closeRespondModal">
+                <div class="sec-modal-box">
+                    <div class="sec-modal-header">
+                        <h3 class="sec-card-title">
+                            {{ $respondingAction === 'approve' ? __('Approve appeal') : __('Reject appeal') }}
+                        </h3>
+                        <p class="sec-card-subtitle">
+                            {{ $respondingAction === 'approve'
+                                ? __('The blocked IP/device will be unblocked automatically.')
+                                : __('The block will remain active.') }}
+                        </p>
+                    </div>
+
+                    <form wire:submit="confirmRespond">
+                        <div class="sec-modal-body">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">{{ __('Admin notes') }}</label>
+                                <textarea
+                                    wire:model="adminNotes"
+                                    rows="3"
+                                    class="sec-textarea"
+                                    placeholder="{{ __('Optional notes shown to the applicant…') }}"
+                                ></textarea>
+                                @error('adminNotes')
+                                    <div style="color: var(--sec-danger); font-size: 11px; margin-top: 4px;">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="sec-modal-footer">
+                            <button type="button" class="sec-btn sec-btn-secondary" wire:click="closeRespondModal">
+                                {{ __('Cancel') }}
+                            </button>
+                            <button
+                                type="submit"
+                                class="sec-btn {{ $respondingAction === 'approve' ? 'sec-btn-primary' : 'sec-btn-danger' }}"
+                            >
+                                {{ $respondingAction === 'approve' ? __('Approve & unblock') : __('Reject') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
     </x-pages::security.layout>
-
-    <flux:modal name="respond-ticket-modal" wire:model="showRespondModal" class="max-w-lg">
-        <form wire:submit="confirmRespond" class="space-y-6">
-            <div>
-                <flux:heading size="lg">
-                    {{ $respondingAction === 'approve' ? __('Approve appeal') : __('Reject appeal') }}
-                </flux:heading>
-                <flux:subheading>
-                    {{ $respondingAction === 'approve'
-                        ? __('The blocked IP/device will be unblocked automatically.')
-                        : __('The block will remain active.') }}
-                </flux:subheading>
-            </div>
-
-            <flux:textarea wire:model="adminNotes" :label="__('Admin notes')" rows="3" :placeholder="__('Optional notes shown to the applicant…')" />
-
-            <div class="flex justify-end gap-3">
-                <flux:modal.close>
-                    <flux:button variant="outline">{{ __('Cancel') }}</flux:button>
-                </flux:modal.close>
-                <flux:button
-                    :variant="$respondingAction === 'approve' ? 'primary' : 'danger'"
-                    type="submit"
-                >
-                    {{ $respondingAction === 'approve' ? __('Approve & unblock') : __('Reject') }}
-                </flux:button>
-            </div>
-        </form>
-    </flux:modal>
 </div>

@@ -1,6 +1,5 @@
 <?php
 
-use Flux\Flux;
 use Illuminate\Support\Str;
 use Internal\SecurityMonitor\Models\TrustedIp;
 use Internal\SecurityMonitor\Models\UserLogin;
@@ -26,14 +25,14 @@ new #[Title('User Sessions')] class extends Component {
     {
         UserLogin::query()->whereKey($id)->delete();
 
-        Flux::toast(variant: 'success', text: __('Login history entry deleted.'));
+        session()->flash('security_message', __('Login history entry deleted.'));
     }
 
     public function destroySession(string $sessionId): void
     {
         app(UserLoginService::class)->logoutSession($sessionId);
 
-        Flux::toast(variant: 'success', text: __('Session terminated.'));
+        session()->flash('security_message', __('Session terminated.'));
     }
 
     public function deleteTrusted(int $id): void
@@ -43,7 +42,7 @@ new #[Title('User Sessions')] class extends Component {
 
         $trusted?->delete();
 
-        Flux::toast(variant: 'success', text: __('Trusted IP :ip removed.', ['ip' => $ip ?? '']));
+        session()->flash('security_message', __('Trusted IP :ip removed.', ['ip' => $ip ?? '']));
     }
 
     public function saveMyIp(): void
@@ -73,7 +72,7 @@ new #[Title('User Sessions')] class extends Component {
             ],
         );
 
-        Flux::toast(variant: 'success', text: __('IP :ip saved as trusted.', ['ip' => $ip]));
+        session()->flash('security_message', __('IP :ip saved as trusted.', ['ip' => $ip]));
     }
 
     /**
@@ -105,128 +104,155 @@ new #[Title('User Sessions')] class extends Component {
     }
 }; ?>
 
-<div class="flex h-full w-full flex-1 flex-col gap-6">
+<div>
     <x-pages::security.layout :heading="__('User Sessions')" :subheading="__('Active sessions, login history, and trusted devices')">
-        <div class="flex flex-wrap items-end justify-between gap-3">
-            <div class="flex flex-wrap items-end gap-3">
-                <flux:card class="px-4! py-3!">
-                    <flux:text class="text-sm text-zinc-500">{{ __('Online now') }}</flux:text>
-                    <flux:heading size="lg" class="text-green-600 dark:text-green-400">{{ number_format($onlineCount) }}</flux:heading>
-                </flux:card>
+        <!-- Toolbar & Counter -->
+        <div class="sec-toolbar">
+            <div class="sec-toolbar-group">
+                <div class="sec-stat-card" style="padding: 10px 16px; min-width: 140px;">
+                    <div class="sec-stat-label" style="margin-bottom: 2px;">{{ __('Online now') }}</div>
+                    <div class="sec-stat-value" style="font-size: 20px; color: var(--sec-success); margin-bottom: 0;">
+                        {{ number_format($onlineCount) }}
+                    </div>
+                </div>
 
-                <flux:input
+                <input
+                    type="search"
                     wire:model.live.debounce.300ms="search"
-                    icon="magnifying-glass"
-                    :placeholder="__('Search user, IP, browser…')"
-                    class="w-full sm:w-72"
+                    placeholder="{{ __('Search user, IP, browser…') }}"
+                    class="sec-input"
+                    style="min-width: 260px;"
                 />
             </div>
 
-            <flux:button variant="primary" icon="shield-check" wire:click="saveMyIp">
-                {{ __('Trust this device') }}
-            </flux:button>
+            <button type="button" class="sec-btn sec-btn-primary" wire:click="saveMyIp">
+                <span>🛡️</span>
+                <span>{{ __('Trust this device') }}</span>
+            </button>
         </div>
 
-        <flux:card class="mt-5 p-0!">
-            <flux:table :paginate="$logins">
-                <flux:table.columns>
-                    <flux:table.column>{{ __('User') }}</flux:table.column>
-                    <flux:table.column>{{ __('IP') }}</flux:table.column>
-                    <flux:table.column>{{ __('Device') }}</flux:table.column>
-                    <flux:table.column>{{ __('Location') }}</flux:table.column>
-                    <flux:table.column>{{ __('Last activity') }}</flux:table.column>
-                    <flux:table.column></flux:table.column>
-                </flux:table.columns>
-
-                <flux:table.rows>
-                    @forelse ($logins as $login)
-                        <flux:table.row :key="$login->id">
-                            <flux:table.cell class="text-xs">
-                                <div class="font-medium">{{ $login->user->name ?? __('Deleted user') }}</div>
-                                <div class="text-zinc-500">{{ $login->user->email ?? '' }}</div>
-                            </flux:table.cell>
-                            <flux:table.cell>
-                                <div class="font-mono text-xs">{{ $login->ip_address }}</div>
-                                @if ($login->isOnline())
-                                    <flux:badge color="green" size="sm" class="mt-0.5">{{ __('Online') }}</flux:badge>
-                                @endif
-                            </flux:table.cell>
-                            <flux:table.cell class="text-xs">
-                                <div>{{ $login->browser ?: __('Unknown') }}</div>
-                                <div class="text-zinc-500">{{ $login->operating_system ?: '' }}</div>
-                            </flux:table.cell>
-                            <flux:table.cell class="text-xs text-zinc-500">{{ $login->formattedLocation() }}</flux:table.cell>
-                            <flux:table.cell class="text-xs text-zinc-500">{{ $login->last_activity_at?->diffForHumans() ?? '-' }}</flux:table.cell>
-                            <flux:table.cell>
-                                <div class="flex items-center justify-end gap-1">
+        <!-- Logins Table -->
+        <div class="sec-card sec-card-flush">
+            <div class="sec-table-wrap">
+                <table class="sec-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('User') }}</th>
+                            <th>{{ __('IP') }}</th>
+                            <th>{{ __('Device') }}</th>
+                            <th>{{ __('Location') }}</th>
+                            <th>{{ __('Last activity') }}</th>
+                            <th style="text-align: right;">{{ __('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($logins as $login)
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">{{ $login->user->name ?? __('Deleted user') }}</div>
+                                    <div style="font-size: 11px; color: var(--sec-text-muted);">{{ $login->user->email ?? '' }}</div>
+                                </td>
+                                <td>
+                                    <div class="sec-font-mono" style="font-size: 12px; font-weight: 600;">{{ $login->ip_address }}</div>
+                                    @if ($login->isOnline())
+                                        <span class="sec-badge sec-badge-success" style="margin-top: 4px;">{{ __('Online') }}</span>
+                                    @endif
+                                </td>
+                                <td style="font-size: 12px;">
+                                    <div>{{ $login->browser ?: __('Unknown') }}</div>
+                                    <div style="font-size: 11px; color: var(--sec-text-muted);">{{ $login->operating_system ?: '' }}</div>
+                                </td>
+                                <td style="font-size: 12px; color: var(--sec-text-muted);">{{ $login->formattedLocation() }}</td>
+                                <td style="font-size: 12px; color: var(--sec-text-muted); white-space: nowrap;">
+                                    {{ $login->last_activity_at?->diffForHumans() ?? '-' }}
+                                </td>
+                                <td style="text-align: right; white-space: nowrap;">
                                     @if ($login->session_id && $login->isOnline())
-                                        <flux:button
-                                            size="sm"
-                                            variant="ghost"
-                                            icon="arrow-right-start-on-rectangle"
+                                        <button
+                                            type="button"
+                                            class="sec-btn sec-btn-ghost sec-btn-sm"
                                             wire:click="destroySession('{{ $login->session_id }}')"
                                             wire:confirm="{{ __('Force logout this session?') }}"
-                                            :title="__('Terminate session')"
-                                        />
+                                            title="{{ __('Terminate session') }}"
+                                        >
+                                            🚪
+                                        </button>
                                     @endif
-                                    <flux:button
-                                        size="sm"
-                                        variant="ghost"
-                                        icon="trash"
+                                    <button
+                                        type="button"
+                                        class="sec-btn sec-btn-ghost sec-btn-sm"
                                         wire:click="deleteLogin({{ $login->id }})"
-                                        :title="__('Delete history entry')"
-                                    />
-                                </div>
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @empty
-                        <flux:table.row>
-                            <flux:table.cell colspan="6" class="text-center text-sm text-zinc-500">
-                                {{ __('No login records found.') }}
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforelse
-                </flux:table.rows>
-            </flux:table>
-        </flux:card>
+                                        title="{{ __('Delete history entry') }}"
+                                    >
+                                        🗑️
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--sec-text-muted); padding: 36px;">
+                                    {{ __('No login records found.') }}
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
 
-        <flux:card class="space-y-3">
-            <flux:heading>{{ __('Trusted IPs') }}</flux:heading>
+            @if ($logins->hasPages())
+                <div style="padding: 16px 20px; border-top: 1px solid var(--sec-border-light);">
+                    {{ $logins->links() }}
+                </div>
+            @endif
+        </div>
 
-            <flux:table>
-                <flux:table.columns>
-                    <flux:table.column>{{ __('IP') }}</flux:table.column>
-                    <flux:table.column>{{ __('User') }}</flux:table.column>
-                    <flux:table.column>{{ __('Device') }}</flux:table.column>
-                    <flux:table.column>{{ __('Verified') }}</flux:table.column>
-                    <flux:table.column></flux:table.column>
-                </flux:table.columns>
-                <flux:table.rows>
-                    @forelse ($trustedIps as $trusted)
-                        <flux:table.row :key="$trusted->id">
-                            <flux:table.cell class="font-mono text-xs">{{ $trusted->ip_address }}</flux:table.cell>
-                            <flux:table.cell class="text-xs">{{ $trusted->user->name ?? __('Deleted user') }}</flux:table.cell>
-                            <flux:table.cell class="text-xs text-zinc-500">{{ $trusted->device_name ?: '-' }}</flux:table.cell>
-                            <flux:table.cell class="text-xs text-zinc-500">{{ $trusted->verified_at?->diffForHumans() ?? '-' }}</flux:table.cell>
-                            <flux:table.cell>
-                                <flux:button
-                                    size="sm"
-                                    variant="ghost"
-                                    icon="trash"
-                                    wire:click="deleteTrusted({{ $trusted->id }})"
-                                    wire:confirm="{{ __('Remove this trusted IP?') }}"
-                                />
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @empty
-                        <flux:table.row>
-                            <flux:table.cell colspan="5" class="text-center text-sm text-zinc-500">
-                                {{ __('No trusted IPs yet.') }}
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforelse
-                </flux:table.rows>
-            </flux:table>
-        </flux:card>
+        <!-- Trusted IPs Card -->
+        <div class="sec-card sec-card-flush">
+            <div class="sec-card-header">
+                <h3 class="sec-card-title">{{ __('Trusted IPs') }}</h3>
+            </div>
+            <div class="sec-table-wrap">
+                <table class="sec-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('IP') }}</th>
+                            <th>{{ __('User') }}</th>
+                            <th>{{ __('Device') }}</th>
+                            <th>{{ __('Verified') }}</th>
+                            <th style="text-align: right;">{{ __('Action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($trustedIps as $trusted)
+                            <tr>
+                                <td class="sec-font-mono" style="font-size: 12px; font-weight: 600;">{{ $trusted->ip_address }}</td>
+                                <td style="font-size: 12px;">{{ $trusted->user->name ?? __('Deleted user') }}</td>
+                                <td style="font-size: 12px; color: var(--sec-text-muted);">{{ $trusted->device_name ?: '-' }}</td>
+                                <td style="font-size: 12px; color: var(--sec-text-muted); white-space: nowrap;">
+                                    {{ $trusted->verified_at?->diffForHumans() ?? '-' }}
+                                </td>
+                                <td style="text-align: right;">
+                                    <button
+                                        type="button"
+                                        class="sec-btn sec-btn-ghost sec-btn-sm"
+                                        wire:click="deleteTrusted({{ $trusted->id }})"
+                                        wire:confirm="{{ __('Remove this trusted IP?') }}"
+                                        title="{{ __('Remove trusted IP') }}"
+                                    >
+                                        🗑️
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--sec-text-muted); padding: 24px;">
+                                    {{ __('No trusted IPs yet.') }}
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </x-pages::security.layout>
 </div>

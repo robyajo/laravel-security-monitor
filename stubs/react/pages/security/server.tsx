@@ -1,9 +1,8 @@
 import { Head, router } from '@inertiajs/react';
-import { toast } from 'sonner';
+import { useState } from 'react';
+import '@/components/security/security.css';
 import { SecurityNav } from '@/components/security/security-nav';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/security/ui';
 
 type Check = {
     id: string;
@@ -69,15 +68,12 @@ type ServerProps = {
     };
 };
 
-const statusVariant: Record<
-    string,
-    'default' | 'destructive' | 'secondary' | 'outline'
-> = {
-    critical: 'destructive',
-    warning: 'secondary',
-    ok: 'outline',
-    info: 'outline',
-};
+function statusBadgeVariant(status: string): 'critical' | 'high' | 'success' | 'low' {
+    if (status === 'critical') return 'critical';
+    if (status === 'warning') return 'high';
+    if (status === 'ok') return 'success';
+    return 'low';
+}
 
 export default function ServerAudit({
     report,
@@ -89,19 +85,29 @@ export default function ServerAudit({
     urls,
 }: ServerProps) {
     const summary = report.summary;
+    const [flashMsg, setFlashMsg] = useState<string | null>(null);
+
+    const showNotification = (msg: string) => {
+        setFlashMsg(msg);
+        setTimeout(() => setFlashMsg(null), 4000);
+    };
 
     const refresh = () => {
-        router.get(urls.refresh, {}, { preserveScroll: true });
+        router.get(urls.refresh, {}, {
+            preserveScroll: true,
+            onSuccess: () => showNotification('Server audit refreshed.'),
+        });
     };
 
     const createBaseline = () => {
-        if (
-            !confirm('Create a new integrity baseline from the current files?')
-        ) {
+        if (!confirm('Create a new integrity baseline from the current files?')) {
             return;
         }
 
-        router.post(urls.baseline, {}, { preserveScroll: true });
+        router.post(urls.baseline, {}, {
+            preserveScroll: true,
+            onSuccess: () => showNotification('Integrity baseline created.'),
+        });
     };
 
     const deleteBaseline = () => {
@@ -109,7 +115,10 @@ export default function ServerAudit({
             return;
         }
 
-        router.delete(urls.baselineDestroy, { preserveScroll: true });
+        router.delete(urls.baselineDestroy, {
+            preserveScroll: true,
+            onSuccess: () => showNotification('Integrity baseline deleted.'),
+        });
     };
 
     const deleteFile = (path: string) => {
@@ -120,155 +129,161 @@ export default function ServerAudit({
         router.delete(urls.suspiciousDestroy, {
             data: { file_path: path },
             preserveScroll: true,
+            onSuccess: () => showNotification('Suspicious file removed.'),
         });
     };
 
     const releaseLockout = (id: number) => {
         router.delete(urls.lockoutDestroy.replace('__ID__', String(id)), {
             preserveScroll: true,
-            onSuccess: () => toast.success('Lockout released.'),
+            onSuccess: () => showNotification('Lockout released.'),
         });
     };
 
     return (
-        <>
+        <div className="sec-root" style={{ padding: '24px 20px', minHeight: '100vh', background: 'var(--sec-bg)' }}>
             <Head title="Server Audit" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                <SecurityNav />
+            <SecurityNav />
 
-                <div className="flex items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-xl font-semibold">Server Audit</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Integrity, webshell scanner, and environment
-                            hygiene.
-                        </p>
+            {flashMsg && (
+                <div className="sec-alert sec-alert-success" style={{ marginBottom: '16px' }}>
+                    <span>{flashMsg}</span>
+                </div>
+            )}
+
+            <div className="sec-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                    <h1 className="sec-page-title">Server Audit</h1>
+                    <p className="sec-page-subtitle">
+                        Integrity, webshell scanner, and environment hygiene.
+                    </p>
+                </div>
+
+                <Button variant="primary" onClick={refresh}>
+                    Refresh
+                </Button>
+            </div>
+
+            <div className="sec-grid-4">
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Health score</div>
+                    <div className="sec-stat-value">
+                        {summary.score}<span style={{ fontSize: '14px', color: 'var(--sec-text-subtle)' }}>/100</span>
                     </div>
-
-                    <Button onClick={refresh}>Refresh</Button>
                 </div>
-
-                <div className="grid auto-rows-min gap-4 md:grid-cols-4">
-                    <MetricCard
-                        title="Health score"
-                        value={`${summary.score}/100`}
-                    />
-                    <MetricCard
-                        title="Critical"
-                        value={String(summary.critical)}
-                        danger
-                    />
-                    <MetricCard
-                        title="Warnings"
-                        value={String(summary.warning)}
-                    />
-                    <MetricCard
-                        title="Passed checks"
-                        value={String(summary.ok)}
-                    />
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Critical</div>
+                    <div className="sec-stat-value" style={{ color: 'var(--sec-danger)' }}>{summary.critical}</div>
                 </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Warnings</div>
+                    <div className="sec-stat-value" style={{ color: 'var(--sec-warning)' }}>{summary.warning}</div>
+                </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Passed checks</div>
+                    <div className="sec-stat-value" style={{ color: 'var(--sec-success)' }}>{summary.ok}</div>
+                </div>
+            </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <Card>
-                        <CardHeader className="flex-row items-start justify-between">
-                            <div>
-                                <CardTitle>Integrity baseline</CardTitle>
-                                <p className="text-sm text-muted-foreground">
-                                    {baseline.exists
-                                        ? `${baseline.files} files tracked · created ${baseline.created_at ?? '-'}`
-                                        : `No baseline created yet (${baseline.watched} files watched).`}
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button size="sm" onClick={createBaseline}>
-                                    Create
+            <div className="sec-grid-2">
+                <Card>
+                    <CardHeader>
+                        <div>
+                            <CardTitle>Integrity baseline</CardTitle>
+                            <p className="sec-card-subtitle">
+                                {baseline.exists
+                                    ? `${baseline.files} files tracked · created ${baseline.created_at ?? '-'}`
+                                    : `No baseline created yet (${baseline.watched} files watched).`}
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <Button size="sm" onClick={createBaseline}>
+                                Create
+                            </Button>
+                            {baseline.exists && (
+                                <Button
+                                    size="sm"
+                                    variant="danger"
+                                    onClick={deleteBaseline}
+                                >
+                                    Delete
                                 </Button>
-                                {baseline.exists && (
-                                    <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={deleteBaseline}
-                                    >
-                                        Delete
-                                    </Button>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-3 gap-3 text-center">
-                            <div>
-                                <div className="text-lg font-semibold tabular-nums">
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', textAlign: 'center', paddingTop: '10px' }}>
+                            <div style={{ padding: '10px', background: 'var(--sec-warning-bg)', border: '1px solid var(--sec-warning-border)', borderRadius: 'var(--sec-radius-sm)' }}>
+                                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--sec-warning)' }}>
                                     {integrity.modified.length}
                                 </div>
-                                <p className="text-xs text-muted-foreground">
+                                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--sec-text-muted)' }}>
                                     Modified
-                                </p>
+                                </div>
                             </div>
-                            <div>
-                                <div className="text-lg font-semibold tabular-nums">
+                            <div style={{ padding: '10px', background: 'var(--sec-danger-bg)', border: '1px solid var(--sec-danger-border)', borderRadius: 'var(--sec-radius-sm)' }}>
+                                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--sec-danger)' }}>
                                     {integrity.missing.length}
                                 </div>
-                                <p className="text-xs text-muted-foreground">
+                                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--sec-text-muted)' }}>
                                     Missing
-                                </p>
+                                </div>
                             </div>
-                            <div>
-                                <div className="text-lg font-semibold tabular-nums">
+                            <div style={{ padding: '10px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: 'var(--sec-radius-sm)' }}>
+                                <div style={{ fontSize: '20px', fontWeight: 700, color: '#0284c7' }}>
                                     {integrity.added.length}
                                 </div>
-                                <p className="text-xs text-muted-foreground">
+                                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--sec-text-muted)' }}>
                                     New
-                                </p>
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Environment</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Environment</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div style={{ display: 'flex', flexDirection: 'column', paddingTop: '6px' }}>
                             {Object.entries(environment).map(([key, value]) => (
                                 <div
                                     key={key}
-                                    className="flex items-center justify-between gap-2 border-b py-1 last:border-0"
+                                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--sec-border-light)', fontSize: '13px' }}
                                 >
-                                    <span className="text-muted-foreground capitalize">
+                                    <span style={{ color: 'var(--sec-text-muted)', textTransform: 'capitalize' }}>
                                         {key.replace(/_/g, ' ')}
                                     </span>
                                     <span
-                                        className="truncate font-medium"
+                                        className="sec-font-mono"
+                                        style={{ fontWeight: 600, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                                         title={value}
                                     >
                                         {value}
                                     </span>
                                 </div>
                             ))}
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Suspicious files &amp; webshells</CardTitle>
-                    </CardHeader>
-                    <CardContent className="overflow-x-auto px-0">
-                        <table className="w-full text-sm">
+            <Card flush>
+                <CardHeader>
+                    <CardTitle>Suspicious files &amp; webshells</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="sec-table-wrap">
+                        <table className="sec-table">
                             <thead>
-                                <tr className="border-b text-left text-muted-foreground">
-                                    <th className="px-4 py-3 font-medium">
-                                        File
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Threat
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Reason
-                                    </th>
-                                    <th className="px-4 py-3 text-right font-medium">
-                                        Size
-                                    </th>
-                                    <th className="px-4 py-3" />
+                                <tr>
+                                    <th>File</th>
+                                    <th>Threat</th>
+                                    <th>Reason</th>
+                                    <th style={{ textAlign: 'right' }}>Size</th>
+                                    <th style={{ textAlign: 'right' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -276,47 +291,33 @@ export default function ServerAudit({
                                     <tr>
                                         <td
                                             colSpan={5}
-                                            className="px-4 py-6 text-center text-muted-foreground"
+                                            style={{ textAlign: 'center', color: 'var(--sec-text-muted)', padding: '36px' }}
                                         >
                                             No suspicious files detected.
                                         </td>
                                     </tr>
                                 )}
                                 {suspicious.map((file) => (
-                                    <tr
-                                        key={file.id}
-                                        className="border-b last:border-0"
-                                    >
-                                        <td className="px-4 py-3 font-mono text-xs">
+                                    <tr key={file.id}>
+                                        <td className="sec-font-mono" style={{ fontSize: '12px', fontWeight: 600 }}>
                                             {file.path}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <Badge
-                                                variant={
-                                                    statusVariant[
-                                                        file.threat_level
-                                                    ] ?? 'outline'
-                                                }
-                                            >
+                                        <td>
+                                            <Badge variant={statusBadgeVariant(file.threat_level)}>
                                                 {file.threat_level}
                                             </Badge>
                                         </td>
-                                        <td
-                                            className="max-w-sm truncate px-4 py-3 text-xs text-muted-foreground"
-                                            title={file.reason}
-                                        >
+                                        <td style={{ maxWidth: '280px', fontSize: '12px', color: 'var(--sec-text-muted)' }} title={file.reason}>
                                             {file.reason}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-xs">
+                                        <td style={{ textAlign: 'right', fontSize: '12px' }} className="sec-font-mono">
                                             {file.size}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td style={{ textAlign: 'right' }}>
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                onClick={() =>
-                                                    deleteFile(file.path)
-                                                }
+                                                onClick={() => deleteFile(file.path)}
                                             >
                                                 Delete
                                             </Button>
@@ -325,60 +326,45 @@ export default function ServerAudit({
                                 ))}
                             </tbody>
                         </table>
-                    </CardContent>
-                </Card>
+                    </div>
+                </CardContent>
+            </Card>
 
-                {lockouts.length > 0 && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Active login lockouts</CardTitle>
-                        </CardHeader>
-                        <CardContent className="overflow-x-auto px-0">
-                            <table className="w-full text-sm">
+            {lockouts.length > 0 && (
+                <Card flush>
+                    <CardHeader>
+                        <CardTitle>Active login lockouts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="sec-table-wrap">
+                            <table className="sec-table">
                                 <thead>
-                                    <tr className="border-b text-left text-muted-foreground">
-                                        <th className="px-4 py-3 font-medium">
-                                            Email
-                                        </th>
-                                        <th className="px-4 py-3 font-medium">
-                                            IP
-                                        </th>
-                                        <th className="px-4 py-3 font-medium">
-                                            Level
-                                        </th>
-                                        <th className="px-4 py-3 font-medium">
-                                            Remaining
-                                        </th>
-                                        <th className="px-4 py-3" />
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>IP</th>
+                                        <th>Level</th>
+                                        <th>Remaining</th>
+                                        <th style={{ textAlign: 'right' }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {lockouts.map((lockout) => (
-                                        <tr
-                                            key={lockout.id}
-                                            className="border-b last:border-0"
-                                        >
-                                            <td className="px-4 py-3 text-xs">
-                                                {lockout.email}
-                                            </td>
-                                            <td className="px-4 py-3 font-mono text-xs">
+                                        <tr key={lockout.id}>
+                                            <td style={{ fontSize: '12px' }}>{lockout.email}</td>
+                                            <td className="sec-font-mono" style={{ fontSize: '12px' }}>
                                                 {lockout.ip_address}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                {lockout.lockout_level}
+                                            <td>
+                                                <Badge variant="high">{lockout.lockout_level}</Badge>
                                             </td>
-                                            <td className="px-4 py-3 text-xs">
+                                            <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)' }}>
                                                 {lockout.remaining}s
                                             </td>
-                                            <td className="px-4 py-3 text-right">
+                                            <td style={{ textAlign: 'right' }}>
                                                 <Button
                                                     size="sm"
-                                                    variant="ghost"
-                                                    onClick={() =>
-                                                        releaseLockout(
-                                                            lockout.id,
-                                                        )
-                                                    }
+                                                    variant="secondary"
+                                                    onClick={() => releaseLockout(lockout.id)}
                                                 >
                                                     Release
                                                 </Button>
@@ -387,97 +373,61 @@ export default function ServerAudit({
                                     ))}
                                 </tbody>
                             </table>
-                        </CardContent>
-                    </Card>
-                )}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Security checks</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Security checks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingTop: '8px' }}>
                         {report.categories.map((category) => (
-                            <div key={category.id} className="space-y-2">
-                                <h3 className="text-sm font-medium text-muted-foreground">
+                            <div key={category.id}>
+                                <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--sec-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 10px 0' }}>
                                     {category.label}
-                                </h3>
-                                <div className="space-y-2">
+                                </h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {category.checks.map((check) => (
                                         <div
                                             key={check.id}
-                                            className="flex items-start justify-between gap-3 rounded-lg border p-3"
+                                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 14px', background: 'var(--sec-card-hover)', borderRadius: 'var(--sec-radius-sm)', gap: '12px' }}
                                         >
-                                            <div className="space-y-0.5">
-                                                <div className="flex items-center gap-2">
-                                                    <Badge
-                                                        variant={
-                                                            statusVariant[
-                                                                check.status
-                                                            ] ?? 'outline'
-                                                        }
-                                                    >
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <Badge variant={statusBadgeVariant(check.status)}>
                                                         {check.status}
                                                     </Badge>
-                                                    <span className="text-sm font-medium">
+                                                    <span style={{ fontSize: '14px', fontWeight: 600 }}>
                                                         {check.label}
                                                     </span>
                                                 </div>
                                                 {check.detail && (
-                                                    <p className="text-xs text-muted-foreground">
+                                                    <p style={{ fontSize: '12px', color: 'var(--sec-text-muted)', margin: 0 }}>
                                                         {check.detail}
                                                     </p>
                                                 )}
                                                 {check.recommendation && (
-                                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                                    <p style={{ fontSize: '12px', color: 'var(--sec-warning)', margin: 0, fontWeight: 500 }}>
                                                         → {check.recommendation}
                                                     </p>
                                                 )}
                                             </div>
                                             {check.value && (
-                                                <Badge variant="outline">
+                                                <span className="sec-badge sec-badge-low sec-font-mono" style={{ fontSize: '11px' }}>
                                                     {check.value}
-                                                </Badge>
+                                                </span>
                                             )}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         ))}
-                    </CardContent>
-                </Card>
-            </div>
-        </>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
-
-function MetricCard({
-    title,
-    value,
-    danger = false,
-}: {
-    title: string;
-    value: string;
-    danger?: boolean;
-}) {
-    return (
-        <Card className="gap-1 py-5">
-            <CardHeader>
-                <p className="text-sm text-muted-foreground">{title}</p>
-                <div
-                    className={`text-2xl font-semibold ${danger ? 'text-red-600 dark:text-red-400' : ''}`}
-                >
-                    {value}
-                </div>
-            </CardHeader>
-        </Card>
-    );
-}
-
-ServerAudit.layout = {
-    breadcrumbs: [
-        {
-            title: 'Server Audit',
-            href: '/security/server',
-        },
-    ],
-};

@@ -1,8 +1,7 @@
 import { Head, router } from '@inertiajs/react';
+import '@/components/security/security.css';
 import { SecurityNav } from '@/components/security/security-nav';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/security/ui';
 
 type TrendPoint = {
     key: string;
@@ -39,13 +38,6 @@ const levelLabels: Record<string, string> = {
     low: 'Low',
 };
 
-const levelClasses: Record<string, string> = {
-    critical: 'bg-red-500',
-    high: 'bg-orange-500',
-    medium: 'bg-amber-500',
-    low: 'bg-neutral-400',
-};
-
 function formatNumber(value: number | undefined): string {
     return new Intl.NumberFormat().format(value ?? 0);
 }
@@ -73,236 +65,181 @@ export default function SecurityOverview({
     };
 
     return (
-        <>
+        <div className="sec-root" style={{ padding: '24px 20px', minHeight: '100vh', background: 'var(--sec-bg)' }}>
             <Head title="Security Overview" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                <SecurityNav />
+            <SecurityNav />
 
-                <div className="flex items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-xl font-semibold">
-                            Security Overview
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Threat summary, blocks, and recent security
-                            activity.
+            <div className="sec-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                    <h1 className="sec-page-title">Security Overview</h1>
+                    <p className="sec-page-subtitle">
+                        Threat summary, blocks, and recent security activity.
+                    </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {(['week', 'month', 'year'] as const).map((option) => (
+                        <Button
+                            key={option}
+                            size="sm"
+                            variant={range === option ? 'primary' : 'secondary'}
+                            onClick={() => changeRange(option)}
+                        >
+                            {option === 'week'
+                                ? '7 days'
+                                : option === 'month'
+                                  ? '30 days'
+                                  : '12 months'}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="sec-grid-4">
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Logs today</div>
+                    <div className="sec-stat-value">{formatNumber(stats.logs_today)}</div>
+                    <div className="sec-stat-desc">{`${formatNumber(stats.total_logs)} total recorded`}</div>
+                </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Critical threats today</div>
+                    <div className="sec-stat-value" style={{ color: 'var(--sec-danger)' }}>{formatNumber(stats.critical_today)}</div>
+                    <div className="sec-stat-desc">Requires immediate review</div>
+                </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Active blocks</div>
+                    <div className="sec-stat-value">{formatNumber(stats.active_blocks)}</div>
+                    <div className="sec-stat-desc">{`${formatNumber(stats.total_blocks)} total blocks`}</div>
+                </div>
+                <div className="sec-stat-card">
+                    <div className="sec-stat-label">Unique IPs today</div>
+                    <div className="sec-stat-value">{formatNumber(stats.unique_ips_today)}</div>
+                    <div className="sec-stat-desc">{`${formatNumber(stats.blocked_attempts_today)} blocked attempts`}</div>
+                </div>
+            </div>
+
+            <div className="sec-grid-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Attack trend</CardTitle>
+                        <p className="sec-card-subtitle">
+                            Total {formatNumber(trend.total)} &middot; Peak{' '}
+                            {trend.peak.label} ({formatNumber(trend.peak.total)})
                         </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        {(['week', 'month', 'year'] as const).map((option) => (
-                            <Button
-                                key={option}
-                                size="sm"
-                                variant={
-                                    range === option ? 'default' : 'outline'
-                                }
-                                onClick={() => changeRange(option)}
-                            >
-                                {option === 'week'
-                                    ? '7 days'
-                                    : option === 'month'
-                                      ? '30 days'
-                                      : '12 months'}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="grid auto-rows-min gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <StatCard
-                        title="Logs today"
-                        value={formatNumber(stats.logs_today)}
-                        hint={`${formatNumber(stats.total_logs)} total recorded`}
-                    />
-                    <StatCard
-                        title="Critical threats today"
-                        value={formatNumber(stats.critical_today)}
-                        hint="Requires immediate review"
-                        danger
-                    />
-                    <StatCard
-                        title="Active blocks"
-                        value={formatNumber(stats.active_blocks)}
-                        hint={`${formatNumber(stats.total_blocks)} total blocks`}
-                    />
-                    <StatCard
-                        title="Unique IPs today"
-                        value={formatNumber(stats.unique_ips_today)}
-                        hint={`${formatNumber(stats.blocked_attempts_today)} blocked attempts`}
-                    />
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Attack trend</CardTitle>
-                            <p className="text-sm text-muted-foreground">
-                                Total {formatNumber(trend.total)} &middot; Peak{' '}
-                                {trend.peak.label} (
-                                {formatNumber(trend.peak.total)})
-                            </p>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex h-40 items-end gap-1.5">
-                                {trend.points.map((point) => (
+                    </CardHeader>
+                    <CardContent>
+                        <div className="sec-chart-box">
+                            {trend.points.map((point) => (
+                                <div
+                                    key={point.key}
+                                    className="sec-chart-col"
+                                    title={`${point.tooltip} · ${point.total}`}
+                                >
                                     <div
-                                        key={point.key}
-                                        className="group flex flex-1 flex-col items-center justify-end gap-1"
-                                        title={`${point.tooltip} · ${point.total}`}
-                                    >
-                                        <div
-                                            className="w-full rounded-t bg-red-500/70 transition group-hover:bg-red-500"
-                                            style={{
-                                                height: `${Math.max(2, Math.round((point.total / maxTrend) * 130))}px`,
-                                            }}
-                                        />
-                                        <span className="text-[10px] text-muted-foreground">
-                                            {point.label}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                        className="sec-chart-bar"
+                                        style={{
+                                            height: `${Math.max(4, Math.round((point.total / maxTrend) * 120))}px`,
+                                        }}
+                                    />
+                                    <span className="sec-chart-label">
+                                        {point.label}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Threats by severity (24h)</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Threats by severity (24h)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '8px' }}>
                             {(
                                 ['critical', 'high', 'medium', 'low'] as const
                             ).map((level) => {
                                 const count = levels[level] ?? 0;
+                                const barColor = level === 'critical' ? 'var(--sec-danger)' : (level === 'high' ? 'var(--sec-warning)' : (level === 'medium' ? '#d97706' : 'var(--sec-text-subtle)'));
 
                                 return (
-                                    <div key={level} className="space-y-1">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="font-medium">
+                                    <div key={level}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                            <Badge variant={level as any}>
                                                 {levelLabels[level]}
-                                            </span>
-                                            <span className="tabular-nums">
+                                            </Badge>
+                                            <span className="sec-font-mono" style={{ fontSize: '13px', fontWeight: 600 }}>
                                                 {formatNumber(count)}
                                             </span>
                                         </div>
-                                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                                        <div style={{ height: '6px', width: '100%', background: 'var(--sec-border-light)', borderRadius: '9999px', overflow: 'hidden' }}>
                                             <div
-                                                className={`h-full rounded-full ${levelClasses[level]}`}
                                                 style={{
+                                                    height: '100%',
+                                                    borderRadius: '9999px',
                                                     width: `${Math.round((count / levelTotal) * 100)}%`,
+                                                    background: barColor,
                                                 }}
                                             />
                                         </div>
                                     </div>
                                 );
                             })}
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Top attackers (24h)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b text-left text-muted-foreground">
-                                        <th className="py-2 pr-4 font-medium">
-                                            IP address
-                                        </th>
-                                        <th className="py-2 pr-4 font-medium">
-                                            Hits
-                                        </th>
-                                        <th className="py-2 pr-4 font-medium">
-                                            Highest level
-                                        </th>
-                                        <th className="py-2 font-medium">
-                                            Last seen
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {attackers.length === 0 && (
-                                        <tr>
-                                            <td
-                                                colSpan={4}
-                                                className="py-6 text-center text-muted-foreground"
-                                            >
-                                                No threats recorded in the last
-                                                24 hours.
-                                            </td>
-                                        </tr>
-                                    )}
-                                    {attackers.map((attacker) => (
-                                        <tr
-                                            key={attacker.ip_address}
-                                            className="border-b last:border-0"
-                                        >
-                                            <td className="py-2 pr-4 font-mono text-xs">
-                                                {attacker.ip_address}
-                                            </td>
-                                            <td className="py-2 pr-4 tabular-nums">
-                                                {formatNumber(attacker.hits)}
-                                            </td>
-                                            <td className="py-2 pr-4">
-                                                <Badge variant="outline">
-                                                    {levelLabels[
-                                                        attacker.level
-                                                    ] ?? attacker.level}
-                                                </Badge>
-                                            </td>
-                                            <td className="py-2 text-xs text-muted-foreground">
-                                                {new Date(
-                                                    attacker.last_seen,
-                                                ).toLocaleString()}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
                         </div>
                     </CardContent>
                 </Card>
             </div>
-        </>
+
+            <Card flush>
+                <CardHeader>
+                    <CardTitle>Top attackers (24h)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="sec-table-wrap">
+                        <table className="sec-table">
+                            <thead>
+                                <tr>
+                                    <th>IP address</th>
+                                    <th>Hits</th>
+                                    <th>Highest level</th>
+                                    <th>Last seen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {attackers.length === 0 && (
+                                    <tr>
+                                        <td
+                                            colSpan={4}
+                                            style={{ textAlign: 'center', color: 'var(--sec-text-muted)', padding: '36px' }}
+                                        >
+                                            No threats recorded in the last 24 hours.
+                                        </td>
+                                    </tr>
+                                )}
+                                {attackers.map((attacker) => (
+                                    <tr key={attacker.ip_address}>
+                                        <td className="sec-font-mono" style={{ fontWeight: 600, fontSize: '12px' }}>
+                                            {attacker.ip_address}
+                                        </td>
+                                        <td className="sec-font-mono" style={{ fontSize: '12px' }}>
+                                            {formatNumber(attacker.hits)}
+                                        </td>
+                                        <td>
+                                            <Badge variant={(attacker.level as any) ?? 'low'}>
+                                                {levelLabels[attacker.level] ?? attacker.level}
+                                            </Badge>
+                                        </td>
+                                        <td style={{ fontSize: '12px', color: 'var(--sec-text-muted)' }}>
+                                            {new Date(attacker.last_seen).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
-
-function StatCard({
-    title,
-    value,
-    hint,
-    danger = false,
-}: {
-    title: string;
-    value: string;
-    hint: string;
-    danger?: boolean;
-}) {
-    return (
-        <Card className="gap-1 py-5">
-            <CardHeader>
-                <p className="text-sm text-muted-foreground">{title}</p>
-                <div
-                    className={`text-2xl font-semibold ${danger ? 'text-red-600 dark:text-red-400' : ''}`}
-                >
-                    {value}
-                </div>
-                <p className="text-xs text-muted-foreground">{hint}</p>
-            </CardHeader>
-        </Card>
-    );
-}
-
-SecurityOverview.layout = {
-    breadcrumbs: [
-        {
-            title: 'Security Overview',
-            href: '/security',
-        },
-    ],
-};
