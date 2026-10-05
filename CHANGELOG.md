@@ -2,6 +2,15 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [2.0.9] - 2026-10-05
+
+### Fixed
+
+- **Kompatibilitas CI & Test Matrix L10 - L13**:
+  - Menambahkan dependensi `guzzlehttp/guzzle: ^7.8|^8.0` pada `composer.json` untuk menjamin ketersediaan PSR-7 Response saat pengujian `Http::fake()` dan fitur `VersionCheckService` pada lingkungan Laravel 10.
+  - Memperbaiki analisis statis PHPStan pada evaluasi tipe dinamis `LoginThrottleService` dan `SecurityInstallCommand`.
+  - Mengoptimalkan assertion command options pada `SecurityInstallAutoInjectTest`.
+
 ## [2.0.8] - 2026-10-05
 
 ### Added
