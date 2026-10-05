@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Internal\SecurityMonitor\Http\Controllers\Api\BlockedIpApiController;
 use Internal\SecurityMonitor\Http\Controllers\Api\IpUnblockRequestApiController;
 use Internal\SecurityMonitor\Http\Controllers\Api\SecurityLogApiController;
+use Internal\SecurityMonitor\Http\Controllers\Api\SecuritySettingApiController;
 use Internal\SecurityMonitor\Http\Controllers\Api\ServerSecurityApiController;
 use Internal\SecurityMonitor\Http\Controllers\Api\UserSessionApiController;
 
@@ -63,5 +64,9 @@ Route::prefix($prefix)->middleware($middleware)->name('security.')->group(functi
         Route::get('unblock-tickets', [IpUnblockRequestApiController::class, 'index'])->name('unblock-tickets.index');
         Route::post('unblock-tickets/{id}/respond', [IpUnblockRequestApiController::class, 'respond'])->name('unblock-tickets.respond');
         Route::delete('unblock-tickets/{id}', [IpUnblockRequestApiController::class, 'destroy'])->name('unblock-tickets.destroy');
+
+        // Security Settings
+        Route::get('settings', [SecuritySettingApiController::class, 'index'])->name('settings.index');
+        Route::post('settings', [SecuritySettingApiController::class, 'update'])->name('settings.update');
     });
 });

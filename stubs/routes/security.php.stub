@@ -45,6 +45,8 @@ Route::middleware(array_merge($middleware, $adminMiddleware))
             Route::get('tickets', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\TicketController::class, 'index'])->name('tickets');
             Route::post('tickets/{id}/respond', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\TicketController::class, 'respond'])->whereNumber('id')->name('tickets.respond');
             Route::delete('tickets/{id}', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\TicketController::class, 'destroy'])->whereNumber('id')->name('tickets.destroy');
+            Route::get('settings', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\SettingController::class, 'index'])->name('settings');
+            Route::post('settings', [\Internal\SecurityMonitor\Http\Controllers\Dashboard\SettingController::class, 'update'])->name('settings.update');
         } elseif (class_exists(\Livewire\Livewire::class)) {
             // Rute Livewire Single-File Pages (render view di resources/views/pages/security)
             Route::livewire('/', 'pages::security.overview')->name('overview');
@@ -53,6 +55,7 @@ Route::middleware(array_merge($middleware, $adminMiddleware))
             Route::livewire('server', 'pages::security.server')->name('server');
             Route::livewire('sessions', 'pages::security.sessions')->name('sessions');
             Route::livewire('tickets', 'pages::security.tickets')->name('tickets');
+            Route::livewire('settings', 'pages::security.settings')->name('settings');
         } else {
             // Render view Blade standar (resources/views/pages/security)
             Route::view('/', 'pages.security.overview')->name('overview');
@@ -61,5 +64,6 @@ Route::middleware(array_merge($middleware, $adminMiddleware))
             Route::view('server', 'pages.security.server')->name('server');
             Route::view('sessions', 'pages.security.sessions')->name('sessions');
             Route::view('tickets', 'pages.security.tickets')->name('tickets');
+            Route::view('settings', 'pages.security.settings')->name('settings');
         }
     });

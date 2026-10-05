@@ -677,6 +677,14 @@
                             <span>{{ __('Appeals') }}</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('security.dashboard.settings') }}"
+                           class="sec-nav-item {{ request()->routeIs('security.dashboard.settings') ? 'active' : '' }}"
+                           wire:navigate>
+                            <span>⚙️</span>
+                            <span>{{ __('Settings') }}</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </aside>

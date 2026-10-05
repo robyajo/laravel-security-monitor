@@ -7,6 +7,7 @@ const items = [
     { title: 'Server Audit', href: '/security/server', icon: '🛡️' },
     { title: 'Sessions', href: '/security/sessions', icon: '👥' },
     { title: 'Appeals', href: '/security/tickets', icon: '📩' },
+    { title: 'Settings', href: '/security/settings', icon: '⚙️' },
 ];
 
 export function SecurityNav() {

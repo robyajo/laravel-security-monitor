@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Internal\SecurityMonitor\Models\BlockedIp;
 use Internal\SecurityMonitor\Models\SecurityLog;
+use Internal\SecurityMonitor\Models\SecuritySetting;
 use Internal\SecurityMonitor\Models\TrustedIp;
 use Internal\SecurityMonitor\Models\UserLogin;
 use Throwable;
@@ -51,14 +52,184 @@ class SecurityMonitorService
      */
     protected static array $patternCache = [];
 
+    /**
+     * Cache array for dynamic settings in memory during the request.
+     *
+     * @var array<string, mixed>
+     */
+    protected array $settingsMemoryCache = [];
+
     public function enabled(): bool
     {
-        return (bool) config('security.enabled', true);
+        return (bool) $this->getSetting('enabled', config('security.enabled', true));
     }
 
     public function enforcementEnabled(): bool
     {
-        return $this->enabled() && (bool) config('security.block_enforcement', true);
+        return $this->enabled() && (bool) $this->getSetting('block_enforcement', config('security.block_enforcement', true));
+    }
+
+    /**
+     * Retrieve a dynamic security setting with fallback to config.
+     */
+    public function getSetting(string $key, mixed $default = null): mixed
+    {
+        if (array_key_exists($key, $this->settingsMemoryCache)) {
+            return $this->settingsMemoryCache[$key];
+        }
+
+        try {
+            if (Cache::has("sec_cfg.{$key}")) {
+                return $this->settingsMemoryCache[$key] = Cache::get("sec_cfg.{$key}");
+            }
+
+            if (Schema::hasTable('security_settings')) {
+                $record = SecuritySetting::query()->where('key', $key)->first();
+                if ($record !== null) {
+                    $val = unserialize($record->value);
+                    Cache::put("sec_cfg.{$key}", $val, 86400);
+
+                    return $this->settingsMemoryCache[$key] = $val;
+                }
+            }
+        } catch (Throwable) {
+            // Fallback gracefully
+        }
+
+        return $this->settingsMemoryCache[$key] = $default ?? config("security.{$key}");
+    }
+
+    /**
+     * Persist a dynamic security setting.
+     */
+    public function setSetting(string $key, mixed $value): void
+    {
+        $this->settingsMemoryCache[$key] = $value;
+
+        try {
+            Cache::forever("sec_cfg.{$key}", $value);
+
+            if (Schema::hasTable('security_settings')) {
+                SecuritySetting::query()->updateOrCreate(
+                    ['key' => $key],
+                    ['value' => serialize($value)]
+                );
+            }
+        } catch (Throwable) {
+            // Ignore if cache or database is unavailable
+        }
+    }
+
+    /**
+     * Get all structured dashboard settings.
+     *
+     * @return array<string, mixed>
+     */
+    public function getSettings(): array
+    {
+        return [
+            'auto_block_scope' => (string) $this->getSetting('auto_block.scope', config('security.auto_block.scope', 'device')),
+            'instant_block_scope' => (string) $this->getSetting('instant_block.scope', config('security.instant_block.scope', 'device')),
+            'auto_block_enabled' => (bool) $this->getSetting('auto_block.enabled', config('security.auto_block.enabled', true)),
+            'auto_block_threshold' => (int) $this->getSetting('auto_block.threshold', config('security.auto_block.threshold', 3)),
+            'auto_block_window' => (int) $this->getSetting('auto_block.window_minutes', config('security.auto_block.window_minutes', 10)),
+            'auto_block_duration' => (int) $this->getSetting('auto_block.duration_hours', config('security.auto_block.duration_hours', 24)),
+            'instant_block_enabled' => (bool) $this->getSetting('instant_block.enabled', config('security.instant_block.enabled', true)),
+            'instant_block_duration' => (int) $this->getSetting('instant_block.duration_hours', config('security.instant_block.duration_hours', 720)),
+            'block_enforcement' => (bool) $this->getSetting('block_enforcement', config('security.block_enforcement', true)),
+        ];
+    }
+
+    /**
+     * Update structured settings and optionally sync with .env file.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    public function updateSettings(array $values): array
+    {
+        if (isset($values['auto_block_scope']) && in_array($values['auto_block_scope'], ['device', 'ip'], true)) {
+            $this->setSetting('auto_block.scope', (string) $values['auto_block_scope']);
+        }
+
+        if (isset($values['instant_block_scope']) && in_array($values['instant_block_scope'], ['device', 'ip'], true)) {
+            $this->setSetting('instant_block.scope', (string) $values['instant_block_scope']);
+        }
+
+        if (isset($values['auto_block_enabled'])) {
+            $this->setSetting('auto_block.enabled', (bool) $values['auto_block_enabled']);
+        }
+
+        if (isset($values['auto_block_threshold'])) {
+            $this->setSetting('auto_block.threshold', max(1, (int) $values['auto_block_threshold']));
+        }
+
+        if (isset($values['auto_block_window'])) {
+            $this->setSetting('auto_block.window_minutes', max(1, (int) $values['auto_block_window']));
+        }
+
+        if (isset($values['auto_block_duration'])) {
+            $this->setSetting('auto_block.duration_hours', max(0, (int) $values['auto_block_duration']));
+        }
+
+        if (isset($values['instant_block_enabled'])) {
+            $this->setSetting('instant_block.enabled', (bool) $values['instant_block_enabled']);
+        }
+
+        if (isset($values['instant_block_duration'])) {
+            $this->setSetting('instant_block.duration_hours', max(0, (int) $values['instant_block_duration']));
+        }
+
+        if (isset($values['block_enforcement'])) {
+            $this->setSetting('block_enforcement', (bool) $values['block_enforcement']);
+        }
+
+        $fresh = $this->getSettings();
+        $this->syncSettingsToEnv($fresh);
+
+        return $fresh;
+    }
+
+    /**
+     * Sync updated settings to .env file if it exists and is writable.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    public function syncSettingsToEnv(array $settings): void
+    {
+        $envPath = base_path('.env');
+
+        if (! file_exists($envPath) || ! is_writable($envPath)) {
+            return;
+        }
+
+        try {
+            $content = (string) file_get_contents($envPath);
+
+            $mapping = [
+                'SECURITY_AUTO_BLOCK_SCOPE' => $settings['auto_block_scope'] ?? 'device',
+                'SECURITY_INSTANT_BLOCK_SCOPE' => $settings['instant_block_scope'] ?? 'device',
+                'SECURITY_AUTO_BLOCK_ENABLED' => ($settings['auto_block_enabled'] ?? true) ? 'true' : 'false',
+                'SECURITY_AUTO_BLOCK_THRESHOLD' => (string) ($settings['auto_block_threshold'] ?? 3),
+                'SECURITY_AUTO_BLOCK_WINDOW' => (string) ($settings['auto_block_window'] ?? 10),
+                'SECURITY_AUTO_BLOCK_DURATION' => (string) ($settings['auto_block_duration'] ?? 24),
+                'SECURITY_INSTANT_BLOCK_ENABLED' => ($settings['instant_block_enabled'] ?? true) ? 'true' : 'false',
+                'SECURITY_INSTANT_BLOCK_DURATION' => (string) ($settings['instant_block_duration'] ?? 720),
+                'SECURITY_BLOCK_ENFORCEMENT' => ($settings['block_enforcement'] ?? true) ? 'true' : 'false',
+            ];
+
+            foreach ($mapping as $envKey => $envVal) {
+                if (preg_match("/^{$envKey}=.*/m", $content)) {
+                    $content = preg_replace("/^{$envKey}=.*/m", "{$envKey}={$envVal}", $content);
+                } else {
+                    $content .= "\n{$envKey}={$envVal}";
+                }
+            }
+
+            file_put_contents($envPath, $content);
+        } catch (Throwable) {
+            // Ignore environment file write errors in restricted permission containers
+        }
     }
 
     /*
@@ -637,7 +808,7 @@ class SecurityMonitorService
     public function instantBlockEnabled(): bool
     {
         return $this->enabled()
-            && (bool) config('security.instant_block.enabled', true)
+            && (bool) $this->getSetting('instant_block.enabled', config('security.instant_block.enabled', true))
             && config('security.instant_block.signatures', []) !== [];
     }
 
@@ -685,7 +856,7 @@ class SecurityMonitorService
         }
 
         $config = config('security.instant_block', []);
-        $scope = (string) ($config['scope'] ?? 'device');
+        $scope = (string) $this->getSetting('instant_block.scope', $config['scope'] ?? 'device');
 
         if ($scope === 'device' && empty($deviceId)) {
             $deviceId = $this->resolveDeviceId();
@@ -704,7 +875,7 @@ class SecurityMonitorService
             'reason' => 'Diblokir instan: '.$reason,
             'notes' => 'Terdeteksi otomatis oleh Security Monitor (zero tolerance signature).'.($deviceId ? " (Perangkat: {$deviceId})" : ''),
             'source' => 'automatic',
-            'duration_hours' => (int) ($config['duration_hours'] ?? 720),
+            'duration_hours' => (int) $this->getSetting('instant_block.duration_hours', $config['duration_hours'] ?? 720),
         ]);
     }
 
@@ -1291,12 +1462,13 @@ class SecurityMonitorService
     public function autoBlockIfNeeded(string $ip, ?string $deviceId = null, ?string $localIp = null): ?BlockedIp
     {
         $config = config('security.auto_block', []);
+        $enabled = (bool) $this->getSetting('auto_block.enabled', $config['enabled'] ?? false);
 
-        if (! ($config['enabled'] ?? false) || $this->isWhitelisted($ip, $deviceId, $localIp)) {
+        if (! $enabled || $this->isWhitelisted($ip, $deviceId, $localIp)) {
             return null;
         }
 
-        $scope = (string) ($config['scope'] ?? 'device');
+        $scope = (string) $this->getSetting('auto_block.scope', $config['scope'] ?? 'device');
 
         if ($scope === 'device' && empty($deviceId)) {
             $deviceId = $this->resolveDeviceId();
@@ -1313,8 +1485,8 @@ class SecurityMonitorService
         }
 
         try {
-            $threshold = max(1, (int) ($config['threshold'] ?? 3));
-            $window = max(1, (int) ($config['window_minutes'] ?? 10));
+            $threshold = max(1, (int) $this->getSetting('auto_block.threshold', $config['threshold'] ?? 3));
+            $window = max(1, (int) $this->getSetting('auto_block.window_minutes', $config['window_minutes'] ?? 10));
             $levels = $config['levels'] ?? ['high', 'critical'];
 
             $query = SecurityLog::query()
@@ -1351,7 +1523,7 @@ class SecurityMonitorService
                 $window
             ),
             'source' => 'automatic',
-            'duration_hours' => (int) ($config['duration_hours'] ?? 24),
+            'duration_hours' => (int) $this->getSetting('auto_block.duration_hours', $config['duration_hours'] ?? 24),
         ]);
     }
 

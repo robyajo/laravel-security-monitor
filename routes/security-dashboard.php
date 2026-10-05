@@ -28,4 +28,5 @@ Route::middleware(array_merge($middleware, $adminMiddleware))
         Route::livewire('server', 'pages::security.server')->name('server');
         Route::livewire('sessions', 'pages::security.sessions')->name('sessions');
         Route::livewire('tickets', 'pages::security.tickets')->name('tickets');
+        Route::livewire('settings', 'pages::security.settings')->name('settings');
     });

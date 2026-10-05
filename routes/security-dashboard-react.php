@@ -6,6 +6,7 @@ use Internal\SecurityMonitor\Http\Controllers\Dashboard\LogController;
 use Internal\SecurityMonitor\Http\Controllers\Dashboard\OverviewController;
 use Internal\SecurityMonitor\Http\Controllers\Dashboard\ServerController;
 use Internal\SecurityMonitor\Http\Controllers\Dashboard\SessionController;
+use Internal\SecurityMonitor\Http\Controllers\Dashboard\SettingController;
 use Internal\SecurityMonitor\Http\Controllers\Dashboard\TicketController;
 
 /*
@@ -59,4 +60,8 @@ Route::middleware(array_merge($middleware, $adminMiddleware))
         Route::get('tickets', [TicketController::class, 'index'])->name('tickets');
         Route::post('tickets/{id}/respond', [TicketController::class, 'respond'])->whereNumber('id')->name('tickets.respond');
         Route::delete('tickets/{id}', [TicketController::class, 'destroy'])->whereNumber('id')->name('tickets.destroy');
+
+        // Security Settings
+        Route::get('settings', [SettingController::class, 'index'])->name('settings');
+        Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
     });

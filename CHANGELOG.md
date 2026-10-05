@@ -2,6 +2,30 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [2.0.7] - 2026-10-05
+
+### Added
+
+- **Interactive Security Settings Page & Dynamic Configuration (Livewire, React, & REST API)**:
+  - Added dedicated Security Settings dashboard page accessible via `/security/settings` in both Livewire (`pages/security/settings.blade.php`) and React (`pages/security/settings.tsx`).
+  - Added Settings link (⚙️) to the sidebar navigation in both Blade and React dashboard layouts.
+  - Interactive radio cards allowing administrators to configure blocking scope with clear visual guidance:
+    - **Isolasi Perangkat Saja (`device`)** *(Default / Rekomendasi)*: Only quarantines the offending device based on Device ID / Fingerprint / LAN IP, keeping innocent users sharing the same WiFi or NAT router completely safe.
+    - **Seluruh IP Router Publik (`ip`)**: Quarantines the entire public router IP address.
+  - Dynamic configuration controls for:
+    - Automatic blocking scope (`auto_block_scope`: `device` or `ip`)
+    - Zero tolerance instant blocking scope (`instant_block_scope`: `device` or `ip`)
+    - Threshold count (`auto_block_threshold`)
+    - Accumulation window in minutes (`auto_block_window`)
+    - Quarantine duration in hours (`auto_block_duration`)
+    - Zero tolerance instant duration (`instant_block_duration`)
+    - HTTP 403 block enforcement master toggle (`block_enforcement`)
+  - Dynamic multi-layer persistence: `SecuritySetting` database model/migration, high-performance in-memory and Cache layer, with automatic `.env` synchronization.
+  - Headless REST API endpoints:
+    - `GET /api/security/settings` (retrieves current configuration)
+    - `POST /api/security/settings` (updates and applies settings with zero downtime)
+  - Added comprehensive feature tests in `tests/Feature/SecuritySettingsTest.php`.
+
 ## [2.0.6] - 2026-10-05
 
 ### Added
