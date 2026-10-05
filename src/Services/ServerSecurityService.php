@@ -415,7 +415,6 @@ class ServerSecurityService
                 : null,
         );
 
-
         // Dibaca sama seperti CheckPublicApiHeader agar hasil pemeriksaan konsisten.
         $apiKey = (string) config('security.server_scan.public_api_key', '');
         $defaultKey = in_array($apiKey, ['', 'change-me'], true);

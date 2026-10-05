@@ -8,7 +8,6 @@ use Internal\SecurityMonitor\Services\SecurityMonitorService;
 use Internal\SecurityMonitor\Services\ServerSecurityService;
 use Internal\SecurityMonitor\Services\UserLoginService;
 
-
 test('login event records a user login session', function () {
     $user = $this->createRegularUser();
 

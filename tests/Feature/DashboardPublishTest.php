@@ -349,4 +349,3 @@ test(
         expect(File::exists($tsxDir.'/overview.tsx'))->toBeTrue();
     },
 );
-
