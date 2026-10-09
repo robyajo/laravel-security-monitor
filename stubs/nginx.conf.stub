@@ -16,22 +16,55 @@ server {
     server_name example.com; # Ganti dengan domain atau IP server Anda
     root /var/www/your-app/public; # Ganti dengan path folder public aplikasi Anda
 
+    # Sembunyikan versi Nginx untuk mencegah fingerprinting sistem
+    server_tokens off;
+
     # Batasi ukuran payload request untuk mencegah DoS / upload raksasa
     client_max_body_size 5M;
 
     # Kode HTTP saat request melebihi ambang batas rate limit
     limit_req_status 429;
 
+    # Buffer header untuk mencegah HTTP 400/414 pada JWT / Cookie besar
+    client_header_buffer_size 16k;
+    large_client_header_buffers 4 32k;
+    client_body_buffer_size 128k;
+
+    # Timeout proteksi Slowloris DoS
+    client_body_timeout 15s;
+    client_header_timeout 15s;
+    keepalive_timeout 65;
+    send_timeout 15s;
+
     # ---------------------------------------------------------------------
     # DAFTAR IP PENYERANG YANG DIBLOKIR MANUAL DI LEVEL NGINX
     # ---------------------------------------------------------------------
     # deny 198.51.100.1; # Contoh blokir IP penyerang manual di level Nginx
+
+    # Tolak method HTTP berisiko (misal TRACE/TRACK) untuk mencegah XST
+    if ($request_method !~ ^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)$ ) {
+        return 405;
+    }
 
     # Header keamanan HTTP
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header X-XSS-Protection "1; mode=block" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always; # Aktifkan saat HTTPS
+
+    # =====================================================================
+    # PULIHKAN IP ASLI DARI REVERSE PROXY / CLOUDFLARE / DOCKER
+    # (Uncomment jika server berada di balik Reverse Proxy / Cloudflare
+    # agar rate-limit dan blokir IP akurat per pengguna asli)
+    # =====================================================================
+    # set_real_ip_from 127.0.0.1;
+    # set_real_ip_from 10.0.0.0/8;
+    # set_real_ip_from 172.16.0.0/12;
+    # set_real_ip_from 192.168.0.0/16;
+    # real_ip_header X-Forwarded-For;
+    # real_ip_recursive on;
 
     index index.php;
     charset utf-8;
@@ -70,8 +103,6 @@ server {
     location = /favicon.ico { access_log off; log_not_found off; }
     location = /robots.txt  { access_log off; log_not_found off; }
 
-    error_page 404 /index.php;
-
     # ---------------------------------------------------------------------
     # KEAMANAN: hanya /index.php yang boleh dieksekusi sebagai PHP.
     # Semua berkas .php lain (termasuk hasil upload webshell seperti
@@ -105,8 +136,8 @@ server {
         try_files $uri =404;
     }
 
-    # Berkas backup / dump tidak boleh diunduh bila ikut tersalin ke public.
-    location ~* \.(sql|bak|old|orig|save|swp|log|env)$ {
+    # Berkas backup / dump / config tidak boleh diunduh bila ikut tersalin ke public.
+    location ~* \.(sql|bak|old|orig|save|swp|log|env|ini|conf|yml|yaml)$ {
         return 403;
     }
 
@@ -118,6 +149,13 @@ server {
         fastcgi_pass unix:/var/run/php/php8.3-fpm.sock; # Sesuaikan socket PHP-FPM Anda (misal: php8.2, php8.3, php8.4)
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
+
+        # Buffer FastCGI (Mencegah 502 Bad Gateway saat respons / cookie besar)
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+        fastcgi_busy_buffers_size 64k;
+        fastcgi_read_timeout 60s;
+
         fastcgi_hide_header X-Powered-By;
     }
 

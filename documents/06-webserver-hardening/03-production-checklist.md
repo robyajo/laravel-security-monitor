@@ -60,6 +60,9 @@ chmod -R 775 /var/www/aplikasi-anda/bootstrap/cache
 
 - [ ] Salin template `nginx.conf` yang telah dipublikasikan ke `/etc/nginx/sites-available/`.
 - [ ] Pastikan dua direktif `limit_req_zone` diletakkan di dalam blok `http { ... }`.
+- [ ] Sesuaikan path socket PHP-FPM (`/var/run/php/php8.3-fpm.sock` atau sesuai versi PHP server).
+- [ ] Jika berada di balik Reverse Proxy / Cloudflare, aktifkan direktif `set_real_ip_from` dan `real_ip_recursive on;`.
+- [ ] Pastikan `server_tokens off;` aktif untuk menyembunyikan versi Nginx.
 - [ ] Jalankan uji sintaks Nginx:
   ```bash
   sudo nginx -t
