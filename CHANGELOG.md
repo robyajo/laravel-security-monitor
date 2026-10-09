@@ -2,6 +2,37 @@
 
 All notable changes to `robyajo/laravel-security-monitor` will be documented in this file.
 
+## [2.1.0] - 2026-10-09
+
+### Added
+
+- **Hardened Apache 2 VirtualHost Configuration (`stubs/apache2.conf.stub`)**:
+  - Menyediakan template VirtualHost Apache 2 hardened siap pakai untuk server Ubuntu / Debian / CentOS.
+  - Tag vendor publish baru: `php artisan vendor:publish --tag=security-apache` (menghasilkan berkas `apache2.conf` di root aplikasi host).
+  - Terintegrasi penuh ke dalam perintah instalasi `php artisan security:install` dan grup tag `--tag=security-all`.
+  - Opsi CLI baru: `--without-apache` pada `php artisan security:install` untuk melewati publikasi `apache2.conf`.
+  - Fitur pengamanan VirtualHost mencakup:
+    - Mitigasi Slowloris DoS via `mod_reqtimeout` (`header=15-30,MinRate=500 body=15,MinRate=500`).
+    - Buffer request body (5MB) dan header buffer (`LimitRequestFieldSize 32768`) untuk mencegah DoS dan error token JWT/Cookie besar.
+    - Penolakan HTTP method berisiko (`TRACE`, `TRACK`) untuk mitigasi Cross-Site Tracing (XST).
+    - Header keamanan lengkap: `X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, dan penyembunyian `X-Powered-By`.
+    - Resolusi IP asli via `mod_remoteip` (`X-Forwarded-For` / `CF-Connecting-IP`).
+    - Restriksi eksekusi PHP: hanya `/index.php` yang diizinkan dieksekusi, semua berkas `.php` lain ditolak dengan 403 Forbidden.
+    - Pencegahan eksekusi berkas double extension (`.php.jpg`, `.phtml.zip`, dll.).
+    - Sandboxing folder `/storage/` dengan `Content-Security-Policy: sandbox` untuk mencegah eksekusi polyglot/SVG berbahaya.
+    - Integrasi PHP-FPM aman melalui `mod_proxy_fcgi`.
+
+## [2.0.10] - 2026-10-09
+
+### Changed
+
+- **Hardening Template Nginx (`stubs/nginx.conf.stub`)**:
+  - Peningkatan FastCGI buffer: `fastcgi_buffers 16 16k;`, `fastcgi_buffer_size 32k;`, `fastcgi_busy_buffers_size 64k;` untuk mencegah 502 Bad Gateway saat respons besar.
+  - Penambahan buffer header klien (`client_header_buffer_size 16k;`, `large_client_header_buffers 4 32k;`).
+  - Penambahan timeout mitigasi Slowloris DoS (`client_body_timeout 15s;`, `client_header_timeout 15s;`, `send_timeout 15s;`).
+  - Restriksi HTTP method (`GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS`).
+  - Blueprint pemulihan real IP dari reverse proxy / Cloudflare / Docker.
+
 ## [2.0.9] - 2026-10-05
 
 ### Fixed
