@@ -205,24 +205,159 @@ curl -I http://localhost:8000/storage/
 
 ---
 
-## 5. Catatan Konfigurasi VirtualHost Apache
+## 5. Konfigurasi VirtualHost Apache 2 Lengkap (`apache2.conf.stub`)
 
-Pastikan virtual host Apache Anda telah mengizinkan override dari berkas `.htaccess` dengan direktif `AllowOverride All`:
+Selain penguatan berbasis `.htaccess` di tingkat folder `public/`, paket menyediakan **template VirtualHost Apache 2 penuh siap pakai** (`stubs/apache2.conf.stub`) yang dipublikasikan sebagai `apache2.conf` di root proyek aplikasi Anda.
 
+### Cara Mempublikasikan Berkas VirtualHost:
+```bash
+php artisan vendor:publish --tag=security-apache
+```
+*(Atau otomatis dipublikasikan bersamaan saat menjalankan `php artisan security:install`).*
+
+### Berkas Konfigurasi `apache2.conf`:
 ```apache
 <VirtualHost *:80>
     ServerName example.com
-    DocumentRoot /var/www/html/example/public
+    ServerAlias www.example.com
+    ServerAdmin webmaster@example.com
 
-    <Directory /var/www/html/example/public>
+    DocumentRoot /var/www/your-app/public
+
+    # Sembunyikan versi Apache pada halaman error
+    ServerSignature Off
+
+    # Batasi ukuran payload request untuk mencegah DoS (5MB)
+    LimitRequestBody 5242880
+
+    # Buffer header untuk mencegah HTTP 400/414 pada token JWT / Cookie besar
+    LimitRequestFieldSize 32768
+    LimitRequestFields 100
+    LimitRequestLine 16384
+
+    # Timeout mitigasi Slowloris DoS
+    Timeout 30
+    KeepAlive On
+    MaxKeepAliveRequests 100
+    KeepAliveTimeout 5
+
+    <IfModule mod_reqtimeout.c>
+        RequestReadTimeout header=15-30,MinRate=500 body=15,MinRate=500
+    </IfModule>
+
+    # Tolak method HTTP berbahaya (misal TRACE/TRACK) untuk mencegah XST
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+        RewriteCond %{REQUEST_METHOD} !^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)$
+        RewriteRule .* - [F,L]
+    </IfModule>
+
+    # Header keamanan HTTP
+    <IfModule mod_headers.c>
+        Header always set X-Frame-Options "SAMEORIGIN"
+        Header always set X-Content-Type-Options "nosniff"
+        Header always set Referrer-Policy "strict-origin-when-cross-origin"
+        Header always set X-XSS-Protection "1; mode=block"
+        Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Header unset X-Powered-By
+    </IfModule>
+
+    # Pulihkan IP asli jika di balik Reverse Proxy / Cloudflare
+    <IfModule mod_remoteip.c>
+        RemoteIPHeader X-Forwarded-For
+        # RemoteIPHeader CF-Connecting-IP
+        RemoteIPInternalProxy 127.0.0.1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+    </IfModule>
+
+    <Directory /var/www/your-app/public>
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
+
+        <IfModule mod_rewrite.c>
+            RewriteEngine On
+            RewriteCond %{HTTP:Authorization} .
+            RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+            RewriteCond %{HTTP:x-xsrf-token} .
+            RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteCond %{REQUEST_URI} (.+)/$
+            RewriteRule ^ %1 [L,R=301]
+
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteRule ^ index.php [L]
+        </IfModule>
     </Directory>
 
-    ErrorLog ${APACHE_LOG_DIR}/example_error.log
-    CustomLog ${APACHE_LOG_DIR}/example_access.log combined
+    # Aset statis Vite / Frontend build (/build/)
+    <Directory /var/www/your-app/public/build>
+        <IfModule mod_headers.c>
+            Header set Cache-Control "public, max-age=31536000, immutable"
+            Header always set X-Content-Type-Options "nosniff"
+        </IfModule>
+    </Directory>
+
+    # Hanya index.php yang boleh dieksekusi sebagai PHP
+    <FilesMatch "\.php$">
+        <If "%{REQUEST_URI} !~ m#^/(index\.php)?$#">
+            Require all denied
+        </If>
+    </FilesMatch>
+
+    # Blokir double extension berbahaya
+    <FilesMatch "\.(php[0-9]?|phtml|pht|phar|phps|asp|aspx|ashx|asmx|jsp|jspx|cgi|pl|py|rb|sh|bash|exe|dll|bat|cmd|scr)\.[a-z0-9]+$">
+        Require all denied
+    </FilesMatch>
+
+    # Sandboxing folder storage
+    <Directory /var/www/your-app/public/storage>
+        <FilesMatch "\.(php[0-9]?|phtml|pht|phar|pl|py|sh|bash|cgi|exe|dll|bat|cmd|htm|html|shtml)$">
+            Require all denied
+        </FilesMatch>
+        <IfModule mod_headers.c>
+            Header always set X-Content-Type-Options "nosniff"
+            Header always set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+        </IfModule>
+    </Directory>
+
+    # Blokir dotfiles (.env, .git, .htaccess) & berkas cadangan (.sql, .bak, .log)
+    <FilesMatch "^\.(?!well-known)">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "\.(sql|bak|old|orig|save|swp|log|env|ini|conf|yml|yaml)$">
+        Require all denied
+    </FilesMatch>
+
+    # Integrasi PHP-FPM (mod_proxy_fcgi)
+    <IfModule mod_proxy_fcgi.c>
+        <FilesMatch "index\.php$">
+            SetHandler "proxy:unix:/var/run/php/php8.3-fpm.sock|fcgi://localhost"
+        </FilesMatch>
+        ProxyTimeout 60
+    </IfModule>
+
+    LogLevel warn
+    ErrorLog ${APACHE_LOG_DIR}/laravel-security-error.log
+    CustomLog ${APACHE_LOG_DIR}/laravel-security-access.log combined
 </VirtualHost>
 ```
 
-> 💡 **LiteSpeed / OpenLiteSpeed**: LiteSpeed secara native mendukung sintaks `.htaccess` Apache dan akan langsung menerapkan aturan-aturan di atas saat berkas disimpan.
+### Cara Pemasangan di Ubuntu / Debian:
+1. Salin berkas `apache2.conf` ke direktori sites-available:
+   ```bash
+   sudo cp apache2.conf /etc/apache2/sites-available/your-app.conf
+   ```
+2. Pastikan modul yang dibutuhkan aktif:
+   ```bash
+   sudo a2enmod rewrite headers remoteip proxy proxy_fcgi reqtimeout ssl
+   ```
+3. Aktifkan konfigurasi VirtualHost dan reload Apache:
+   ```bash
+   sudo a2ensite your-app.conf
+   sudo apache2ctl configtest
+   sudo systemctl reload apache2
+   ```
+
+> 💡 **LiteSpeed / OpenLiteSpeed**: LiteSpeed secara native mendukung sintaks `.htaccess` Apache dan akan langsung menerapkan aturan-aturan keamanan di atas.

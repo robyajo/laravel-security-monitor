@@ -162,6 +162,7 @@ routes/
 
 stubs/
 ├── nginx.conf.stub        # Hardened Nginx WAF configuration template
+├── apache2.conf.stub      # Hardened Apache 2 VirtualHost configuration template
 ├── htaccess.stub          # Hardened Apache .htaccess template
 ├── blocked.blade.php      # Default 403 "blocked" page
 ├── env.stub               # Documented SECURITY_* environment block

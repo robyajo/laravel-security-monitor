@@ -1,0 +1,219 @@
+# =====================================================================
+# LARAVEL SECURITY MONITOR (BULWARK) - HARDENED APACHE 2 CONFIGURATION
+# =====================================================================
+# Template VirtualHost Apache 2 hardened siap pakai untuk Laravel.
+#
+# MODUL APACHE YANG DIBUTUHKAN:
+# Pastikan modul-modul berikut aktif di server Anda:
+#   sudo a2enmod rewrite headers remoteip proxy proxy_fcgi reqtimeout ssl
+#
+# CARA PEMASANGAN DI UBUNTU / DEBIAN:
+# 1. Salin berkas ini ke direktori konfigurasi situs Apache:
+#      sudo cp apache2.conf /etc/apache2/sites-available/your-app.conf
+# 2. Sesuaikan ServerName, DocumentRoot, dan socket PHP-FPM di bawah.
+# 3. Aktifkan konfigurasi dan reload Apache:
+#      sudo a2ensite your-app.conf
+#      sudo apache2ctl configtest
+#      sudo systemctl reload apache2
+# =====================================================================
+
+<VirtualHost *:80>
+    ServerName example.com
+    ServerAlias www.example.com
+    ServerAdmin webmaster@example.com
+
+    # Folder public aplikasi Laravel Anda (WAJIB menunjuk ke folder /public)
+    DocumentRoot /var/www/your-app/public
+
+    # -----------------------------------------------------------------
+    # FINGERPRINTING & KEAMANAN DASAR SERVER
+    # -----------------------------------------------------------------
+    # Sembunyikan versi Apache pada halaman error bawaan
+    ServerSignature Off
+
+    # Batasi ukuran payload request untuk mencegah DoS / upload raksasa (5MB)
+    LimitRequestBody 5242880
+
+    # Buffer header untuk mencegah HTTP 400/414 pada token JWT / Cookie besar
+    LimitRequestFieldSize 32768
+    LimitRequestFields 100
+    LimitRequestLine 16384
+
+    # Timeout proteksi Slowloris DoS
+    Timeout 30
+    KeepAlive On
+    MaxKeepAliveRequests 100
+    KeepAliveTimeout 5
+
+    <IfModule mod_reqtimeout.c>
+        RequestReadTimeout header=15-30,MinRate=500 body=15,MinRate=500
+    </IfModule>
+
+    # -----------------------------------------------------------------
+    # RESTRIKSI HTTP METHOD BERISIKO
+    # Tolak method berisiko (misal TRACE / TRACK) untuk mencegah XST
+    # -----------------------------------------------------------------
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+        RewriteCond %{REQUEST_METHOD} !^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)$
+        RewriteRule .* - [F,L]
+    </IfModule>
+
+    # -----------------------------------------------------------------
+    # HEADER KEAMANAN HTTP (mod_headers)
+    # -----------------------------------------------------------------
+    <IfModule mod_headers.c>
+        Header always set X-Frame-Options "SAMEORIGIN"
+        Header always set X-Content-Type-Options "nosniff"
+        Header always set Referrer-Policy "strict-origin-when-cross-origin"
+        Header always set X-XSS-Protection "1; mode=block"
+        Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Header unset X-Powered-By
+        # Aktifkan HSTS saat produksi sudah menggunakan HTTPS:
+        # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    </IfModule>
+
+    # -----------------------------------------------------------------
+    # PULIHKAN IP ASLI DARI REVERSE PROXY / CLOUDFLARE / DOCKER
+    # (Uncomment jika Apache berada di balik Reverse Proxy / Cloudflare)
+    # -----------------------------------------------------------------
+    <IfModule mod_remoteip.c>
+        RemoteIPHeader X-Forwarded-For
+        # RemoteIPHeader CF-Connecting-IP # Aktifkan bila langsung di balik Cloudflare
+        RemoteIPInternalProxy 127.0.0.1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+    </IfModule>
+
+    # -----------------------------------------------------------------
+    # DIREKTORI UTAMA LARAVEL PUBLIC
+    # -----------------------------------------------------------------
+    <Directory /var/www/your-app/public>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+
+        # Routing Front Controller Laravel
+        <IfModule mod_rewrite.c>
+            RewriteEngine On
+
+            # Tangani Header Authorization & XSRF Token
+            RewriteCond %{HTTP:Authorization} .
+            RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+            RewriteCond %{HTTP:x-xsrf-token} .
+            RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+            # Redirect Trailing Slashes Jika Bukan Folder...
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteCond %{REQUEST_URI} (.+)/$
+            RewriteRule ^ %1 [L,R=301]
+
+            # Teruskan Request ke Front Controller (index.php)...
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteRule ^ index.php [L]
+        </IfModule>
+    </Directory>
+
+    # -----------------------------------------------------------------
+    # ASET STATIS VITE / FRONTEND BUILD (/build/)
+    # - Cache immutable 1 tahun karena Vite menyematkan hash unik pada nama berkas.
+    # - Bebas dari overhead pemrosesan PHP.
+    # -----------------------------------------------------------------
+    <Directory /var/www/your-app/public/build>
+        <IfModule mod_headers.c>
+            Header set Cache-Control "public, max-age=31536000, immutable"
+            Header always set X-Content-Type-Options "nosniff"
+        </IfModule>
+    </Directory>
+
+    # -----------------------------------------------------------------
+    # KEAMANAN EKSEKUSI PHP: Hanya /index.php yang boleh dieksekusi.
+    # Semua berkas .php lain di dalam direktori publik (termasuk webshell
+    # hasil upload penyerang seperti wne.php atau c99.php) ditolak mentah-mentah.
+    # -----------------------------------------------------------------
+    <FilesMatch "\.php$">
+        <If "%{REQUEST_URI} !~ m#^/(index\.php)?$#">
+            <IfModule mod_authz_core.c>
+                Require all denied
+            </IfModule>
+        </If>
+    </FilesMatch>
+
+    # Double extension: shell.php.jpg, wne.php;.png, shell.phtml.zip
+    <FilesMatch "\.(php[0-9]?|phtml|pht|phar|phps|asp|aspx|ashx|asmx|jsp|jspx|cgi|pl|py|rb|sh|bash|exe|dll|bat|cmd|scr)\.[a-z0-9]+$">
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+    </FilesMatch>
+
+    # -----------------------------------------------------------------
+    # PROTEKSI FOLDER STORAGE / UPLOAD (Anti-Webshell & Polyglot)
+    # - Tidak ada eksekusi PHP atau script aktif di folder ini.
+    # - Terapkan Content-Security-Policy sandbox agar gambar tidak mengeksekusi script.
+    # -----------------------------------------------------------------
+    <Directory /var/www/your-app/public/storage>
+        <FilesMatch "\.(php[0-9]?|phtml|pht|phar|pl|py|sh|bash|cgi|exe|dll|bat|cmd|htm|html|shtml)$">
+            <IfModule mod_authz_core.c>
+                Require all denied
+            </IfModule>
+        </FilesMatch>
+
+        <IfModule mod_headers.c>
+            Header always set X-Content-Type-Options "nosniff"
+            Header always set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+        </IfModule>
+    </Directory>
+
+    # -----------------------------------------------------------------
+    # BLOKIR AKSES KE BERKAS SENSITIF & DOTFILES
+    # -----------------------------------------------------------------
+    # Dotfiles (.env, .git, .htaccess, .htpasswd) kecuali .well-known
+    <FilesMatch "^\.(?!well-known)">
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+    </FilesMatch>
+
+    # Berkas backup, dump database, log, atau konfigurasi
+    <FilesMatch "\.(sql|bak|old|orig|save|swp|log|env|ini|conf|yml|yaml)$">
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+    </FilesMatch>
+
+    # -----------------------------------------------------------------
+    # INTEGRASI PHP-FPM (mod_proxy_fcgi)
+    # Sesuaikan socket dengan versi PHP Anda (misal: php8.2-fpm, php8.3-fpm, php8.4-fpm)
+    # -----------------------------------------------------------------
+    <IfModule mod_proxy_fcgi.c>
+        <FilesMatch "index\.php$">
+            SetHandler "proxy:unix:/var/run/php/php8.3-fpm.sock|fcgi://localhost"
+        </FilesMatch>
+
+        # Mencegah 502/504 timeout pada proses berat
+        ProxyTimeout 60
+    </IfModule>
+
+    # -----------------------------------------------------------------
+    # LOGGING
+    # -----------------------------------------------------------------
+    LogLevel warn
+    ErrorLog ${APACHE_LOG_DIR}/laravel-security-error.log
+    CustomLog ${APACHE_LOG_DIR}/laravel-security-access.log combined
+</VirtualHost>
+
+# =====================================================================
+# BLOK VIRTUALHOST HTTPS (SSL) - OPSIONAL
+# Uncomment dan aktifkan blok di bawah saat sertifikat SSL (Let's Encrypt / Certbot) siap:
+# =====================================================================
+# <VirtualHost *:443>
+#     ServerName example.com
+#     ServerAlias www.example.com
+#     ServerAdmin webmaster@example.com
+#     DocumentRoot /var/www/your-app/public
+#
+#     SSLEngine on
+#     SSLCertificateFile /etc/letsencrypt/live/example.com/fullchain.pem
+#     SSLCertificateKeyFile /etc/letsencrypt/live/example.com/privkey.pem
+#
+#     # Gunakan konfigurasi direktori yang sama seperti pada port 80 di atas
+# </VirtualHost>

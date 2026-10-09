@@ -10,6 +10,7 @@ class SecurityInstallCommand extends Command
     protected $signature = 'security:install
                             {--force : Timpa berkas konfigurasi, migrasi, nginx, htaccess, dan halaman blokir yang sudah ada}
                             {--without-nginx : Jangan publikasikan berkas nginx.conf}
+                            {--without-apache : Jangan publikasikan berkas apache2.conf}
                             {--without-htaccess : Jangan perbarui berkas public/.htaccess}
                             {--without-views : Jangan publikasikan halaman blokir errors/blocked.blade.php}
                             {--without-env : Jangan tambahkan variabel konfigurasi ke berkas .env}
@@ -34,6 +35,7 @@ class SecurityInstallCommand extends Command
 
         $force = (bool) $this->option('force');
         $withoutNginx = (bool) $this->option('without-nginx');
+        $withoutApache = (bool) $this->option('without-apache');
         $withoutHtaccess = (bool) $this->option('without-htaccess');
         $withoutViews = (bool) $this->option('without-views');
         $withoutEnv = (bool) $this->option('without-env');
@@ -105,6 +107,17 @@ class SecurityInstallCommand extends Command
             );
             $this->call('vendor:publish', [
                 '--tag' => 'security-nginx',
+                '--force' => $force,
+            ]);
+        }
+
+        // 3b. Publish Apache2 VirtualHost Configuration
+        if (! $withoutApache) {
+            $this->comment(
+                'Mempublikasikan konfigurasi server Apache2 (apache2.conf)...',
+            );
+            $this->call('vendor:publish', [
+                '--tag' => 'security-apache',
                 '--force' => $force,
             ]);
         }
@@ -234,9 +247,14 @@ class SecurityInstallCommand extends Command
                 '  6. Web Server Nginx: Periksa dan sesuaikan <fg=yellow>nginx.conf</> di root proyek.',
             );
         }
+        if (! $withoutApache) {
+            $this->line(
+                '  7. Web Server Apache2: Periksa dan sesuaikan <fg=yellow>apache2.conf</> di root proyek.',
+            );
+        }
         if (! $withoutHtaccess) {
             $this->line(
-                '  7. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat',
+                '  8. Web Server Apache / cPanel: Berkas <fg=yellow>public/.htaccess</> telah diperkuat',
             );
             $this->line(
                 '     terhadap upload webshell, double extension, pembacaan dotfile, dan file backup.',

@@ -133,6 +133,16 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             'security-nginx',
         );
 
+        // Apache 2 VirtualHost Hardened Configuration
+        $this->publishes(
+            [
+                __DIR__.'/../stubs/apache2.conf.stub' => base_path(
+                    'apache2.conf',
+                ),
+            ],
+            'security-apache',
+        );
+
         // Apache .htaccess Hardened Configuration
         $this->publishes(
             [
@@ -151,7 +161,7 @@ class SecurityMonitorServiceProvider extends ServiceProvider
             'security-views',
         );
 
-        // Publish All Assets (Config, Migrations, Nginx, Htaccess, Blocked View)
+        // Publish All Assets (Config, Migrations, Nginx, Apache2, Htaccess, Blocked View)
         $this->publishes(
             [
                 __DIR__.'/../config/security.php' => config_path(
@@ -162,6 +172,9 @@ class SecurityMonitorServiceProvider extends ServiceProvider
                 ),
                 __DIR__.'/../stubs/nginx.conf.stub' => base_path(
                     'nginx.conf',
+                ),
+                __DIR__.'/../stubs/apache2.conf.stub' => base_path(
+                    'apache2.conf',
                 ),
                 __DIR__.'/../stubs/htaccess.stub' => public_path('.htaccess'),
                 __DIR__.'/../stubs/blocked.blade.php' => resource_path(
